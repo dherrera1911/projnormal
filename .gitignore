@@ -1,0 +1,6 @@
+accuracy maximization analysische__/
+*.pyc
+*.egg-info/
+dist/
+build/
+
