@@ -11,140 +11,122 @@ import mpmath as mpm  # Important to use mpmath for hyp1f1, scipy blows up
 #
 ##################################
 ##################################
-#
-# This group of functions provides several functionalities
-# to analytically calculate first and second moments of different
-# distributions. Mainly, utilities for ratios of quadratic forms,
-# inverse non-central chi squared distribution, and inverse
-# non-central chi distribution are provided.
 
-def compute_nc_parameter_batch(s, sigma):
+#### Terminology:
+# X: Random variable with multidimensional Gaussian distribution
+# mu: Mean of X
+# sigma: Standard deviation of X
+# nc: non-centrality parameter
+# df: Degrees of freedom of X, or nDim
+# nX: Number of random variables with different mu or sigma
+
+def non_centrality(mu, sigma):
     """ Compute the non-centrality parameter of each row
-    in s, given isotropic noise with sigma standard deviation.
+    in mu, given isotropic noise with sigma standard deviation.
     ----------------
     Arguments:
     ----------------
-      - s: Stimuli dataset. (nStim x nDim)
-      - sigma: standard deviation of noise. Sigma can be a scalar,
-          or a vector where each element of s will be divided by
-          the corresponding element (it won't be an exact non-centrality
-          parameter in this case)
+      - mu: Means of gaussians. Shape (nX x nDim)
+      - sigma: standard deviation of noise. Scalar, or a vector
+          (vector size nX or nDim?)
     ----------------
     Outputs:
     ----------------
-      - nc: Non-centrality parameter of each stimulus. ||mu||^2, where
-          mu = s/sigma
+      - nc: Non-centrality parameter of each random variable, which is
+            ||muNorm||^2, where muNorm = mu/sigma. Shape (nX)
     """
-    sNorm = s/sigma
-    # non-centrality parameter, ||\mu||^2. Make numpy array for mpm package
-    if sNorm.is_cuda:
-        sNorm = sNorm.to('cpu')
-    nc = np.array(sNorm.norm(dim=1)**2)
+    # If mu has dim 1, make it size 2 with 1 row
+    if mu.dim() == 1:
+        mu = mu.unsqueeze(0)
+    muNorm = mu/sigma
+    # non-centrality parameter, ||\mu||^2
+    nc = muNorm.norm(dim=1)**2
     return nc
 
 
-# Get the values of the hypergeometric function given a and b,
-# for each value of non-centrality parameter, which is sitmulus dependent
-def compute_stimuli_hyp1f1(a, b, nc):
+# Get the values of the hypergeometric function given a and b, for each
+# value of non-centrality parameter, which is random-variable  dependent
+def hyp1f1(a, b, nc):
     """ For each element in nc (which is the non-centrality parameter
-    given by ||s/sigma||**2 for stimulus s), compute the
-    confluent hypergeometric function hyp1f1(a, b, -nc[i]/2)
+    given by ||mu/sigma||**2 for random variable X), compute the
+    confluent hypergeometric function hyp1f1(a, b, -nc/2).
+    Acts as a wrapper of mpm.hyp1f1 for pytorch tensors.
     ----------------
     Arguments:
     ----------------
       - a: First parameter of hyp1f1 (usually 1 or 1/2). (Scalar)
       - b: Second parameter of hyp1f1 (usually df/2+k, k being an integer). (Scalar)
-      - nc: Non-centrality parameter. Has to be numpy array (Vector length df)
+      - nc: Non-centrality parameter. (Vector length df)
     ----------------
     Outputs:
     ----------------
-      - hypFun: Value of hyp1f1 for each nc. (Vector length df)
+      - hypVal: Value of hyp1f1 for each nc. (Vector length df)
     """
-    nStim = len(nc)  # Get number of dimensions
-    # Calculate hypergeometric functions (not vectorized function)
-    hypFun = torch.zeros(nStim)
-    for i in range(nStim):
-        hypFun[i] = torch.tensor(float(mpm.hyp1f1(a, b, -nc[i]/2)))
-    return hypFun
+    # If nc is a pytorch tensor, convert to numpy array
+    isTensor = isinstance(nc, torch.Tensor)
+    if isTensor:
+        device = nc.device
+        if nc.is_cuda:
+            nc = nc.cpu()
+        nc = nc.numpy()
+    nX = len(nc)  # Get number of dimensions
+    # Calculate hypergeometric functions
+    hypVal = torch.zeros(nX)
+    for i in range(nX):
+        hypVal[i] = torch.tensor(float(mpm.hyp1f1(a, b, -nc[i]/2)))
+    if isTensor:
+        hypVal = hypVal.to(device)
+    return hypVal
 
 
-def compute_isotropic_formula_weights(s, sigma):
-    """ For a set of stimuli, and a given standard deviation for
-    isotropic Gaussian noise, compute and the weights of the
-    stimulus outer products and the identity matrix needed to get
-    the second moment matrix of each stimulus.
+def isotropic_sm_weights(mu, sigma):
+    """ For a set of X, assuming isotropic Gaussian noise,
+    compute and the of the mean outer product and the identity
+    matrix in the second moment estimation formula.
     ----------------
     Arguments:
     ----------------
-      - s: Stimulus dataset. (nStim x nDim)
+      - mu: Means of different X. (nX x nDim)
       - sigma: Standard deviation of the noise
     ----------------
     Outputs:
     ----------------
-      - nonCentrality: Non centrality parameter of each stimulus (nStim)
-      - smMeanW: Weigths for the outer products of the means
-      (i.e. the stimuli). (nStim)
-      - smNoiseW: Weights for the identity matrices. (nStim)
+      - nc: Non centrality parameter of each X (nX)
+      - smMeanW: Weigths for the outer products of the means for
+          each random variable. (nX)
+      - smNoiseW: Weights for the identity matrices. (nX)
     """
-    df = s.shape[1]
+    df = mu.shape[1]
     # Square mean of stimuli divided by standard deviation
-    nonCentrality = compute_nc_parameter_batch(s, sigma)
+    nc = non_centrality(mu, sigma)
     # Weighting factors for the mean outer product in second moment estimation
-    smMeanW = compute_stimuli_hyp1f1(a=1, b=df/2+2,
-            nc=nonCentrality) * (1/(df+2))
+    smMeanW = hyp1f1(a=1, b=df/2+2, nc=nc) * (1/(df+2))
     # Weighting factors for the identity matrix in second moment estimation
-    smNoiseW = compute_stimuli_hyp1f1(a=1, b=df/2+1,
-            nc=nonCentrality) * (1/df)
-    return torch.tensor(nonCentrality), smMeanW, smNoiseW
+    smNoiseW = hyp1f1(a=1, b=df/2+1, nc=nc) * (1/df)
+    return torch.tensor(nc), smMeanW, smNoiseW
 
 
 # Inverse non-centered chi expectation.
-def inv_ncx(mu, sigma):
-    """ Get the expected value of the inverse of the norm
-    of a multivariate gaussian X with mean mu and isotropic noise
-    variance sigma.
-    ----------------
-    Arguments:
-    ----------------
-      - mu: Multidimensional mean of the gaussian. (Vector length df)
-      - sigma: Standard deviation of isotropic noise. (Scalar)
-    ----------------
-    Outputs:
-    ----------------
-      - expectedValue: Expected value of 1/||x|| with x~N(mu, sigma).
-          (Scalar)
-    """
-    df = len(mu)
-    # lambda parameter of non-central chi distribution, squared
-    lam = np.array(torch.sum((mu/sigma)**2))
-    gammaQRes = (1/np.sqrt(2)) * torch.exp(gammaln(torch.tensor((df-1)/2))
-                                           - gammaln(torch.tensor(df/2)))
-    hypGeomVal = torch.tensor(float(mpm.hyp1f1(1/2, df/2, -lam/2)))
-    expectedValue = (gammaQRes * hypGeomVal) / sigma
-    return expectedValue
-
-
-# Inverse non-centered chi expectation.
-def inv_ncx_batch(mu, sigma):
+def inv_ncx_mean(mu, sigma):
     """ Get the expected value of the inverse of the norm
     of a multivariate gaussian X with mean mu and isotropic noise
     standard deviation sigma, for each different value of mu.
     ----------------
     Arguments:
     ----------------
-      - mu: Multidimensional mean of the gaussian. (nStim x df)
+      - mu: Multidimensional mean of the gaussian. (nX x df)
       - sigma: Standard deviation of isotropic noise. (Scalar)
     ----------------
     Outputs:
     ----------------
       - expectedValue: Expected value of 1/||x|| with x~N(mu, sigma).
-          (Vector length nStim)
+          (Vector length nX)
     """
     df = mu.shape[1]
     # lambda parameter of non-central chi distribution, squared
-    lam = compute_nc_parameter_batch(s=mu, sigma=sigma)
+    lam = non_centrality(mu=mu, sigma=sigma)
     # Corresponding hypergeometric function values
-    hypGeomVal = compute_stimuli_hyp1f1(1/2, df/2, lam)
+    hypGeomVal = hyp1f1(1/2, df/2, lam)
     gammaQRes = (1/np.sqrt(2)) * torch.exp(gammaln(torch.tensor((df-1)/2))
                                            - gammaln(torch.tensor(df/2)))
     expectedValue = (gammaQRes * hypGeomVal) / sigma  # This is a torch tensor
@@ -154,7 +136,7 @@ def inv_ncx_batch(mu, sigma):
 # Inverse non-centered chi square expectation.
 ##### Check that description is ok, regarding non-centrality
 ##### parameter and what distribution is actually obtained
-def inv_ncx2(df, nc):
+def inv_ncx2_mean(mu, sigma):
     """ Get the expected value of the inverse of the
     squared norm of a non-centered gaussian
     distribution, with degrees of freedom df, and non-centrality
@@ -164,396 +146,288 @@ def inv_ncx2(df, nc):
     ----------------
       - df: degrees of freedom
       - nc: non-centrality parameter
+    ----------------
+    Outputs:
+    ----------------
+      - expectedValue: Expected value of 1/||x||^2 with x~N(mu, sigma).
     """
-    df = float(df)
-    nc = float(nc)
+    df = mu.shape[1]
+    nc = non_centrality(mu=mu, sigma=sigma)
     gammaQRes = 0.5 * torch.exp((gammaln(torch.tensor(df)/2-1) -
                                  gammaln(torch.tensor(df)/2)))
-    hypFunRes = mpm.hyp1f1(1, df/2, -nc/2)
-    hypFunRes = torch.tensor(float(hypFunRes))
-    expectation = gammaQRes * hypFunRes
-    return expectation
-
+    hypFunRes = hyp1f1(1, df/2, nc)
+    expectedValue = (gammaQRes * hypFunRes) / sigma**2
+    return expectedValue
 
 
 ##################################
 ##################################
 #
-## CALCULATE STIMULI STATISTICS UNDER NORMALIZATION
+## RATIOS OF QUADRATIC FORMS
 #
 ##################################
 ##################################
 #
 # NOTE: POINT THE SPECIFIC FUNCTIONS TO THE ACCOMPANYING DOCUMENT
 
-#############
-#### Stimulus means
-#############
-
-def isotropic_individual_stim_mean(s, sigma=0.1, invNorm=None):
-    """ Compute the mean of each row in s
-    (i.e. each stimulus) given isotropic noise with standard
-    deviation sigma and normalization by the norm. It can either take the
-    expected values of the inverse norm as inputs, or
-    compute them here
+def projected_normal_mean(mu, sigma=0.1, invNorm=None, acrossVars=True):
+    """ Compute the approximated expected value of each
+    projected gaussian Yi = Xi/||Xi||, where Xi~N(mu[i,:], I*sigma^2).
+    The expected value is approximated, by taking the expected values
+    to be mu * E(1/||X||).
     ----------------
     Arguments:
     ----------------
-      - s: Stimulus dataset. (nStim x nDim)
-      - sigma: Standard deviation of the noise
-      - invNorm: Expected value of the inverse norm of the
-          noisy stimulus. (nStim)
+      - mu: Means of normal distributions X. (nX x nDim)
+      - sigma: Standard deviation of the normal distributions (isotropic)
+      - invNorm: If E(1/||X||) is already known, it can be passed here
+          to avoid computing again. Shape (nX)
+      - acrossVars: If True, compute the expected value across
+          stimuli, instead of the expected value of each stimulus.
     ----------------
     Outputs:
     ----------------
-      - sNormMeanExpected: Expected mean value of each normalized
-          noisy stimulus. (nStim x nDim)
+      - YExpected: Expected mean value across projected
+          normals, or for each projected normal, as indicated in
+          acrossVars. Shape (nDim) or (nX x nDim), respectively.
     """
+    nX = mu.shape[0]
+    # Get expected value of inverse norm
     if invNorm is None:
-        invNorm = inv_ncx_batch(s, sigma)
-    sNormMeanExpected = torch.einsum('nd,n->nd', s, invNorm)
-    return sNormMeanExpected
-
-
-# Compute the expected value of noisy normalized stimulus set
-# by doing a weighted combination of the stimuli given
-# precomputed weighting values
-# previously called isotropic_weighted_mean_batch
-def isotropic_mean_batch(s, sigma, invNormMean=None, ctgInd=None):
-    """ Compute the expected value of the normalized noisy stimuli
-    across the dataset, given by stimuli s and isotropic noise with
-    sigma standard deviation.
-    The expected value is computed by weighted sum of the
-    stimuli, where the weights are given by the expected value of the
-    inverse norm of the noisy stimulus (E(1/||s+\gamma||)).
-    The sum weights can be precomputed with the inv_ncx_batch function.
-    ----------------
-    Arguments:
-    ----------------
-      - s: matrix with stimuli. (nStim x nDim)
-      - sigma: noise standard deviation. Scalar. If invNormMean is
-          given as input, it is ignored.
-      - invNormMean: Optional to save compute. Expected inverse norm
-          for each stimulus. (nStim)
-      - ctgInd: Vector with index categories for the stimuli in s
-    ----------------
-    Outputs:
-    ----------------
-      - sNormMeanExpected: Expected value of the normalized noisy stimuli
-          for each class in the dataset (nClasses x nDim)
-    """
-    nDim = s.shape[1]
-    nStim = s.shape[0]
-    # Fill up vector ctgInd with 0's if not given
-    if ctgInd is None:
-        ctgInd = torch.zeros(nStim, device=s.device)
-    # If precomputed normalization factors are not given, compute them here
-    if invNormMean is None:
-        invNormMean = inv_ncx_batch(mu=s, sigma=sigma).to(s.device)
-    # Compute the means of the second moments for each batch of stimuli
-    nClasses = torch.unique(ctgInd).size()[0]
-    sNormMeanExpected = torch.zeros(nClasses, nDim, device=s.device)
-    for cl in range(nClasses):
-        mask = (ctgInd == cl)
-        sLevel = s[mask,:]  # Stimuli of the same category
-        invNormMeanLevel = invNormMean[mask]
-        sNormMeanExpected[cl,:] = torch.mean(torch.einsum('nb,n->nb',
-            sLevel, invNormMeanLevel), dim=0)
-    return sNormMeanExpected
+        invNorm = inv_ncx_mean(mu, sigma)
+    # Compute expected value
+    if acrossVars:
+        YExpected = torch.einsum('nb,n->b', mu, invNorm/nX)
+    else:
+        YExpected = torch.einsum('nd,n->nd', mu, invNorm)
+    return YExpected
 
 
 #############
-#### Stimulus second moment matrices
+#### SECOND MOMENT
 #############
+
+def compute_missing_weights(mu, sigma, noiseW=None, meanW=None):
+    """ Auxiliary function, if weights of noise and mean outer
+    products are not given, compute them"""
+    # If precomputed weights are not given, compute them here
+    df = mu.shape[1]
+    if (noiseW is None) or (meanW is None):
+        nc = non_centrality(mu=mu, sigma=sigma)
+    if noiseW is None:
+        hypFunNoise = hyp1f1(a=1, b=df/2+1, nc=nc)
+        noiseW = hypFunNoise * (1/df)
+        noiseW = noiseW
+    if meanW is None:
+        hypFunMean = hyp1f1(a=1, b=df/2+2, nc=nc)
+        meanW = hypFunMean * (1/(df+2))
+        meanW = meanW
+    return noiseW, meanW
+
 
 # Apply the isotropic covariance formula to get the covariance
 # for each stimulus
-def isotropic_individual_stim_secondM(s, sigma, noiseW=None, meanW=None):
-    """ Compute the second moment of each row in s
-    (i.e. each stimulus) given isotropic noise with standard
-    deviation sigma and normalization by the norm. It can either take
-    the weighting terms for the identity and the mean outer product as
-    inputs, or compute them here
+def projected_normal_sm_iso(mu, sigma, noiseW=None, meanW=None, acrossVars=True):
+    """ Compute the second moment of each projected gaussian
+    Yi = Xi/||Xi||, where Xi~N(mu[i,:], sigma*I). Note that
+    Xi has isotropic noise.
     ----------------
     Arguments:
     ----------------
-      - s: Stimulus dataset. (nStim x nDim)
-      - sigma: Standard deviation of the noise
-      - noiseW: Weighting term for the identity matrix. (nStim)
-      - meanW: Weighting term for the mean outer product. (nStim)
+      - mu: Means of normal distributions X. (nX x nDim)
+      - sigma: Standard deviation of the normal distributions (isotropic)
+      - noiseW: If the weighting term for the identity matrix is already
+          computed, it can be passed here to avoid computing again. (nX)
+      - meanW: If the weighting term for the mean outer product is already
+          computed, it can be passed here to avoid computing again. (nX)
+      - acrossVars: If True, compute the expected value across
+          stimuli, instead of the expected value of each stimulus.
     ----------------
     Outputs:
     ----------------
-      - sNormSecondMExpected: Expected second moment of each normalized
-          noisy stimulus. (nStim x nDim x nDim)
+      - YSM: Second moment across the projected gaussians, or of each projected
+          gaussian, as indicated in acrossVars.
+          Shape (nDim x nDim) or (nX x nDim x nDim), respectively.
     """
-    if s.dim() == 1:
-        s = s.unsqueeze(0)
-    df = s.shape[1]
-    nStim = s.shape[0]
+    if mu.dim() == 1:
+        mu = mu.unsqueeze(0)
+    nX = mu.shape[0]
+    df = mu.shape[1]
     # If precomputed weights are not given, compute them here
-    if (noiseW is None) or (meanW is None):
-        nc = compute_nc_parameter_batch(s, sigma)
-    if noiseW is None:
-        hypFunNoise = compute_stimuli_hyp1f1(a=1, b=df/2+1, nc=nc)
-        noiseW = hypFunNoise * (1/df)
-        noiseW = noiseW.to(s.device)
-    if meanW is None:
-        hypFunMean = compute_stimuli_hyp1f1(a=1, b=df/2+2, nc=nc)
-        meanW = hypFunMean * (1/(df+2))
-        meanW = meanW.to(s.device)
-    # Compute the second moment of each stimulus
-    sScaled = s/sigma
-    #outerProds = torch.einsum('nd,nb->ndb', sScaled, sScaled)
-    ## Get the outer product of the normalized stimulus, and multiply by weight
-    #meanTerm = torch.einsum('ndb,n->ndb', outerProds, meanW)
-    # Get the outer product of the normalized stimulus, and multiply by weight
-    meanTerm = torch.einsum('nd,nb,n->ndb', sScaled, sScaled, meanW)
-    # Multiply the identity matrix by weighting term
-    noiseTerm = torch.einsum('db,n->ndb', torch.eye(df, device=s.device), noiseW)
-    # Add the two terms
-    expectedCovs = meanTerm + noiseTerm
-    return expectedCovs.float()
-
-
-# Compute the expected second moment matrix of noisy normalized stimulus
-# set by doing a weighted combination of mean and noise, given
-# the precomputed weighting values. Can include the weights given by
-# narrowband normalization
-#def isotropic_weighted_secondM_batch(s, sigma,
-def isotropic_ctg_secondM(s, sigma, noiseW=None, meanW=None, ctgInd=None,
-        normFactor=None):
-    """ Compute the second moment of the normalized noisy stimuli
-    across the dataset, given by stimuli s and isotropic noise with
-    sigma standard deviation.
-    The second moment is computed by weighted sum of the outer product of
-    each stimulus and the identity matrix (corresponding to isotropic noise).
-    The sum weights noiseW and meanW can be precomputed and given as input
-    and are otherwise computed here.
-    A vector of normalizing factors (normFactor) given by the filter-specific
-    normalization can be passed as inputs, to simulate narrowband
-    normalization.
-    ----------------
-    Arguments:
-    ----------------
-      - s: matrix with stimuli. (nStim x nDim)
-      - sigma: noise standard deviation. Scalar
-      - noiseW: Weight of the noise for each row in s. Obtained
-          as hyp1f1(1; nDim/2+1, -(||s/sigma||**2)/2).
-          If empty, it is computed inside this function. Vector, length = nStim
-      - meanW: Weight of mean outer product for each row in s. Obtained
-          as hyp1f1(1; nDim/2+2, -(||s/sigma||**2)/2).
-          If empty, it is computed inside this function. Vector, length = nStim
-      - ctgInd: Vector with index categories for the stimuli in s
-      - normFactor: normalization factor given by filter-stimulus phase
-          independent similarity. Either a scalar, or a vector length=nStim.
-    ----------------
-    Output: 
-    ----------------
-      - expectedSM: Array with expected second moment matrices. (nClasses x df x df)
-    """
-    df = s.shape[1]
-    nStim = s.shape[0]
-    # Fill up vector ctgInd with 0's if not given
-    if ctgInd is None:
-        ctgInd = torch.zeros(nStim, device=s.device)
-    # If precomputed weights are not given, compute them here
-    if (noiseW is None) or (meanW is None):
-        nc = compute_nc_parameter_batch(s, sigma)
-    if noiseW is None:
-        hypFunNoise = compute_stimuli_hyp1f1(a=1, b=df/2+1, nc=nc)
-        noiseW = hypFunNoise * (1/df)
-        noiseW = noiseW.to(s.device)
-    if meanW is None:
-        hypFunMean = compute_stimuli_hyp1f1(a=1, b=df/2+2, nc=nc)
-        meanW = hypFunMean * (1/(df+2))
-        meanW = meanW.to(s.device)
-    # Compute the means of the second moments for each ctg of stimuli
-    nClasses = torch.unique(ctgInd).size()[0]
-    expectedSM = torch.zeros(nClasses, df, df, device=s.device)
-    for cl in range(nClasses):
-        # Get stim in this level
-        mask = (ctgInd == cl)
-        sLevel = s[mask,:]  # Stimuli of the same category
-        nStimLevel = mask.sum()
-        # Select the weights of the formula for this category
-        noiseWMean = noiseW[mask].mean()  # Scalar by which to multiply identity term
-        meanWStim = meanW[mask]  # Vector with scaling fators for each stimulus
+    noiseW, meanW = compute_missing_weights(mu=mu, sigma=sigma,
+                                            noiseW=noiseW, meanW=meanW)
+    if acrossVars:
+        # Get the total weight of the identity in the across stim SM
+        noiseWMean = noiseW.mean()
         # Scale each stimulus by the sqrt of the outer prods weights
-        stimScales = torch.sqrt(meanWStim/(nStimLevel))/sigma
-        if normFactor is not None:
-            stimScales = stimScales * torch.sqrt(normFactor[mask])
-        scaledStim = torch.einsum('nd,n->nd', sLevel, stimScales)
-        expectedSM[cl,:,:] = torch.einsum('nd,nb->db', scaledStim, scaledStim) + \
-                torch.eye(df, device=s.device) * noiseWMean
-    return expectedSM
+        stimScales = torch.sqrt(meanW/(nX))/sigma
+        #if normFactor is not None:
+        #    stimScales = stimScales * torch.sqrt(normFactor[mask])
+        scaledStim = torch.einsum('nd,n->nd', mu, stimScales)
+        YSM = torch.einsum('nd,nb->db', scaledStim, scaledStim) + \
+                torch.eye(df, device=mu.device) * noiseWMean
+    else:
+        # Compute the second moment of each stimulus
+        muNorm = mu/sigma
+        # Get the outer product of the normalized stimulus, and multiply by weight
+        meanTerm = torch.einsum('nd,nb,n->ndb', muNorm, muNorm, meanW)
+        # Multiply the identity matrix by weighting term
+        eye = torch.eye(df, device=mu.device)
+        noiseTerm = torch.einsum('db,n->ndb', eye, device=mu.device), noiseW)
+        # Add the two terms
+        YSM = torch.tensor(meanTerm + noiseTerm)
+    return YSM
 
 
-##################################
-##################################
-#
-## CALCULATE FILTER RESPONSE STATISTICS
-#
-##################################
-##################################
+def product_trace(A, B):
+    """ Compute the trace of the product of two matrices
+    A and B. """
+    return torch.einsum('ij,ji->', A, B)
 
 
-def isotropic_ctg_resp_mean(s, sigma, f, normalization='broadband',
-        ctgInd=None, sAmp=None, invNormMean=None):
-    """Compute analytically the mean of filter responses to the noisy
-        normalized stimuli of each category.
+def product_trace4(A, B, C, D):
+    """ Compute the trace of the product of  matrices
+    A and B. """
+    return torch.einsum('ij,jk,kl,li->', A, B, C, D)
+
+
+def quadratic_form_mean(mu, covariance, M):
+    """ Compute the mean of the quadratic form
+    X^T * matrix * X, where X~N(mu, covariance).
     ----------------
     Arguments:
     ----------------
-      - s: Stimuli dataset (nStim x nDim)
-      - sigma: Standard deviation of the isotropic noise (it is ignored if
-          invNormMean is not None)
-      - f: Filters (nFilt x nDim)
-      - normalization: String indicating whether the filter response
-          normalization is to be 'broadband' or 'narrowband'
-      - ctgInd: Vector with category indices of stimuli s (length nStim)
-      - sAmp: Optional to save compute when normalization='narrowband'.
-          Stimulus amplitude spectrum. Should be computed with
-          'au.compute_amplitude_spectrum(s)' (nStim x nDim)
-      - invNormMean: Optional to save compute (broadband and narrowband).
-          The expected values of the inverse of the norm for each stimulus s.
-          Should be computed with the inv_ncx functions. (nStim)
+      - mu: Means of normal distributions X. (nX x nDim)
+      - covariance: Covariance of the normal distributions (nX x nDim x nDim)
+      - matrix: Matrix to multiply by. (nDim x nDim)
     ----------------
     Outputs:
     ----------------
-      - respMean: Response mean vector for each category. (nClasses x nFilt)
+      - qfMean: Expected value of quadratic form of random
+          variable X with M. Shape (nX)
     """
-    # 1) Housekeeping
-    nStim = s.shape[0]
-    # Adjust dimensions of filters to be row vectors
-    if f.dim() == 1:
-        f = f.unsqueeze(0)
-    nFilt = f.shape[0]
-    if ctgInd is None:
-        ctgInd = torch.zeros(nStim)
-    nClasses = len(ctgInd.unique())
-    if normalization not in ['broadband', 'narrowband']:
-        print('Error, normalization is neither narrowband nor broadband')
-        return
-    # Computation depends on normalization type
-    if normalization == 'broadband':
-        # 1) If broadband, a) calculate normalized stimulus means,
-        # b) apply filters to the means
-        #
-        # a) Compute stimuli means
-        if invNormMean is None:
-            invNormMean = inv_ncx_batch(mu=s, sigma=sigma)
-        stimMean = isotropic_mean_batch(s=s, sigma=sigma,
-                invNormMean=invNormMean, ctgInd=ctgInd)
-        # b) Apply filters to the means
-        respMean = torch.einsum('cd,kd->ck', stimMean, f)
-    elif normalization == 'narrowband':
-        # 2) If narrowband, a) Calculate E(1/||X||),
-        # b) Get filter responses to each normalized stimulus,
-        # c) Compute similarity scores, d) Weight responses by similarity
-        # scores, e) Compute the means of the responses
-        # a) Get E(1/||X||)
-        if invNormMean is None:
-            invNormMean = inv_ncx_batch(mu=s, sigma=sigma)
-        # b) Compute responses
-        # Compute filter responses to normalized stimuli
-        resp = torch.einsum('nd,kd,n->nk', s, f, invNormMean)
-        # c) Compute similarities and normalization factor
-        if sAmp is not None:
-            similarities = compute_amplitude_similarity(s=sAmp,
-                    f=f, stimSpace='fourier', filterSpace='signal')
-        else:
-            similarities = compute_amplitude_similarity(
-                    s=torch.multiply(s, invNormMean.unsqueeze(1)),
-                    f=f, stimSpace='signal', filterSpace='signal')
-        normFactors = 1/similarities
-        # d) Scale filter responses by stimulus similarity
-        respScaled = resp * normFactors  # element-wise multiplication
-        respMean = torch.zeros(nClasses, nFilt)
-        for cl in range(nClasses):
-            levelInd = [i for i, j in enumerate(ctgInd) if j == cl]
-            respMean[cl,:] = torch.mean(respScaled[levelInd,:], dim=0)
-    return respMean
+    covariance = torch.tensor(covariance)
+    if mu.dim() == 1:
+        mu = mu.unsqueeze(0)
+    # Compute the trace of M*covariance
+    if covariance.dim() == 2:
+        trace = product_trace(M, covariance)
+    elif covariance.dim() == 0:
+        trace = torch.trace(M)*covariance
+    # Compute mean
+    muQuadratic = torch.einsum('nd,db,nb->n', mu, M, mu)
+    # Add terms
+    qfMean = trace + muQuadratic
+    return qfMean
 
 
-
-def isotropic_ctg_resp_secondM(s, f, sigma, noiseW, meanW,
-        normalization='broadband', ctgInd=None, normFactors=None):
-    """Compute the second moment matrix of filter responses to
-    the noisy (isotropic noise) normalized stimuli of each category, using
-    an analytic formula.
+def quadratic_form_var(mu, covariance, M):
+    """ Compute the variance of the quadratic form
+    X^T * matrix * X, where X~N(mu, covariance), and M is
+    positive definite.
     ----------------
     Arguments:
     ----------------
-      - s: Stimuli dataset (nStim x nDim)
-      - f: Filters (nFilt x nDim)
-      - sigma: Standard deviation of the isotropic stimulus noise
-      - noiseW: Vector with weights of the noise term in the analytic formulas
-          (length nStim)
-      - meanW: Vector with weights of the mean term in the analytic formulas
-          (length nStim)
-      - normalization: What normalization regime to use for the filter responses.
-          String that is either 'broadband' or 'narrowband'.
-      - ctgInd: Vector with category indices of stimuli s (length nStim).
-          If not given, all stimuli are assigned to the same class.
-      - normFactors: Factor by which to multiply the respone of each filter
-          to each stimulus to implement narrowband normalization. It is
-          given by 1/similarity for each filter/stimulus. (nStim x nFilt)
+      - mu: Means of normal distributions X. (nX x nDim)
+      - covariance: Covariance of the normal distributions (nX x nDim x nDim)
+      - matrix: Matrix to multiply by. (nDim x nDim)
     ----------------
     Outputs:
     ----------------
-      - expectedSM: Tensor with the second moment matrix of the filter
-          responses for each category. (nClasses x nFilt x nFilt)
+      - qfVar: Variance of quadratic form of random
+          variable X with M. Shape (nX)
     """
-    # Fill up vectors ctgInd with irrelevant values if not given
-    nStim = s.shape[0]
-    if ctgInd is None:
-        ctgInd = torch.zeros(nStim)
-    nFilt = f.shape[0]
-    # Compute responses and filter inner products, which are
-    # used in all cases
-    responses = torch.einsum('kd,nd->nk', f, s)
-    filterInnerProds = torch.einsum('kd,md->km', f, f)
-    # If narrowband, compute similarities and weight responses
-    if normalization=='narrowband':
-        # Get the normalization factors given by similarity
-        if normFactors is None:
-            #### Add correction by inverse mean of s
-            # Approximate normalization factor of s/||s+\sigma||
-            invNormMean = inv_ncx_batch(mu=s, sigma=sigma)
-            # Compute similarity scores
-            similarities = compute_amplitude_similarity(
-                    s=torch.multiply(s, invNormMean.unsqueeze(1)),
-                    f=f, stimSpace='signal', filterSpace='signal')
-            normFactors = 1/similarities
-            # Adjust each response by the normalization factor
-            responses = torch.einsum('nk,nk->nk', responses, normFactors)
-    # Proceed the same for narrowband and broadband, after response weighting
-    nClasses = np.unique(ctgInd).size
-    expectedSM = torch.zeros(nClasses, nFilt, nFilt)
-    for cl in range(nClasses):
-        # Get index of stim in this level
-        levelInd = [i for i, j in enumerate(ctgInd) if j == cl]
-        nStimLevel = len(levelInd)
-        # Get the weights for this class for stimuli
-        meanWStim = meanW[levelInd]  # Vector with scaling fators for each stimulus
-        # Get the noise term
-        # First, compute the matrix of correlation of normalization factors
-        if normalization=='narrowband':
-            normFactorsCl = normFactors[levelInd,:] * \
-                torch.sqrt(noiseW[levelInd]).unsqueeze(1)
-            # Correlation of normalization factors
-            normCorr = torch.einsum('nk,nm->km', normFactorsCl, normFactorsCl)
-        else:
-            normCorr = torch.ones((nFilt, nFilt))
-        noiseTerm = normCorr * filterInnerProds * 1/nStimLevel
-        # Scale each response by the normalizing factor
-        scalingFactors = torch.sqrt(meanWStim/(nStimLevel))/sigma
-        respScaled = torch.einsum('nd,n->nd', responses[levelInd,:], scalingFactors)
-        expectedSM[cl,:,:] = torch.einsum('nd,nb->db', respScaled, respScaled) + \
-                noiseTerm
-    return expectedSM
+    covariance = torch.tensor(covariance)
+    if mu.dim() == 1:
+        mu = mu.unsqueeze(0)
+    # Compute the trace of M*covariance*M*covariance
+    if covariance.dim() == 2:
+        trace = product_trace4(A=M, B=covariance, C=M, D=covariance)
+    elif covariance.dim() == 0:  # Isotropic case
+        trace = product_trace(A=M, B=M) * covariance**2
+    # Compute mean term
+    muQuadratic = torch.einsum('nd,db,bk,km,nm->n', mu, M, covariance, M, mu)
+    # Add terms
+    qfVar = 2*trace + 4*muQuadratic
+    return qfVar
 
+
+def quadratic_form_cov(mu, covariance, M, M2):
+    """ Compute the covariance of the quadratic forms
+    given by random variable X with M and X with M2.
+    X ~ N(mu, covariance).
+    ----------------
+    Arguments:
+    ----------------  
+      - mu: Means of normal distributions X. (nX x nDim)
+      - covariance: Covariance of the normal distributions (nX x nDim x nDim)
+      - M: Matrix to multiply by. (nDim x nDim)
+      - M2: Matrix to multiply by. (nDim x nDim)
+    ----------------
+    Outputs:
+    ----------------
+      - qfCov: Covariance of quadratic forms of random
+          variable X with M and X with M2. Shape (nX)
+    """
+    covariance = torch.tensor(covariance)
+    if mu.dim() == 1:
+        mu = mu.unsqueeze(0)
+    # Compute the trace of M*covariance*M2*covariance
+    if covariance.dim() == 2:
+        trace = product_trace4(A=M, B=covariance, C=M2, D=covariance)
+    elif covariance.dim() == 0:  # Isotropic case
+        trace = product_trace(A=M, B=M2) * covariance**2
+    # Compute mean term
+    muQuadratic = torch.einsum('nd,db,bk,km,nm->n', mu, M, covariance, M2, mu)
+    # Add terms
+    qfCov = 2*trace + 4*muQuadratic
+    return qfCov
+
+
+def projected_normal_sm(mu, covariance, B):
+    """ Compute the second moment of the projected normal distribution
+    Yi = Xi/||Xi||, where Xi~N(mu[i,:], sigma*I)
+    ----------------
+    Arguments:
+    ----------------
+      - mu: Means of normal distributions X. (nX x nDim)
+      - covariance: Covariance of the normal distributions (nX x nDim x nDim)
+    ----------------
+    Outputs:
+    ----------------
+      - YSM: Second moment of each projected gaussian.
+          Shape (nX x nDim x nDim)
+    """
+    if mu.dim() == 1:
+        mu = mu.unsqueeze(0)
+        # Compute the mean of numerator for each matrix A^{ij}
+    muN = covariance + torch.einsum('nd,nb->ndb', mu, mu)
+    # Compute denominator terms
+    muD = quadratic_form_mean(mu=mu, covariance=covariance, M=B)
+    varD = quadratic_form_var(mu=mu, covariance=covariance, M=B)
+    # Compute covariance between numerator and denominator for each
+    # matrix A^{ij}
+    covB = torch.einsum('ij,jk->ik', covariance, B)
+    term1 = torch.einsum('ij,jk->ik', covB, covariance)
+    term2 = torch.einsum('ni,nj,kj->nik', mu, mu, covB)
+    covND = 2 * (term1 + term2 + term2.transpose(1, 2))
+    # Compute second moment of projected normal
+    YSM = torch.zeros_like(muN)
+    for i in range(muN.shape[0]):
+        YSM[i,:,:] = muN[i,:,:]/muD[i] * \
+            (1 - covND[i,:,:]/muN[i,:,:]*(1/muD[i]) + varD[i]/muD[i]**2)
+    return YSM
+
+
+#dim = 10
+#B = torch.randn(dim, dim) 
+#B = B + B.T
+#covariance = make_spdm(dim=dim)
+#i = 7
+#j = 3
+#A = make_Aij(dim=dim, i=i, j=j)
+#lala = quadratic_form_cov(mu=mu, covariance=covariance, M=A, M2=B)
+#print(f'Estimate 1: {lala}, estimate 2: {covND[i,j]}')
 
 ##################################
 ##################################
@@ -564,48 +438,7 @@ def isotropic_ctg_resp_secondM(s, f, sigma, noiseW, meanW,
 ##################################
 
 
-def compute_amplitude_similarity(s, f, stimSpace='signal',
-        filterSpace='signal'):
-    """Compute the similarity between the amplitude spectrum of
-    stimuli in s, and of filters in f (i.e. s*f/(||s||*||f||).
-    Return a matrix with similarity scores.
-    ----------------
-    Arguments:
-    ----------------
-      - s: Either the stimuli dataset, or their amplitude spectra. (nStim x nDim)
-      - f: Either the filters, or their amplitude spectra. (nFilt x nDim)
-      - stimSpace: String indicating if s is in signal space, or amplitude spectrum
-      - filterSpace: String indicating if f is in signal space, or amplitude spectrum
-    ----------------
-    Outputs:
-    ----------------
-      - similarity: Similarity score matrix. (nStim x nFilt)
-    """
-    # Adjust dimensions of filters to be row vectors
-    if f.dim() == 1:
-        f = f.unsqueeze(0)
-    # Get the Amplitude spectrum of the signal
-    if stimSpace == 'signal':
-        # Get amplitude spectrum
-        sAmp = au.compute_amplitude_spectrum(s)
-    else:
-        sAmp = s
-    # Get the Amplitude spectrum of the filter
-    if filterSpace == 'signal':
-        # Get amplitude spectrum
-        fAmp = au.compute_amplitude_spectrum(f)
-    else:
-        fAmp = f
-    # Get the normalization factor, i.e. inverse product of norms
-    normFactor = torch.einsum('n,k->nk', 1/sAmp.norm(dim=1),
-            1/fAmp.norm(dim=1))
-    # Compute the Amplitude spectrum similarity
-    similarity = torch.einsum('nd,kd,nk->nk', sAmp.float(), fAmp.float(),
-        normFactor)
-    return similarity
-
-
-def secondM_2_cov(secondM, mean, nStim=None):
+def secondM_2_cov(secondM, mean, nX=None):
     """Convert matrices of second moments to covariances, by
     subtracting the product of the mean with itself.
     ----------------
@@ -614,8 +447,7 @@ def secondM_2_cov(secondM, mean, nStim=None):
       - secondM: Second moment matrix. E.g. computed with
            'isotropic_ctg_resp_secondM'. (nClasses x nFilt x nFilt,
            or nFilt x nFilt)
-      - mean: mean matrix. E.g. computed with 'isotropic_ctg_resp_mean'.
-           (nClasses x nFilt, or nFilt)
+      - mean: mean matrix (nClasses x nFilt, or nFilt)
     ----------------
     Outputs:
     ----------------
@@ -626,11 +458,35 @@ def secondM_2_cov(secondM, mean, nStim=None):
     if mean.dim() == 1:
         mean = mean.unsqueeze(0)
     # Get the multiplying factor to make covariance unbiased
-    if nStim is None:
+    if nX is None:
         unbiasingFactor = 1
     else:
-        unbiasingFactor = nStim/(nStim-1)
+        unbiasingFactor = nX/(nX-1)
     covariance = (secondM - torch.einsum('cd,cb->cdb', mean, mean)) * unbiasingFactor
     return covariance
+
+
+def make_spdm(dim):
+    """ Make a random symmetric positive definite matrix
+    ----------------
+    Arguments:
+    ----------------
+      - dim: Dimension of matrix
+    ----------------
+    Outputs:
+    ----------------
+      - M: Random symmetric positive definite matrix
+    """
+    M = torch.randn(dim, dim)
+    M = torch.einsum('ij,ik->jk', M, M) / dim**2
+    return M
+
+
+def make_Aij(dim, i, j):
+  A = torch.zeros(dim, dim)
+  A[i,j] = 0.5
+  A[j,i] = A[j,i] + 0.5
+  return A
+
 
 
