@@ -3,11 +3,11 @@ from setuptools import setup
 setup(
     # Needed to silence warnings (and to be a worthwhile package)
     name='quadratic_ratios',
-    url='https://github.com/dherrera1911/accuracy_maximization_analysis',
+    url='https://github.com/dherrera1911/quadratic_ratios',
     author='Daniel Herrera-Esposito',
     author_email='dherrera1911@gmail.com',
     # Needed to actually package something
-    packages=['quadratic_ratios'],
+    packages=['qr_library'],
     # Needed for dependencies
     install_requires=[
       'numpy',
