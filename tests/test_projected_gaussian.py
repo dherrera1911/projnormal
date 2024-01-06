@@ -5,10 +5,11 @@
 #
 ##################
 
-import pytest
+#import pytest
 import torch
 import numpy as np
 import qr_library as qr
+from einops import reduce
 from test_functions import *
 
 # Parameters of simulation
@@ -37,42 +38,56 @@ meanE, covE, smE = empirical_moments_projected_gaussian(mu, covariance,
                                                         nSamples=nSamples, B=B)
 
 # Get errors
-meanErr = torch.max(torch.abs(meanE - meanT)/(meanE+0.02))
-covErr = torch.max(torch.abs(covE - covT)/(covE+0.02))
-smErr = torch.max(torch.abs(smE - smT)/(smE+0.02))
+meanErr = torch.max(torch.abs(meanE - meanT)/(torch.abs(meanE)+0.02))
+covErr = torch.max(torch.abs(covE - covT)/(torch.abs(covE)+0.02))
+smErr = torch.max(torch.abs(smE - smT)/(torch.abs(smE)+0.02))
+
+# Print with 2 decimals
+print(f'Mean error (max) = {meanErr*100:.2f}%')
+print(f'Cov error (max) = {covErr*100:.2f}%')
 
 # Plot covariances
-maxN = 5
-cols = np.min([nX, maxN])
-for i in range(cols):
-    maxVal = np.max([torch.max(covE[i, :, :]), torch.max(covT[i, :, :])])
-    minVal = np.min([torch.min(covE[i, :, :]), torch.min(covT[i, :, :])])
-    # Set min and max values to the color scale
-    plt.subplot(4, cols, i+1)
-    plt.imshow(covE[i, :, :], vmin=minVal, vmax=maxVal)
-    plt.yticks(ticks=[])
-    plt.xticks(ticks=[])
-    if i == 0:
-        plt.ylabel('Empirical')
-    plt.subplot(4, cols, i+1+cols)
-    plt.imshow(covT[i, :, :], vmin=minVal, vmax=maxVal)
-    plt.yticks(ticks=[])
-    plt.xticks(ticks=[])
-    if i == 0:
-        plt.ylabel('Theoretical')
-    plt.subplot(4, cols, i+1+2*cols)
-    plt.imshow(covE[i, :, :] - covT[i, :, :], vmin=minVal, vmax=maxVal)
-    plt.yticks(ticks=[])
-    plt.xticks(ticks=[])
-    if i == 0:
-        plt.ylabel('Difference')
-    plt.subplot(4, cols, i+1+3*cols)
-    plt.plot(meanE[i, :], label='Empirical')
-    plt.plot(meanT[i, :], label='Theoretical')
-    plt.legend()
-    plt.yticks(ticks=[])
-    plt.xticks(ticks=[])
-plt.show()
+plotCovariances = True
+if plotCovariances:
+    maxN = 5
+    cols = np.min([nX, maxN])
+    for i in range(cols):
+        maxVal = np.max([torch.max(covE[i, :, :]), torch.max(covT[i, :, :])])
+        minVal = np.min([torch.min(covE[i, :, :]), torch.min(covT[i, :, :])])
+        # Set min and max values to the color scale
+        plt.subplot(4, cols, i+1)
+        plt.imshow(covE[i, :, :], vmin=minVal, vmax=maxVal)
+        plt.yticks(ticks=[])
+        plt.xticks(ticks=[])
+        if i == 0:
+            plt.ylabel('Empirical')
+        plt.subplot(4, cols, i+1+cols)
+        plt.imshow(covT[i, :, :], vmin=minVal, vmax=maxVal)
+        plt.yticks(ticks=[])
+        plt.xticks(ticks=[])
+        if i == 0:
+            plt.ylabel('Theoretical')
+        plt.subplot(4, cols, i+1+2*cols)
+        plt.imshow(covE[i, :, :] - covT[i, :, :], vmin=minVal, vmax=maxVal)
+        plt.yticks(ticks=[])
+        plt.xticks(ticks=[])
+        if i == 0:
+            plt.ylabel('Difference')
+        plt.subplot(4, cols, i+1+3*cols)
+        plt.plot(meanE[i, :], label='Empirical')
+        plt.plot(meanT[i, :], label='Theoretical')
+        plt.legend()
+        plt.yticks(ticks=[])
+        plt.xticks(ticks=[])
+    plt.show()
+
+
+# Check that the efficiently computed average second moment
+# is the same as the average of the second moments computed
+avSMT = reduce(smT, 'n d b -> d b', 'mean')
+avSMT2 = qr.projected_normal_sm_iso_batch(mu=mu, sigma=sigma)
+smTDiff = torch.max(torch.abs(avSMT - avSMT2)/(torch.abs(avSMT)))
+print(f'SM batch error (max) = {smTDiff*100:.2f}%')
 
 
 ####################################
@@ -122,9 +137,7 @@ meanE, covE, smE = empirical_moments_projected_gaussian(mu, covariance,
 
 # Get theoretical moments
 if approxMethod == 'taylor':
-    meanT = qr.projected_normal_mean_taylor(mu=mu, variances=variances, order=2)
-elif approxMethod == '0th':
-    meanT = qr.projected_normal_mean_taylor(mu=mu, variances=variances, order=0)
+    meanT = qr.projected_normal_mean_taylor(mu=mu, variances=variances)
 elif approxMethod == 'empirical':
     meanT = meanE
 smT = qr.projected_normal_sm(mu=mu, covariance=covariance, B=B)
@@ -163,41 +176,6 @@ for i in range(cols):
     plt.yticks(ticks=[])
     plt.xticks(ticks=[])
 plt.show()
-
-
-# Plot second moments
-#maxN = 5
-#cols = np.min([nX, maxN])
-#for i in range(cols):
-#    maxVal = np.max([torch.max(smE[i, :, :]), torch.max(smT[i, :, :])])
-#    minVal = np.min([torch.min(smE[i, :, :]), torch.min(smT[i, :, :])])
-#    # Set min and max values to the color scale
-#    plt.subplot(4, cols, i+1)
-#    plt.imshow(smE[i, :, :], vmin=minVal, vmax=maxVal)
-#    plt.yticks(ticks=[])
-#    plt.xticks(ticks=[])
-#    if i == 0:
-#        plt.ylabel('Empirical')
-#    plt.subplot(4, cols, i+1+cols)
-#    plt.imshow(smT[i, :, :], vmin=minVal, vmax=maxVal)
-#    plt.yticks(ticks=[])
-#    plt.xticks(ticks=[])
-#    if i == 0:
-#        plt.ylabel('Theoretical')
-#    plt.subplot(4, cols, i+1+2*cols)
-#    plt.imshow(smE[i, :, :] - smT[i, :, :], vmin=minVal, vmax=maxVal)
-#    plt.yticks(ticks=[])
-#    plt.xticks(ticks=[])
-#    if i == 0:
-#        plt.ylabel('Difference')
-#    plt.subplot(4, cols, i+1+3*cols)
-#    plt.plot(meanE[i, :], label='Empirical')
-#    plt.plot(meanT[i, :], label='Theoretical')
-#    plt.legend()
-#    plt.yticks(ticks=[])
-#    plt.xticks(ticks=[])
-#plt.show()
-
 
 
 ####################################

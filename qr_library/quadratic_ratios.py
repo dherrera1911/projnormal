@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 from torch.special import gammaln
-import mpmath as mpm  # Important to use mpmath for hyp1f1, scipy blows up
 import scipy.special as sps
 
 #### Terminology:
