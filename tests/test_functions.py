@@ -6,14 +6,13 @@ import scipy
 
 
 # Make mean vectors
-def make_mu_sin(nX, nDim):
-    mu = torch.zeros(nX, nDim)
-    angles = torch.rand(nX) * torch.pi*2
-    amplitudes = torch.rand(nX) + 0.1
+def make_mu_sin(nDim):
+    mu = torch.zeros(nDim)
+    angles = torch.rand(1) * torch.pi*2
+    amplitude = torch.rand(1) + 0.1
     xVals = torch.linspace(0, torch.pi*2, nDim)
-    for s in range(nX):
-        freq = torch.rand(1) * 10
-        mu[s,:] = torch.sin(xVals * freq + angles[s]) * amplitudes[s]
+    freq = torch.rand(1) * 10
+    mu = torch.sin(xVals * freq + angles) * amplitude
     return mu
 
 
@@ -55,19 +54,14 @@ def make_covariance(nDim, sigmaScale=1, covType='random'):
 
 
 def empirical_moments_isotropic_gaussian_norm(mu, covariance, nSamples):
-    nX, nDim = mu.shape
-    norm = torch.zeros(nX)      # ||X||
-    norm2 = torch.zeros(nX)     # ||X||^2
-    invNorm = torch.zeros(nX)   # 1/||X||
-    invNorm2 = torch.zeros(nX)  # 1/||X||^2
-    for s in range(nX):
-        dist = mvn.MultivariateNormal(loc=mu[s,:], covariance_matrix=covariance)
-        X = dist.sample([nSamples])
-        X2 = torch.einsum('ni,ni->n', X, X)
-        norm[s] = torch.mean(torch.sqrt(X2))
-        norm2[s] = torch.mean(X2)
-        invNorm[s] = torch.mean(1/torch.sqrt(X2))
-        invNorm2[s] = torch.mean(1/X2)
+    nDim = len(mu)
+    dist = mvn.MultivariateNormal(loc=mu, covariance_matrix=covariance)
+    X = dist.sample([nSamples])
+    X2 = torch.einsum('ni,ni->n', X, X)
+    norm = torch.mean(torch.sqrt(X2))
+    norm2 = torch.mean(X2)
+    invNorm = torch.mean(1/torch.sqrt(X2))
+    invNorm2 = torch.mean(1/X2)
     return {'norm': norm, 'norm2': norm2, 'invNorm': invNorm, 'invNorm2': invNorm2}
 
 
@@ -90,16 +84,12 @@ def sample_projected_gaussian(mu, covariance, nSamples, B=None):
 
 
 def empirical_moments_projected_gaussian(mu, covariance, nSamples, B=None):
-    nX, nDim = mu.shape
-    means = torch.zeros(nX, nDim)
-    covariances = torch.zeros(nX, nDim, nDim)
-    secondM = torch.zeros(nX, nDim, nDim)
-    for s in range(nX):
-        samples = sample_projected_gaussian(mu[s,:], covariance, nSamples=nSamples, B=B)
-        means[s,:] = torch.mean(samples, dim=0)
-        covariances[s,:,:] = torch.cov(samples.T)
-        secondM[s,:,:] = torch.einsum('ni,nj->ij', samples, samples) / nSamples
-    return means, covariances, secondM
+    nDim = len(mu)
+    samples = sample_projected_gaussian(mu, covariance, nSamples=nSamples, B=B)
+    mean = torch.mean(samples, dim=0)
+    covariance = torch.cov(samples.T)
+    secondM = torch.einsum('ni,nj->ij', samples, samples) / nSamples
+    return mean, covariance, secondM
 
 
 def empirical_moments_quadratic_form(mu, covariance, M, nSamples):
@@ -120,18 +110,14 @@ def empirical_moments_quadratic_form(mu, covariance, M, nSamples):
       - means: Mean of the quadratic form.
       - var: Variance of the quadratic form.
     """
-    nX, nDim = mu.shape
-    means = torch.zeros(nX)
-    var = torch.zeros(nX)
-    secondM = torch.zeros(nX)
-    for s in range(nX):
-        dist = mvn.MultivariateNormal(loc=mu[s,:], covariance_matrix=covariance)
-        X = dist.sample([nSamples])
-        qf = torch.einsum('ni,ij,nj->n', X, M, X)
-        means[s] = torch.mean(qf)
-        var[s] = torch.var(qf)
-        secondM[s] = torch.mean(qf**2)
-    return {'mean': means, 'var':var, 'secondM': secondM}
+    nDim = len(mu)
+    dist = mvn.MultivariateNormal(loc=mu, covariance_matrix=covariance)
+    X = dist.sample([nSamples])
+    qf = torch.einsum('ni,ij,nj->n', X, M, X)
+    mean = torch.mean(qf)
+    var = torch.var(qf)
+    secondM = torch.mean(qf**2)
+    return {'mean': mean, 'var':var, 'secondM': secondM}
 
 
 def empirical_covariance_quadratic_form(mu, covariance, M1, M2, nSamples):
@@ -149,17 +135,14 @@ def empirical_covariance_quadratic_form(mu, covariance, M1, M2, nSamples):
     -----------------
     Output:
     -----------------
-      - means: Mean of the quadratic form.
-      - var: Variance of the quadratic form.
+      - cov: Covariance between the two quadratic forms.
     """
-    nX, nDim = mu.shape
-    cov = torch.zeros(nX)
-    for s in range(nX):
-        dist = mvn.MultivariateNormal(loc=mu[s,:], covariance_matrix=covariance)
-        X = dist.sample([nSamples])
-        qf1 = torch.einsum('ni,ij,nj->n', X, M1, X)
-        qf2 = torch.einsum('ni,ij,nj->n', X, M2, X)
-        cov[s] = torch.cov(torch.cat((qf1.unsqueeze(0), qf2.unsqueeze(0))))[0,1]
+    nDim = len(mu)
+    dist = mvn.MultivariateNormal(loc=mu, covariance_matrix=covariance)
+    X = dist.sample([nSamples])
+    qf1 = torch.einsum('ni,ij,nj->n', X, M1, X)
+    qf2 = torch.einsum('ni,ij,nj->n', X, M2, X)
+    cov = torch.cov(torch.cat((qf1.unsqueeze(0), qf2.unsqueeze(0))))[0,1]
     return cov
 
 
