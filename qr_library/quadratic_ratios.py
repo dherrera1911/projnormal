@@ -109,6 +109,27 @@ def quadratic_form_cov(mu, covariance, M, M2):
     return qfCov
 
 
+def quadratic_linear_cov(mu, covariance, M, b):
+    """ Compute the covariance of the quadratic form
+    given by X'MX and the linear form given by b'X.
+    X ~ N(mu, covariance).
+    ----------------
+    Arguments:
+    ----------------
+      - mu: Means of normal distributions X. (nDim)
+      - covariance: Covariance of the normal distributions (nDim x nDim)
+      - M: Matrix to multiply by. (nDim x nDim)
+      - b: Vector for linear form. (nDim)
+    ----------------
+    Outputs:
+    ----------------
+      - qlCov: Covariance of quadratic form and linear form of random
+          variable X. Scalar
+    """
+    qlCov = 2 * torch.einsum('i,ij,jk,k->', mu, M, covariance, b)
+    return qlCov
+
+
 # Moments of non-central chi squared distribution
 def nc_X2_moments(mu, sigma, s, exact=True):
     """ Get the s-th moment of the non-central chi squared
@@ -208,10 +229,10 @@ def inv_ncx2_mean(mu, sigma, exact=True):
 # NOTE: POINT THE SPECIFIC FUNCTIONS TO THE ACCOMPANYING DOCUMENT
 
 #############
-#### FIRST MOMENT
+#### ISOTROPIC, EXACT
 #############
 
-def projected_normal_mean_iso(mu, sigma, exact=True):
+def prnorm_mean_iso(mu, sigma, exact=True):
     """ Compute the expected value of each projected gaussian Yi = Xi/||Xi||,
     where Xi~N(mu[i,:], I*sigma^2).
     ----------------
@@ -236,82 +257,9 @@ def projected_normal_mean_iso(mu, sigma, exact=True):
     return YExpected
 
 
-def projected_normal_mean_taylor(mu, covariance):
-    """ Compute the approximated expected value of each
-    projected gaussian Yi = Xi/||Xi||, where Xi~N(mu[i,:], \Sigma),
-    and \Sigma is a diagonal matrix with variances on the diagonal.
-    Uses a Taylor approximation where Xi/||Xi|| = u/sqrt(u^2 + v) = f(u,v)
-    ----------------
-    Arguments:
-    ----------------
-      - mu: Means of normal distributions X. (nDim)
-      - covariance: covariance of X. (nDim x nDim)
-    ----------------
-    Outputs:
-    ----------------
-      - YExpected: Expected mean value for each projected normal.
-          Shape (nDim)
-    """
-    # NEED TO FIX THE DIMENSIONS, SINCE IT DOESNT WORK WITH
-    # MORE THAN ONE VARIANCE VECTOR
-    nDim = torch.as_tensor(len(mu))
-    variances = torch.diagonal(covariance)
-    ### Get moments required for the formula
-    # Compute the expected value and variance of ||X||^2
-    meanX2 = quadratic_form_mean(mu=mu, covariance=covariance, M=torch.eye(nDim))
-    varX2 = quadratic_form_var(mu=mu, covariance=covariance, M=torch.eye(nDim))
-    # Compute E(X_i^2)
-    meanXi2 = mu**2 + variances # Vector with E(Xi^2)
-    # Get statistics of varible v in formulas (||X||^2 - X_i^2)
-    # Get E(||X||^2 - X_i^2)
-    meanX2 = meanX2.repeat(nDim)
-    meanV = meanX2 - meanXi2
-    # Get Var(||X||^2 - X_i^2)
-    varSubtract = 2 * variances**2 + 4 * mu**2 * variances
-    varX2 = varX2.repeat(nDim)
-    varV = varX2 - varSubtract
-    ### Get the derivatives for the taylor approximation
-    dfdx2 = proj_normal_dx2(u=mu, v=meanV)
-    dfdv2 = proj_normal_dv2(u=mu, v=meanV)
-    ### 0th order approximation
-    term0 = mu / torch.sqrt(mu**2 + meanV)
-    ### Compute Taylor approximation
-    YExpected = term0 + 0.5*dfdx2*variances + 0.5*dfdv2*varV
-    return YExpected
-
-
-def projected_normal_mean_0th(mu, covariance):
-    """ Compute the approximated expected value of each
-    projected gaussian Yi = Xi/||Xi||, where Xi~N(mu[i,:], \Sigma),
-    and \Sigma is a diagonal matrix with variances on the diagonal.
-    Approximates it as E(X)/sqrt(E(||X||^2)).
-    ----------------
-    Arguments:
-    ----------------
-      - mu: Means of normal distributions X. (nX x nDim)
-      - covariance: Covariance (nDim x nDim)
-    ----------------
-    Outputs:
-    ----------------
-      - YExpected: Expected mean value for each projected normal.
-          Shape (nX x nDim)
-    """
-    nDim = torch.as_tensor(mu.shape[1])
-    ### Get moments required for the formula
-    # Compute the expected value of ||X||^2
-    meanX2 = quadratic_form_mean(mu=mu, covariance=covariance, M=torch.eye(nDim))
-    # Compute the expected value of each X_i^2
-    YExpected = torch.einsum('ni,n->ni', mu, 1/torch.sqrt(meanX2))
-    return YExpected
-
-
-#############
-#### SECOND MOMENT
-#############
-
 # Apply the isotropic covariance formula to get the covariance
 # for each stimulus
-def projected_normal_sm_iso(mu, sigma, exact=True):
+def prnorm_sm_iso(mu, sigma, exact=True):
     """ Compute the second moment of each projected gaussian
     Yi = Xi/||Xi||, where Xi~N(mu[i,:], sigma*I). Note that
     Xi has isotropic noise.
@@ -342,7 +290,154 @@ def projected_normal_sm_iso(mu, sigma, exact=True):
     return YSM
 
 
-def projected_normal_sm_taylor(mu, covariance, B):
+def prnorm_sm_iso_batch(mu, sigma):
+    """
+    To get the SM of a set of projected normals, this saves a lot
+    of computation time by not adding the indentity matrix to each SM.
+    """
+    if mu.dim() == 1:
+        mu = mu.unsqueeze(0)
+    nX = mu.shape[0]
+    df = mu.shape[1]
+    # Compute mean SM
+    noiseW = torch.zeros(nX, device=mu.device)
+    meanW = torch.zeros(nX, device=mu.device)
+    for i in range(nX):
+        noiseW[i], meanW[i] = iso_sm_weights(mu=mu[i,:], sigma=sigma)
+    # Compute the second moment of each stimulus
+    muNorm = mu/sigma
+    # Get the total weight of the identity in the across stim SM
+    noiseWMean = noiseW.mean()
+    # Scale each stimulus by the sqrt of the outer prods weights
+    stimScales = torch.sqrt(meanW/(nX))/sigma
+    scaledStim = torch.einsum('nd,n->nd', mu, stimScales)
+    YSM = torch.einsum('nd,nb->db', scaledStim, scaledStim) + \
+            torch.eye(df, device=mu.device) * noiseWMean
+    return YSM
+
+
+#############
+#### GENERAL CASE, TAYLOR APPROXIMATION
+#############
+
+
+# Taylor approximation uses a variable v = ||X||^2 - X_i^2 for each
+# X_i. That is, v is the sum of squares of all elements of X,
+# except the i-th element.
+# We use some functions to efficiently compute the statistics of v.
+def v_mean(mu, covariance):
+    """ For random variable X~N(mu,\Sigma), compute the expected value
+    of ||X||^2 - X_i^2 for each X_i.
+    ----------------
+    Arguments:
+    ----------------
+      - mu: Means of normal distributions X. (nDim)
+      - covariance: covariance of X. (nDim x nDim)
+    ----------------
+    Outputs:
+    ----------------
+      - meanV: Expected value of ||X||^2 - X_i^2 for each different i (nDim)
+    """
+    # Compute the expected value of ||X||^2
+    meanX2 = torch.trace(covariance) + torch.einsum('i,i->', mu, mu)
+    # Compute E(X_i^2)
+    meanXi2 = mu**2 + torch.diagonal(covariance)
+    # Subtract to get E(||X||^2 - X_i^2)
+    meanV = meanX2 - meanXi2
+    return meanV
+
+
+def v_var(mu, covariance):
+    """ For random variable X~N(mu,\Sigma), compute the variance
+    of ||X||^2 - X_i^2 for each X_i.
+    ----------------
+    Arguments:
+    ----------------
+      - mu: Means of normal distributions X. (nDim)
+      - covariance: covariance of X. (nDim x nDim)
+    ----------------
+    Outputs:
+    ----------------
+      - varV: Variance of ||X||^2 - X_i^2 for each different i (nDim)
+    """
+    # Compute the variance of ||X||^2
+    varX2 = 2 * product_trace(covariance, covariance) + \
+        4 * torch.einsum('i,ij,j->', mu, covariance, mu)
+    # Compute the term to subtract for each X_i
+    term1 = 2 * torch.einsum('ij,ij->i', covariance, covariance) - \
+        covariance.diagonal()**2  # Repeated terms in the trace
+    term2 = 2 * torch.einsum('i,ij,j->i', mu, covariance, mu) - \
+        mu**2 * torch.diag(covariance) # Repeated terms in (mu'Cov mu)
+    # Subtract to get variance
+    varV = varX2 - 2*term1 - 4*term2
+    return varV
+
+
+def v_cov(mu, covariance):
+    """ For random variable X~N(mu,\Sigma), compute the covariance
+    between (||X||^2 - X_i^2) and X_i for each X_i.
+    ----------------
+    Arguments:
+    ----------------
+      - mu: Means of normal distributions X. (nDim)
+      - covariance: covariance of X. (nDim x nDim)
+    ----------------
+    Outputs:
+    ----------------
+      - covV: Covariance between (||X||^2 - X_i^2) and X_i for each
+        different i (nDim)
+    """
+    covV = 2 * (torch.einsum('i,ij->j', mu, covariance) - \
+        mu * torch.diagonal(covariance))
+    return covV
+
+
+def prnorm_mean_taylor(mu, covariance):
+    """ Compute the approximated expected value of each
+    projected gaussian Yi = Xi/||Xi||, where Xi~N(mu[i,:], \Sigma),
+    and \Sigma is a diagonal matrix with variances on the diagonal.
+    Uses a Taylor approximation where Xi/||Xi|| = u/sqrt(u^2 + v) = f(u,v)
+    ----------------
+    Arguments:
+    ----------------
+      - mu: Means of normal distributions X. (nDim)
+      - covariance: covariance of X. (nDim x nDim)
+    ----------------
+    Outputs:
+    ----------------
+      - YExpected: Expected mean value for each projected normal.
+          Shape (nDim)
+    """
+    # NEED TO FIX THE DIMENSIONS, SINCE IT DOESNT WORK WITH
+    # MORE THAN ONE VARIANCE VECTOR
+    nDim = torch.as_tensor(len(mu))
+    variances = torch.diagonal(covariance)
+    ### Get moments required for the formula
+    meanV = v_mean(mu=mu, covariance=covariance)
+    # Compute the expected value and variance of ||X||^2
+    meanX2 = quadratic_form_mean(mu=mu, covariance=covariance, M=torch.eye(nDim))
+    varX2 = quadratic_form_var(mu=mu, covariance=covariance, M=torch.eye(nDim))
+    # Compute E(X_i^2)
+    meanXi2 = mu**2 + variances # Vector with E(Xi^2)
+    # Get statistics of varible v in formulas (||X||^2 - X_i^2)
+    # Get E(||X||^2 - X_i^2)
+    meanX2 = meanX2.repeat(nDim)
+    meanV = meanX2 - meanXi2
+    # Get Var(||X||^2 - X_i^2)
+    varSubtract = 2 * variances**2 + 4 * mu**2 * variances
+    varX2 = varX2.repeat(nDim)
+    varV = varX2 - varSubtract
+    ### Get the derivatives for the taylor approximation
+    dfdu2 = prnorm_du2(u=mu, v=meanV)
+    dfdv2 = prnorm_dv2(u=mu, v=meanV)
+    ### 0th order approximation
+    term0 = mu / torch.sqrt(mu**2 + meanV)
+    ### Compute Taylor approximation
+    YExpected = term0 + 0.5*dfdu2*variances + 0.5*dfdv2*varV
+    return YExpected
+
+
+def prnorm_sm_taylor(mu, covariance, B):
     """ Compute the second moment of the projected normal distribution
     Yi = Xi/(X'BX), where Xi~N(mu[i,:], sigma*I).
     ----------------
@@ -370,32 +465,6 @@ def projected_normal_sm_taylor(mu, covariance, B):
     covND = 2 * (term1 + term2 + term2.transpose(0,1))
     # Compute second moment of projected normal
     YSM = muN/muD * (1 - covND/muN*(1/muD) + varD/muD**2)
-    return YSM
-
-
-def projected_normal_sm_iso_batch(mu, sigma):
-    """
-    To get the SM of a set of projected normals, this saves a lot
-    of computation time by not adding the indentity matrix to each SM.
-    """
-    if mu.dim() == 1:
-        mu = mu.unsqueeze(0)
-    nX = mu.shape[0]
-    df = mu.shape[1]
-    # Compute mean SM
-    noiseW = torch.zeros(nX, device=mu.device)
-    meanW = torch.zeros(nX, device=mu.device)
-    for i in range(nX):
-        noiseW[i], meanW[i] = iso_sm_weights(mu=mu[i,:], sigma=sigma)
-    # Compute the second moment of each stimulus
-    muNorm = mu/sigma
-    # Get the total weight of the identity in the across stim SM
-    noiseWMean = noiseW.mean()
-    # Scale each stimulus by the sqrt of the outer prods weights
-    stimScales = torch.sqrt(meanW/(nX))/sigma
-    scaledStim = torch.einsum('nd,n->nd', mu, stimScales)
-    YSM = torch.einsum('nd,nb->db', scaledStim, scaledStim) + \
-            torch.eye(df, device=mu.device) * noiseWMean
     return YSM
 
 
@@ -604,20 +673,14 @@ def make_spdm(dim):
     return M
 
 
-def make_Aij(dim, i, j):
-  A = torch.zeros(dim, dim)
-  A[i,j] = 0.5
-  A[j,i] = A[j,i] + 0.5
-  return A
+#def make_Aij(dim, i, j):
+#  A = torch.zeros(dim, dim)
+#  A[i,j] = 0.5
+#  A[j,i] = A[j,i] + 0.5
+#  return A
 
 
-def rm_el(vec, ind):
-    """ Remove element from vector"""
-    out = torch.cat((vec[:ind], vec[ind+1:]))
-    return out
-
-
-def proj_normal_dx2(u, v):
+def prnorm_du2(u, v):
     """ Compute Second derivative of X_i/||X|| wrt X_i,
     evaluated at point u, v. Does the derivative for each
     X_i in X.
@@ -631,14 +694,14 @@ def proj_normal_dx2(u, v):
     ----------------
     Outputs:
     ----------------
-      - dfdx2: Second derivative of X_i/||X|| wrt X_i
+      - dfdu2: Second derivative of X_i/||X|| wrt X_i
           for each different i (nX)
     """
-    dfdx2 = u*(3*u**2/(u**2+v) - 3) / (u**2+v)**(3/2)
-    return dfdx2
+    dfdu2 = u*(3*u**2/(u**2+v) - 3) / (u**2+v)**(3/2)
+    return dfdu2
 
 
-def proj_normal_dv2(u, v):
+def prnorm_dv2(u, v):
     """ Compute Second derivative of X_i/||X|| wrt
     (\sum_{j!=i} X_j**2) - X_i^2, evaluated at point u, v.
     Does the derivative for each X_i in X.
@@ -656,4 +719,24 @@ def proj_normal_dv2(u, v):
     """
     dfdv2 = 3*u/(4*(u**2+v)**(5/2))
     return dfdv2
+
+
+def prnorm_dudv(u, v):
+    """ Compute Second derivative of X_i/||X|| wrt
+    (\sum_{j!=i} X_j**2) - X_i^2, evaluated at point u, v.
+    Does the derivative for each X_i in X.
+    ----------------
+    Arguments:
+    ----------------
+      - u: Vector with values of X_i at which to evaluate (nX)
+      - v: Vector with values of (\sum_j X_j**2) - u^2 at which
+            to evaluate (nX)
+    ----------------
+    Outputs:
+    ----------------
+      - dfdv2: Second derivative of X_i/||X|| wrt
+            (\sum_{j!=i} X_j**2) - X_i^2 for each different i (nX)
+    """
+    dfdudv = (u**2 - v/2) / (u**2 + v)**(5/2)
+    return dfdudv
 
