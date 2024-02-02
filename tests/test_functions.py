@@ -65,7 +65,7 @@ def empirical_moments_isotropic_gaussian_norm(mu, covariance, nSamples):
     return {'norm': norm, 'norm2': norm2, 'invNorm': invNorm, 'invNorm2': invNorm2}
 
 
-def sample_projected_gaussian(mu, covariance, nSamples, B=None):
+def sample_prnorm(mu, covariance, nSamples, B=None):
     assert mu.dim()==1 or mu.shape[0] == 1, "Only a single mean vector is supported."
     mu = mu.squeeze()
     covariance = covariance.squeeze()
@@ -83,9 +83,9 @@ def sample_projected_gaussian(mu, covariance, nSamples, B=None):
     return Y
 
 
-def empirical_moments_projected_gaussian(mu, covariance, nSamples, B=None):
+def empirical_moments_prnorm(mu, covariance, nSamples, B=None):
     nDim = len(mu)
-    samples = sample_projected_gaussian(mu, covariance, nSamples=nSamples, B=B)
+    samples = sample_prnorm(mu, covariance, nSamples=nSamples, B=B)
     mean = torch.mean(samples, dim=0)
     covariance = torch.cov(samples.T)
     secondM = torch.einsum('ni,nj->ij', samples, samples) / nSamples
