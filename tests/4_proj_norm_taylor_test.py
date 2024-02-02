@@ -50,11 +50,11 @@ elif covType == 'poisson':
 B = torch.eye(nDim)
 
 # Get empirical moments
-meanE, covE, smE = empirical_moments_projected_gaussian(mu, covariance,
+meanE, covE, smE = empirical_moments_prnorm(mu, covariance,
                                                         nSamples=nSamples, B=B)
 # Get analytic moments
-meanA = qr.projected_normal_mean_taylor(mu=mu, covariance=covariance)
-smA = qr.projected_normal_sm_taylor(mu=mu, covariance=covariance, B=B)
+meanA = qr.prnorm_mean_taylor(mu=mu, covariance=covariance)
+smA = qr.prnorm_sm_taylor(mu=mu, covariance=covariance, B=B)
 covA = qr.secondM_2_cov(smA, meanA)
 
 # Plot covariances

@@ -30,12 +30,12 @@ covariance = make_covariance(nDim=nDim, sigmaScale=sigma, covType='isotropic')
 B = torch.eye(nDim)
 
 # Get analytical estimates
-meanA = qr.projected_normal_mean_iso(mu=mu, sigma=sigma)
-smA = qr.projected_normal_sm_iso(mu=mu, sigma=sigma)
+meanA = qr.prnorm_mean_iso(mu=mu, sigma=sigma)
+smA = qr.prnorm_sm_iso(mu=mu, sigma=sigma)
 covA = qr.secondM_2_cov(secondM=smA, mean=meanA)
 
 # Get empirical estimates
-meanE, covE, smE = empirical_moments_projected_gaussian(mu, covariance,
+meanE, covE, smE = empirical_moments_prnorm(mu, covariance,
                                                         nSamples=nSamples, B=B)
 
 # Get errors
@@ -80,12 +80,12 @@ mu = torch.zeros((nX, nDim))
 smA = torch.zeros((nX, nDim, nDim))
 for i in range(nX):
     mu[i,:] = make_mu_sin(nDim=nDim)
-    smA[i,:,:] = qr.projected_normal_sm_iso(mu=mu[i], sigma=sigma)
+    smA[i,:,:] = qr.prnorm_sm_iso(mu=mu[i], sigma=sigma)
 
 # Average individually computed second moments
 avSMA = reduce(smA, 'n d b -> d b', 'mean')
 # Compute average second moment efficiently
-avSMA2 = qr.projected_normal_sm_iso_batch(mu=mu, sigma=sigma)
+avSMA2 = qr.prnorm_sm_iso_batch(mu=mu, sigma=sigma)
 # Compute the error and print
 smADiff = torch.max(torch.abs(avSMA - avSMA2)/(torch.abs(avSMA)))
 print(f'SM batch error (max) = {smADiff*100:.2f}%')
