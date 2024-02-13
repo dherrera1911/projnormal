@@ -320,7 +320,8 @@ def prnorm_sm_iso_batch(mu, sigma):
 #### GENERAL CASE, TAYLOR APPROXIMATION
 #############
 
-def prnorm_mean_taylor(mu, covariance):
+
+def prnorm_mean_taylor(mu, covariance, B=None):
     """ Compute the approximated expected value of each
     projected gaussian Yi = Xi/||Xi||, where Xi~N(mu[i,:], \Sigma),
     and \Sigma is a diagonal matrix with variances on the diagonal.
@@ -336,20 +337,42 @@ def prnorm_mean_taylor(mu, covariance):
       - YExpected: Expected mean value for each projected normal.
           Shape (nDim)
     """
-    nDim = torch.as_tensor(len(mu))
+    if B is not None:
+        if check_diagonal(B):
+            weights = torch.diagonal(B)
+            P = torch.eye(len(mu))
+        else:
+            if not check_symmetric(B):
+                raise ValueError('B must be symmetric')
+            # Diagonalize B
+            eigvals, eigvecs = torch.linalg.eigh(B)
+            # Sort eigenvectors by eigenvalues
+            eigvals, indices = torch.sort(eigvals, descending=True)
+            eigvecs = eigvecs[:, indices]
+            weights = eigvals
+            P = eigvecs
+            # Project mu to the new basis
+            mu = torch.einsum('ij,j->i', P.t(), mu)
+            # Project covariance to the new basis
+            covariance = torch.einsum('ij,jk,kl->il', P.t(), covariance, P)
+    else:
+        weights = None
     variances = torch.diagonal(covariance)
     ### Get moments of variable v (||X||^2 - X_i^2) required for the formula
-    meanV = v_mean(mu=mu, covariance=covariance)
-    varV = v_var(mu=mu, covariance=covariance)
-    covV = v_cov(mu=mu, covariance=covariance)
+    meanV = v_mean(mu=mu, covariance=covariance, weights=weights)
+    varV = v_var(mu=mu, covariance=covariance, weights=weights)
+    covV = v_cov(mu=mu, covariance=covariance, weights=weights)
     ### Get the derivatives for the taylor approximation
-    dfdu2 = prnorm_du2(u=mu, v=meanV)
-    dfdv2 = prnorm_dv2(u=mu, v=meanV)
-    dfdudv = prnorm_dudv(u=mu, v=meanV)
+    dfdu2 = prnorm_du2(u=mu, v=meanV, b=weights)
+    dfdv2 = prnorm_dv2(u=mu, v=meanV, b=weights)
+    dfdudv = prnorm_dudv(u=mu, v=meanV, b=weights)
     ### 0th order term
-    term0 = mu / torch.sqrt(mu**2 + meanV)
+    term0 = f0(u=mu, v=meanV, b=weights)
     ### Compute Taylor approximation
     YExpected = term0 + 0.5*dfdu2*variances + 0.5*dfdv2*varV + dfdudv*covV
+    ### If B is not None, project back to original basis
+    if B is not None:
+        YExpected = torch.einsum('ij,j->i', P, YExpected)
     return YExpected
 
 
@@ -388,7 +411,16 @@ def prnorm_sm_taylor(mu, covariance, B):
 # X_i. That is, v is the sum of squares of all elements of X,
 # except the i-th element.
 # We use some functions to efficiently compute the statistics of v.
-def v_mean(mu, covariance):
+def f0(u, v, b=None):
+    """ First term of the Taylor approximation of f(u,v) = u/sqrt(b*u^2 + v),
+    evaluated at point u,v. b is a constant """
+    if b is None:
+        b = 1
+    f0 = u / torch.sqrt(b*u**2 + v)
+    return f0
+
+
+def v_mean(mu, covariance, weights=None):
     """ For random variable X~N(mu,\Sigma), compute the expected value
     of ||X||^2 - X_i^2 for each X_i.
     ----------------
@@ -401,16 +433,22 @@ def v_mean(mu, covariance):
     ----------------
       - meanV: Expected value of ||X||^2 - X_i^2 for each different i (nDim)
     """
-    # Compute the expected value of ||X||^2
-    meanX2 = torch.trace(covariance) + torch.einsum('i,i->', mu, mu)
-    # Compute E(X_i^2)
-    meanXi2 = mu**2 + torch.diagonal(covariance)
-    # Subtract to get E(||X||^2 - X_i^2)
+    variances = covariance.diagonal()
+    # If weights are not None, scale variances and mu
+    if weights is not None:
+        variances = weights * variances
+    else:
+        weights = torch.ones(len(mu))
+    # Compute the expected value of X'BX
+    meanX2 = torch.sum(variances) + torch.einsum('i,i->', mu, mu*weights)
+    # Compute E(B_i*X_i^2)
+    meanXi2 = mu**2 * weights + variances
+    # Subtract to get E(X'BX - B_i*X_i^2)
     meanV = meanX2 - meanXi2
     return meanV
 
 
-def v_var(mu, covariance):
+def v_var(mu, covariance, weights=None):
     """ For random variable X~N(mu,\Sigma), compute the variance
     of ||X||^2 - X_i^2 for each X_i.
     ----------------
@@ -423,20 +461,28 @@ def v_var(mu, covariance):
     ----------------
       - varV: Variance of ||X||^2 - X_i^2 for each different i (nDim)
     """
-    # Compute the variance of ||X||^2
+    if weights is not None:
+        covariance = torch.einsum('i,ij->ij', weights, covariance)
+    else:
+        weights = torch.ones(len(mu))
+    # Compute the variance of X'BX
     varX2 = 2 * product_trace(covariance, covariance) + \
-        4 * torch.einsum('i,ij,j->', mu, covariance, mu)
+        4 * torch.einsum('i,ij,j->', mu, covariance, mu*weights)
+    # Note: In line above, we implement mu'*B'*Cov*B*mu. Because
+    # we already multiplied Cov by B on the left, we just multiply
+    # mu by B on the right (i.e. because B is diagonal, we just
+    # multiply by 'weights'). Similar logic is applied elsewhere.
     # Compute the term to subtract for each X_i
-    term1 = 2 * torch.einsum('ij,ij->i', covariance, covariance) - \
+    term1 = 2 * torch.einsum('ij,ji->i', covariance, covariance) - \
         covariance.diagonal()**2  # Repeated terms in the trace
-    term2 = 2 * torch.einsum('i,ij,j->i', mu, covariance, mu) - \
-        mu**2 * torch.diag(covariance) # Repeated terms in (mu'Cov mu)
+    term2 = 2 * torch.einsum('i,ij,j->i', mu, covariance, mu*weights) - \
+        mu**2 * torch.diag(covariance) * weights # Repeated terms in (mu'Cov mu)
     # Subtract to get variance
     varV = varX2 - 2*term1 - 4*term2
     return varV
 
 
-def v_cov(mu, covariance):
+def v_cov(mu, covariance, weights=None):
     """ For random variable X~N(mu,\Sigma), compute the covariance
     between (||X||^2 - X_i^2) and X_i for each X_i.
     ----------------
@@ -450,36 +496,38 @@ def v_cov(mu, covariance):
       - covV: Covariance between (||X||^2 - X_i^2) and X_i for each
         different i (nDim)
     """
-    covV = 2 * (torch.einsum('i,ij->j', mu, covariance) - \
-        mu * torch.diagonal(covariance))
+    if weights is None:
+        weights = torch.ones(len(mu))
+    covV = 2 * (torch.einsum('i,ij->j', mu*weights, covariance) - \
+        mu * weights * torch.diagonal(covariance))
     return covV
 
 
 # Derivatives of the function f(u,v) = u/sqrt(u^2 + v)
 # that is used in the taylor approximation to the mean
-#def prnorm_du2(u, v, c):
-#    """ Second derivative of f(u,v) = u/sqrt(c*u^2 + v) wrt u,
-#    evaluated at point u,v. c is a constant """
-#    dfdu2 = u*(3*u**2/(u**2+v) - 3) / (u**2+v)**(3/2)
-#    return dfdu2
-
-def prnorm_du2(u, v, b=1):
+def prnorm_du2(u, v, b=None):
     """ Second derivative of f(u,v) = u/sqrt(c*u^2 + v) wrt u,
     evaluated at point u,v. b is a constant """
+    if b is None:
+        b = 1
     dfdu2 = - 3*b*u*v / (b*u**2 + v)**(5/2)
     return dfdu2
 
 
-def prnorm_dv2(u, v, b=1):
+def prnorm_dv2(u, v, b=None):
     """ Second derivative of f(u,v) = u/sqrt(c*u^2 + v) wrt v,
     evaluated at point u,v. b is a constant """
+    if b is None:
+        b = 1
     dfdv2 = 3*u/(4*(b*u**2+v)**(5/2))
     return dfdv2
 
 
-def prnorm_dudv(u, v, b=1):
+def prnorm_dudv(u, v, b=None):
     """ Mixed second derivative of f(u,v) = u/sqrt(c*u^2 + v),
     evaluated at point u,v. b is a constant"""
+    if b is None:
+        b = 1
     dfdudv = (b*u**2 - v/2) / (b*u**2 + v)**(5/2)
     return dfdudv
 
@@ -657,4 +705,35 @@ def cov_2_corr(covariance):
     std = torch.sqrt(torch.diagonal(covariance))
     correlation = covariance / torch.einsum('a,b->ab', std, std)
     return correlation
+
+
+def check_diagonal(B):
+    """ Check if a matrix is diagonal
+    ----------------
+    Arguments:
+    ----------------
+      - B: Matrix to check. (nDim x nDim)
+    ----------------
+    Outputs:
+    ----------------
+      - isDiagonal: True if B is diagonal, False otherwise
+    """
+    isDiagonal = torch.allclose(B, torch.diag(torch.diagonal(B)))
+    return isDiagonal
+
+
+def check_symmetric(B):
+    """ Check if a matrix is symmetric
+    ----------------
+    Arguments:
+    ----------------
+      - B: Matrix to check. (nDim x nDim)
+    ----------------
+    Outputs:
+    ----------------
+      - isSymmetric: True if B is symmetric, False otherwise
+    """
+    isSymmetric = torch.allclose(B, B.t(), atol=1e-7)
+    return isSymmetric
+
 
