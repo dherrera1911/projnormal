@@ -146,4 +146,49 @@ def empirical_covariance_quadratic_form(mu, covariance, M1, M2, nSamples):
     return cov
 
 
+def make_Aij(dim, i, j):
+  A = torch.zeros(dim, dim)
+  A[i,j] = 0.5
+  A[j,i] = A[j,i] + 0.5
+  return A
+
+
+def make_spdm(dim):
+    """ Make a random symmetric positive definite matrix
+    ----------------
+    Arguments:
+    ----------------
+      - dim: Dimension of matrix
+    ----------------
+    Outputs:
+    ----------------
+      - M: Random symmetric positive definite matrix
+    """
+    M = torch.randn(dim, dim)
+    M = torch.einsum('ij,ik->jk', M, M) / dim**2
+    return M
+
+
+def make_random_covariance(variances, eig):
+    """ Create a random covariance matrix with the given variances, and
+    whose correlation matrix has the given eigenvalues.
+    ----------------
+    Arguments:
+    ----------------
+      - variances: Vector of variances. Shape (n).
+      - eig: Vector of eigenvalues of correlation matrix. Shape (n).
+    ----------------
+    Outputs:
+    ----------------
+      - covariance: Random covariance matrix. Shape (n x n).
+    """
+    # Make sume of eigenvalues equal to n
+    eig = np.array(eig)
+    eig = eig / eig.sum() * len(eig)
+    randCorr = scipy.stats.random_correlation(eig).rvs()
+    randCorr = torch.as_tensor(randCorr, dtype=torch.float32)
+    D = torch.diag(torch.sqrt(variances))
+    covariance = torch.einsum('ij,jk,kl->il', D, randCorr, D)
+    return covariance
+
 

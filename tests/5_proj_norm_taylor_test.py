@@ -17,14 +17,14 @@ from test_functions import *
 #######  TAYLOR APPROXIMATION ######
 ####################################
 
-nDim = 15
+nDim = 10
 nSamples = 1000000
 
 # Parameters of distribution
-meanType = 'sin'
-covType = 'diagonal'
-sigma = 1
-muMult = 4
+meanType = 'ones'
+covType = 'random'
+sigma = 3
+muMult = 5
 
 # Instantiate parameters
 if meanType == 'sin':
@@ -47,13 +47,23 @@ elif covType == 'poisson':
     variances = mu.clone().squeeze() * sigma**2
     variances = torch.abs(variances)
     covariance = torch.diag(variances)
-B = torch.eye(nDim)
+
+# Option 1
+#B = torch.eye(nDim) * 0.1
+# Option 2
+B = torch.zeros((nDim, nDim))
+i = torch.arange(nDim)
+B[i,i] = torch.exp(-i.float()*3/nDim)
+# Option 3
+#B = torch.eye(nDim) * 0.5
+#i = torch.arange(3)
+#B[i,i] = 0
 
 # Get empirical moments
-meanE, covE, smE = empirical_moments_prnorm(mu, covariance,
-                                                        nSamples=nSamples, B=B)
+meanE, covE, smE = empirical_moments_prnorm(mu, covariance, nSamples=nSamples, B=B)
+
 # Get analytic moments
-meanA = qr.prnorm_mean_taylor(mu=mu, covariance=covariance)
+meanA = qr.prnorm_mean_taylor(mu=mu, covariance=covariance, B=B)
 smA = qr.prnorm_sm_taylor(mu=mu, covariance=covariance, B=B)
 covA = qr.secondM_2_cov(smA, meanA)
 
