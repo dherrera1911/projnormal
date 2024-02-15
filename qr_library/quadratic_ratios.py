@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from torch.special import gammaln
 import scipy.special as sps
+import torch.distributions.multivariate_normal as mvn
 
 #### Terminology:
 # X: Random variable with multidimensional Gaussian distribution
@@ -9,8 +10,7 @@ import scipy.special as sps
 # sigma: Standard deviation of X (if isotropic)
 # covariance: Covariance of X
 # nc: non-centrality parameter
-# df: Degrees of freedom of X, or nDim
-# nX: Number of random variables with different mu or sigma
+# nDim: Dimensions of freedom of X
 
 
 ##################################
@@ -131,14 +131,14 @@ def quadratic_linear_cov(mu, covariance, M, b):
 
 
 # Moments of non-central chi squared distribution
-def nc_X2_moments(mu, sigma, s, exact=True):
+def nc_X2_moments(mu, sigma, s):
     """ Get the s-th moment of the non-central chi squared
     distribution, for a normal distribution with mean mu and
     standard deviation sigma for each element.
     ----------------
     Arguments:
     ----------------
-      - mu: Multidimensional mean of the gaussian. (df)
+      - mu: Multidimensional mean of the gaussian. (nDim)
       - sigma: Standard deviation of isotropic noise. (Scalar)
       - s: Order of the moment to compute
     ----------------
@@ -147,32 +147,32 @@ def nc_X2_moments(mu, sigma, s, exact=True):
       - out: Expected value of the s-th moment of the non-central
           chi squared distribution. Scalar
     """
-    df = torch.as_tensor(len(mu))
+    nDim = torch.as_tensor(len(mu))
     # lambda parameter of non-central chi distribution, squared
     nc = non_centrality(mu=mu, sigma=sigma)
     if s == 1:
-        out = (nc + df) * sigma**2
+        out = (nc + nDim) * sigma**2
     elif s == 2:
-        out = (df**2 + 2*df + 4*nc + nc**2 + 2*df*nc) * sigma**4
+        out = (nDim**2 + 2*nDim + 4*nc + nc**2 + 2*nDim*nc) * sigma**4
     else:
         # Get gamma and hyp1f1 values
-        hypGeomVal = hyp1f1(df/2+s, df/2, nc/2, exact=exact)
-        gammaln1 = gammaln(df/2+s)
-        gammaln2 = gammaln(df/2)
+        hypGeomVal = hyp1f1(nDim/2+s, nDim/2, nc/2)
+        gammaln1 = gammaln(nDim/2+s)
+        gammaln2 = gammaln(nDim/2)
         gammaQRes = (2**s/torch.exp(nc/2)) * torch.exp(gammaln1 - gammaln2)
         out = (gammaQRes * hypGeomVal) * (sigma**(s*2))  # This is a torch tensor
     return out
 
 
 # Inverse non-centered chi expectation.
-def inv_ncx_mean(mu, sigma, exact=True):
+def inv_ncx_mean(mu, sigma):
     """ Get the expected value of the inverse of the norm
     of a multivariate gaussian X with mean mu and isotropic noise
     standard deviation sigma.
     ----------------
     Arguments:
     ----------------
-      - mu: Multidimensional mean of the gaussian. (df)
+      - mu: Multidimensional mean of the gaussian. (nDim)
       - sigma: Standard deviation of isotropic noise. (Scalar)
     ----------------
     Outputs:
@@ -180,40 +180,40 @@ def inv_ncx_mean(mu, sigma, exact=True):
       - expectedValue: Expected value of 1/||x|| with x~N(mu, sigma).
       Scalar
     """
-    df = torch.as_tensor(len(mu))
+    nDim = torch.as_tensor(len(mu))
     # lambda parameter of non-central chi distribution, squared
     nc = non_centrality(mu=mu, sigma=sigma)
     # Corresponding hypergeometric function values
-    hypGeomVal = hyp1f1(1/2, df/2, -nc/2, exact=exact)
-    gammaln1 = gammaln((df-1)/2)
-    gammaln2 = gammaln(df/2)
+    hypGeomVal = hyp1f1(1/2, nDim/2, -nc/2)
+    gammaln1 = gammaln((nDim-1)/2)
+    gammaln2 = gammaln(nDim/2)
     gammaQRes = (1/np.sqrt(2)) * torch.exp(gammaln1 - gammaln2)
     expectedValue = (gammaQRes * hypGeomVal) / sigma  # This is a torch tensor
     return expectedValue
 
 
 # Inverse non-centered chi square expectation.
-def inv_ncx2_mean(mu, sigma, exact=True):
+def inv_ncx2_mean(mu, sigma):
     """ Get the expected value of the inverse of the
     squared norm of a non-centered gaussian
-    distribution, with degrees of freedom df, and non-centrality
+    distribution, with degrees of freedom nDim, and non-centrality
     parameter nc (||\mu||^2).
     ----------------
     Arguments:
     ----------------
-      - mu: Multidimensional mean of the gaussian. (df)
+      - mu: Multidimensional mean of the gaussian. (nDim)
       - sigma: Standard deviation of isotropic noise. (Scalar)
     ----------------
     Outputs:
     ----------------
       - expectedValue: Expected value of 1/||x||^2 with x~N(mu, sigma).
     """
-    df = torch.as_tensor(len(mu))
+    nDim = torch.as_tensor(len(mu))
     nc = non_centrality(mu=mu, sigma=sigma)
-    gammaln1 = gammaln(df/2-1)
-    gammaln2 = gammaln(df/2)
+    gammaln1 = gammaln(nDim/2-1)
+    gammaln2 = gammaln(nDim/2)
     gammaQRes = 0.5 * torch.exp(gammaln1 - gammaln2)
-    hypFunRes = hyp1f1(1, df/2, -nc/2, exact=exact)
+    hypFunRes = hyp1f1(1, nDim/2, -nc/2)
     expectedValue = (gammaQRes * hypFunRes) / sigma**2
     return expectedValue
 
@@ -232,73 +232,80 @@ def inv_ncx2_mean(mu, sigma, exact=True):
 #### ISOTROPIC, EXACT
 #############
 
-def prnorm_mean_iso(mu, sigma, exact=True):
-    """ Compute the expected value of each projected gaussian Yi = Xi/||Xi||,
-    where Xi~N(mu[i,:], I*sigma^2).
+def prnorm_mean_iso(mu, sigma):
+    """ Compute the expected value of projected gaussian Y = X/||X||,
+    where X~N(mu, I*sigma^2).
     ----------------
     Arguments:
     ----------------
-      - mu: Means of normal distributions X. (nX x nDim)
-      - sigma: Standard deviation of the normal distributions (isotropic)
-      - exact: If True, compute the exact value of the hypergeometric function.
+      - mu: Mean of X. (nDim)
+      - sigma: Standard deviation of X elements (Scalar)
     ----------------
     Outputs:
     ----------------
-      - YExpected: Expected mean value of the projected
-          normals. Shape (nX x nDim), respectively.
+      - YExpected: Expected value of projected normal. Shape (nDim).
     """
-    df = torch.as_tensor(len(mu))
+    nDim = torch.as_tensor(len(mu))
     nc = non_centrality(mu, sigma)
-    gammaln1 = gammaln((df+1)/2)
-    gammaln2 = gammaln(df/2+1)
+    gammaln1 = gammaln((nDim+1)/2)
+    gammaln2 = gammaln(nDim/2+1)
     gammaRatio = 1/(np.sqrt(2)*sigma) * torch.exp(gammaln1 - gammaln2)
-    hypFunRes = hyp1f1(1/2, df/2+1, -nc/2, exact=exact)
+    hypFunRes = hyp1f1(1/2, nDim/2+1, -nc/2)
     YExpected = gammaRatio * hypFunRes * mu
     return YExpected
 
 
 # Apply the isotropic covariance formula to get the covariance
 # for each stimulus
-def prnorm_sm_iso(mu, sigma, exact=True):
+def prnorm_sm_iso(mu, sigma):
     """ Compute the second moment of each projected gaussian
     Yi = Xi/||Xi||, where Xi~N(mu[i,:], sigma*I). Note that
     Xi has isotropic noise.
     ----------------
     Arguments:
     ----------------
-      - mu: Means of normal distributions X. (nX x nDim)
-      - sigma: Standard deviation of the normal distributions (isotropic)
-      - noiseW: If the weighting term for the identity matrix is already
-          computed, it can be passed here to avoid computing again. (nX)
-      - meanW: If the weighting term for the mean outer product is already
-          computed, it can be passed here to avoid computing again. (nX)
+      - mu: Mean of X (nDim)
+      - sigma: Standard deviation of X elements (Scalar)
     ----------------
     Outputs:
     ----------------
-      - YSM: Second moment of each projected gaussian. Shape (nX x nDim x nDim)
+      - YSM: Second moment matrix projected normal. Shape (nDim x nDim)
     """
-    df = torch.as_tensor(len(mu))
+    nDim = torch.as_tensor(len(mu))
     # If precomputed weights are not given, compute them here
-    noiseW, meanW = iso_sm_weights(mu=mu, sigma=sigma, exact=exact)
+    noiseW, meanW = iso_sm_weights(mu=mu, sigma=sigma)
     # Compute the second moment of each stimulus
     muNorm = mu/sigma
     # Get the outer product of the normalized stimulus, and multiply by weight
     YSM = torch.einsum('d,b->db', muNorm, muNorm) * meanW
     # Add noise term to the diagonal
-    diag_idx = torch.arange(df)
+    diag_idx = torch.arange(nDim)
     YSM[diag_idx, diag_idx] += noiseW
     return YSM
 
 
 def prnorm_sm_iso_batch(mu, sigma):
     """
-    To get the SM of a set of projected normals, this saves a lot
+    Get the SM of a set of projected normals. This saves a lot
     of computation time by not adding the indentity matrix to each SM.
+    ----------------
+    Arguments:
+    ----------------
+      - mu: Means of normal distributions X. (nX x nDim)
+      - sigma: Standard deviation of the normal distributions (isotropic)
+      - noiseW: If the weighting term for the identity matrix is already
+          computed, it can be passed here to avoid computing again.
+      - meanW: If the weighting term for the mean outer product is already
+          computed, it can be passed here to avoid computing again.
+    ----------------
+    Outputs:
+    ----------------
+      - YSM: Second moment of each projected gaussian. Shape (nDim x nDim)
     """
     if mu.dim() == 1:
         mu = mu.unsqueeze(0)
     nX = mu.shape[0]
-    df = mu.shape[1]
+    nDim = mu.shape[1]
     # Compute mean SM
     noiseW = torch.zeros(nX, device=mu.device)
     meanW = torch.zeros(nX, device=mu.device)
@@ -312,7 +319,7 @@ def prnorm_sm_iso_batch(mu, sigma):
     stimScales = torch.sqrt(meanW/(nX))/sigma
     scaledStim = torch.einsum('nd,n->nd', mu, stimScales)
     YSM = torch.einsum('nd,nb->db', scaledStim, scaledStim) + \
-            torch.eye(df, device=mu.device) * noiseWMean
+            torch.eye(nDim, device=mu.device) * noiseWMean
     return YSM
 
 
@@ -382,14 +389,14 @@ def prnorm_sm_taylor(mu, covariance, B):
     ----------------
     Arguments:
     ----------------
-      - mu: Means of normal distributions X. (nX x nDim)
-      - covariance: Covariance of the normal distributions (nX x nDim x nDim)
+      - mu: Means of normal distributions X. (nDim)
+      - covariance: Covariance of the normal distributions (nDim x nDim)
       - B: Matrix in the denominator. (nDim x nDim)
     ----------------
     Outputs:
     ----------------
       - YSM: Second moment of each projected gaussian.
-          Shape (nX x nDim x nDim)
+          Shape (nDim x nDim)
     """
     # Compute the mean of numerator for each matrix A^{ij}
     muN = covariance + torch.einsum('d,b->db', mu, mu)
@@ -421,17 +428,20 @@ def f0(u, v, b=None):
 
 
 def v_mean(mu, covariance, weights=None):
-    """ For random variable X~N(mu,\Sigma), compute the expected value
-    of ||X||^2 - X_i^2 for each X_i.
+    """ For random variable X~N(mu, Sigma) and diagonal matrix B, compute
+    the expected value of V = [V_1, ..., V_n] where
+    V_i = (X'BX - B_{ii}X_i^2).
     ----------------
     Arguments:
     ----------------
       - mu: Means of normal distributions X. (nDim)
       - covariance: covariance of X. (nDim x nDim)
+      - weights: Diagonal elements of matrix B (nDim). If None, B is assumed
+          to be the identity matrix.
     ----------------
     Outputs:
     ----------------
-      - meanV: Expected value of ||X||^2 - X_i^2 for each different i (nDim)
+      - meanV: Expected value of V (nDim)
     """
     variances = covariance.diagonal()
     # If weights are not None, scale variances and mu
@@ -449,52 +459,59 @@ def v_mean(mu, covariance, weights=None):
 
 
 def v_var(mu, covariance, weights=None):
-    """ For random variable X~N(mu,\Sigma), compute the variance
-    of ||X||^2 - X_i^2 for each X_i.
+    """ For random variable X~N(mu, Sigma) and diagonal matrix B, compute
+    the variance of each element of V = [V_1, ..., V_n], where
+    V_i = (X'BX - B_{ii}X_i^2).
     ----------------
     Arguments:
     ----------------
       - mu: Means of normal distributions X. (nDim)
       - covariance: covariance of X. (nDim x nDim)
+      - weights: Diagonal elements of matrix B (nDim). If None, B is assumed
+          to be the identity matrix.
     ----------------
     Outputs:
     ----------------
-      - varV: Variance of ||X||^2 - X_i^2 for each different i (nDim)
+      - varV: Variance of each element of V (nDim)
     """
     if weights is not None:
-        covariance = torch.einsum('i,ij->ij', weights, covariance)
+        Bcovariance = torch.einsum('i,ij->ij', weights, covariance)
     else:
         weights = torch.ones(len(mu))
     # Compute the variance of X'BX
-    varX2 = 2 * product_trace(covariance, covariance) + \
-        4 * torch.einsum('i,ij,j->', mu, covariance, mu*weights)
+    varX2 = 2 * product_trace(Bcovariance, Bcovariance) + \
+        4 * torch.einsum('i,ij,j->', mu, Bcovariance, mu*weights)
     # Note: In line above, we implement mu'*B'*Cov*B*mu. Because
     # we already multiplied Cov by B on the left, we just multiply
     # mu by B on the right (i.e. because B is diagonal, we just
     # multiply by 'weights'). Similar logic is applied elsewhere.
-    # Compute the term to subtract for each X_i
-    term1 = 2 * torch.einsum('ij,ji->i', covariance, covariance) - \
-        covariance.diagonal()**2  # Repeated terms in the trace
-    term2 = 2 * torch.einsum('i,ij,j->i', mu, covariance, mu*weights) - \
-        mu**2 * torch.diag(covariance) * weights # Repeated terms in (mu'Cov mu)
+    # Next, Compute the term to subtract for each X_i
+    # The first term also has B baked into the covariance
+    term1 = 2 * torch.einsum('ij,ji->i', Bcovariance, Bcovariance) - \
+        Bcovariance.diagonal()**2  # Repeated terms in the trace
+    term2 = 2 * torch.einsum('i,ij,j->i', mu, Bcovariance, mu*weights) - \
+        mu**2 * torch.diag(Bcovariance) * weights # Repeated terms in (mu'Cov mu)
     # Subtract to get variance
     varV = varX2 - 2*term1 - 4*term2
     return varV
 
 
 def v_cov(mu, covariance, weights=None):
-    """ For random variable X~N(mu,\Sigma), compute the covariance
-    between (||X||^2 - X_i^2) and X_i for each X_i.
+    """ For random variable X~N(mu, Sigma) and diagonal matrix B, compute
+    the covariance between each element of V = [V_1, ..., V_n], where
+    V_i = (X'BX - B_{ii}X_i^2), and the corresponding X_i.
     ----------------
     Arguments:
     ----------------
       - mu: Means of normal distributions X. (nDim)
       - covariance: covariance of X. (nDim x nDim)
+      - weights: Diagonal elements of matrix B (nDim). If None, B is assumed
+          to be the identity matrix.
     ----------------
     Outputs:
     ----------------
-      - covV: Covariance between (||X||^2 - X_i^2) and X_i for each
-        different i (nDim)
+      - covV: Covariance between each element of V and the
+          corresponding X_i (nDim)
     """
     if weights is None:
         weights = torch.ones(len(mu))
@@ -515,7 +532,7 @@ def prnorm_du2(u, v, b=None):
 
 
 def prnorm_dv2(u, v, b=None):
-    """ Second derivative of f(u,v) = u/sqrt(c*u^2 + v) wrt v,
+    """ Second derivative of f(u,v) = u/sqrt(b*u^2 + v) wrt v,
     evaluated at point u,v. b is a constant """
     if b is None:
         b = 1
@@ -524,7 +541,7 @@ def prnorm_dv2(u, v, b=None):
 
 
 def prnorm_dudv(u, v, b=None):
-    """ Mixed second derivative of f(u,v) = u/sqrt(c*u^2 + v),
+    """ Mixed second derivative of f(u,v) = u/sqrt(b*u^2 + v),
     evaluated at point u,v. b is a constant"""
     if b is None:
         b = 1
@@ -563,76 +580,27 @@ def non_centrality(mu, sigma):
     return nc
 
 
-## Get the values of the hypergeometric function given a and b, for each
-## value of non-centrality parameter, which is random-variable  dependent
-#def hyp1f1(a, b, c, exact=True):
-#    """ For each element in c, compute the
-#    confluent hypergeometric function hyp1f1(a, b, c).
-#    Acts as a wrapper of mpm.hyp1f1 for pytorch tensors.
-#    ----------------
-#    Arguments:
-#    ----------------
-#      - a: First parameter of hyp1f1 (usually 1 or 1/2). (Scalar)
-#      - b: Second parameter of hyp1f1 (usually df/2+k, k being an integer). (Scalar)
-#      - c: Vector, usually function of non-centrality parameters (Vector length df)
-#      - exact: Whether to use exact formula to compute hyp1f1 or approximation
-#          (1+2*nc/b)**(-a). (Boolean)
-#    ----------------
-#    Outputs:
-#    ----------------
-#      - hypVal: Value of hyp1f1 for each nc. (Vector length df)
-#    """
-#    # If nc is a pytorch tensor, convert to numpy array
-#    isTensor = isinstance(c, torch.Tensor)
-#    b = float(b)
-#    if exact:
-#        if isTensor:
-#            device = c.device
-#            if c.is_cuda:
-#                c = c.cpu()
-#            c = c.numpy()
-#        if isinstance(b, torch.Tensor) or isinstance(a, torch.Tensor):
-#            b = float(b)
-#            a = float(a)
-#        nX = len(c)  # Get number of dimensions
-#        # Calculate hypergeometric functions
-#        hypVal = torch.zeros(nX)
-#        for i in range(nX):
-#            hypVal[i] = torch.tensor(float(mpm.hyp1f1(a, b, c[i])))
-#        if isTensor:
-#            hypVal = hypVal.to(device)
-#    else:
-#        hypVal = (1 + c/(b*2))**(-a)
-#    return hypVal
-
-
 # Get the values of the hypergeometric function given a and b, for each
 # value of non-centrality parameter, which is random-variable  dependent
-def hyp1f1(a, b, c, exact=True):
+def hyp1f1(a, b, c):
     """ For each element in c, compute the
     confluent hypergeometric function hyp1f1(a, b, c).
     ----------------
     Arguments:
     ----------------
-      - a: First parameter of hyp1f1 (usually 1 or 1/2). (Scalar)
-      - b: Second parameter of hyp1f1 (usually df/2+k, k being an integer). (Scalar)
-      - c: Vector, usually function of non-centrality parameters (Vector length df)
-      - exact: Whether to use exact formula to compute hyp1f1 or approximation
-          (1+2*nc/b)**(-a). (Boolean)
+      - a: First parameter of hyp1f1 (Scalar)
+      - b: Second parameter of hyp1f1 (Scalar)
+      - c: Vector, usually function of non-centrality parameters (nDim)
     ----------------
     Outputs:
     ----------------
-      - hypVal: Value of hyp1f1 for each nc. (Vector length df)
+      - hypVal: Value of hyp1f1 for each nc. (nDim)
     """
-    # If nc is a pytorch tensor, convert to numpy array
-    if exact:
-        hypVal = sps.hyp1f1(a, b, c)
-    else:
-        hypVal = (1 + c/(b*2))**(-a)
+    hypVal = sps.hyp1f1(a, b, c)
     return hypVal
 
 
-def iso_sm_weights(mu, sigma, nc=None, exact=True):
+def iso_sm_weights(mu, sigma, nc=None):
     """ Compute the weights of the mean outer product and of the identity
     matrix in the isotropic projected Gaussian SM formula.
     ----------------
@@ -649,13 +617,13 @@ def iso_sm_weights(mu, sigma, nc=None, exact=True):
       - smNoiseW: Weights for the identity matrices. (nX)
     """
     # If precomputed weights are not given, compute them here
-    df = len(mu)
+    nDim = len(mu)
     if nc is None:
         nc = non_centrality(mu=mu, sigma=sigma)
-    hypFunNoise = hyp1f1(a=1, b=df/2+1, c=-nc/2, exact=exact)
-    noiseW = hypFunNoise * (1/df)
-    hypFunMean = hyp1f1(a=1, b=df/2+2, c=-nc/2, exact=exact)
-    meanW = hypFunMean * (1/(df+2))
+    hypFunNoise = hyp1f1(a=1, b=nDim/2+1, c=-nc/2)
+    noiseW = hypFunNoise * (1/nDim)
+    hypFunMean = hyp1f1(a=1, b=nDim/2+2, c=-nc/2)
+    meanW = hypFunMean * (1/(nDim+2))
     return noiseW, meanW
 
 
@@ -670,6 +638,8 @@ def product_trace4(A, B, C, D):
     A and B. """
     return torch.einsum('ij,jk,kl,li->', A, B, C, D)
 
+
+#### CONVERT BETWEEN SECOND MOMENT MATRICES ####
 
 def secondM_2_cov(secondM, mean):
     """Convert matrices of second moments to covariances, by
@@ -707,6 +677,8 @@ def cov_2_corr(covariance):
     return correlation
 
 
+#### MATRIX CHECKS ####
+
 def check_diagonal(B):
     """ Check if a matrix is diagonal
     ----------------
@@ -733,7 +705,144 @@ def check_symmetric(B):
     ----------------
       - isSymmetric: True if B is symmetric, False otherwise
     """
-    isSymmetric = torch.allclose(B, B.t(), atol=1e-7)
+    isSymmetric = torch.allclose(B, B.t(), atol=5e-6)
     return isSymmetric
+
+
+##################################
+##################################
+#
+## EMPIRICAL MOMENTS
+#
+##################################
+##################################
+
+
+def sample_quadratic_form(mu, covariance, M, nSamples):
+    """ Sample from the random variable Y = X^T M X, where X~N(mu, covariance).
+    -----------------
+    Arguments:
+    -----------------
+      - mu: Mean. (nDim)
+      - covariance: Covariance matrix. (nDim x nDim)
+      - M: Matrix of the quadratic form. (nDim x nDim)
+      - nSamples: Number of samples.
+    -----------------
+    Output:
+    -----------------
+      - qf: Samples from the quadratic form. (nSamples)
+    """
+    dist = mvn.MultivariateNormal(loc=mu, covariance_matrix=covariance)
+    X = dist.sample([nSamples])
+    if check_diagonal(M):
+        D = torch.diagonal(M)
+        qf = torch.einsum('ni,i,in->n', X, D, X.t())
+    else:
+        qf = torch.einsum('ni,ij,jn->n', X, M, X.t())
+    return qf
+
+
+def empirical_moments_quadratic_form(mu, covariance, M, nSamples):
+    """ Compute the mean and variance of the quadratic form
+    qf = X^T M X for X~N(mu, covariance).
+    -----------------
+    Arguments:
+    -----------------
+      - mu: Mean. (nDim)
+      - covariance: Covariance matrix. (nDim x nDim)
+      - M: Matrix of the quadratic form. (nDim x nDim)
+      - nSamples: Number of samples.
+    -----------------
+    Output:
+    -----------------
+      - statsDict: Dictionary with the mean, variance and second
+          moment of the quadratic form
+    """
+    qfSamples = sample_quadratic_form(mu, covariance, M, nSamples)
+    mean = torch.mean(qfSamples)
+    var = torch.var(qfSamples)
+    secondM = torch.mean(qfSamples**2)
+    return {'mean': mean, 'var':var, 'secondM': secondM}
+
+
+def empirical_covariance_quadratic_form(mu, covariance, M1, M2, nSamples):
+    """ Compute the covariance between the quadratic forms
+    qf1 = X^T M1 X and qf2 = X^T M2 X, where X~N(mu, covariance).
+    -----------------
+    Arguments:
+    -----------------
+      - mu: Mean vector of the Gaussian. (nDim)
+      - covariance: Covariance matrix of the Gaussian. (nDim x nDim)
+      - M1: Matrix of the first quadratic form. (nDim x nDim)
+      - M2: Matrix of the second quadratic form. (nDim x nDim)
+      - nSamples: Number of samples to use to compute the moments.
+    -----------------
+    Output:
+    -----------------
+      - cov: Covariance between the two quadratic forms.
+    """
+    dist = mvn.MultivariateNormal(loc=mu, covariance_matrix=covariance)
+    X = dist.sample([nSamples])
+    qf1 = torch.einsum('ni,ij,jn->n', X, M1, X.t())
+    qf2 = torch.einsum('ni,ij,jn->n', X, M2, X.t())
+    cov = torch.cov(torch.cat((qf1.unsqueeze(0), qf2.unsqueeze(0))))[0,1]
+    return cov
+
+
+def sample_prnorm(mu, covariance, nSamples, B=None):
+    """ Sample from the random variable Y = X/(X'BX)^0.5, where X~N(mu, covariance).  
+    -----------------
+    Arguments:
+    -----------------
+      - mu: Mean. (nDim)
+      - covariance: Covariance matrix. (nDim x nDim)
+      - nSamples: Number of samples.
+      - B: Matrix in the denominator. (nDim x nDim)
+    -----------------
+    Output:
+    -----------------
+      - prnorm: Samples from the projected normal. (nSamples x nDim)
+    """
+    mu = mu.squeeze()
+    covariance = covariance.squeeze()
+    if B is None:
+        B = torch.eye(len(mu))
+    # Initialize Gaussian distribution to sample from
+    dist = mvn.MultivariateNormal(loc=mu, covariance_matrix=covariance)
+    # Take nSamples
+    X = dist.sample([nSamples])
+    # Compute normalizing quadratic form
+    if check_diagonal(B):
+        D = torch.diagonal(B)
+        q = torch.sqrt(torch.einsum('ni,i,in->n', X, D, X.t()))
+    else:
+        q = torch.sqrt(torch.einsum('ni,ij,jn->n', X, B, X.t()))
+    # Normalize samples
+    Y = torch.einsum('ni,n->ni', X, 1/q)
+    return Y
+
+
+def empirical_moments_prnorm(mu, covariance, nSamples, B=None):
+    """ Compute the mean, covariance and second moment of the projected normal
+    Y = X/(X'BX)^0.5, where X~N(mu, covariance).
+    -----------------
+    Arguments:
+    -----------------
+      - mu: Mean. (nDim)
+      - covariance: Covariance matrix. (nDim x nDim)
+      - nSamples: Number of samples.
+      - B: Matrix in the denominator. (nDim x nDim)
+    -----------------
+    Output:
+    -----------------
+      - mean: Mean of the projected normal. (nDim)
+      - covariance: Covariance of the projected normal. (nDim x nDim)
+      - secondM: Second moment of the projected normal. (nDim x nDim)
+    """
+    samples = sample_prnorm(mu, covariance, nSamples=nSamples, B=B)
+    mean = torch.mean(samples, dim=0)
+    covariance = torch.cov(samples.t())
+    secondM = torch.einsum('in,nj->ij', samples.t(), samples) / nSamples
+    return {'mean':mean, 'covariance':covariance, 'secondM':secondM}
 
 
