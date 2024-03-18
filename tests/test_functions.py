@@ -53,7 +53,6 @@ def make_covariance(nDim, sigmaScale=1, covType='random'):
     return covariance
 
 
-
 def make_Aij(dim, i, j):
   A = torch.zeros(dim, dim)
   A[i,j] = 0.5

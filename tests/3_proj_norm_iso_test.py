@@ -35,8 +35,10 @@ smA = qr.prnorm_sm_iso(mu=mu, sigma=sigma)
 covA = qr.secondM_2_cov(secondM=smA, mean=meanA)
 
 # Get empirical estimates
-meanE, covE, smE = empirical_moments_prnorm(mu, covariance,
-                                                        nSamples=nSamples, B=B)
+moments = qr.empirical_moments_prnorm(mu, covariance, nSamples=nSamples, B=B)
+meanE = moments['mean']
+covE = moments['covariance']
+smE = moments['secondM']
 
 # Get errors
 meanErr = torch.max(torch.abs(meanE - meanA)/(torch.abs(meanE)+0.02))

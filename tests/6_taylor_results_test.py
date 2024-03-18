@@ -23,8 +23,9 @@ nSamples = 1000000
 # Parameters of distribution
 meanType = 'ones'
 covType = 'random'
-sigma = 3
-muMult = 5
+sigma = 1
+muMult = 1
+c50 = 5
 
 # Instantiate parameters
 if meanType == 'sin':
@@ -60,11 +61,15 @@ B[i,i] = torch.exp(-i.float()*3/nDim)
 #B[i,i] = 0
 
 # Get empirical moments
-meanE, covE, smE = empirical_moments_prnorm(mu, covariance, nSamples=nSamples, B=B)
+momentsE = qr.empirical_moments_prnorm(mu, covariance, nSamples=nSamples,
+                                       B=B, c50=c50)
+meanE = momentsE['mean']
+covE = momentsE['covariance']
+smE = momentsE['secondM']
 
 # Get analytic moments
-meanA = qr.prnorm_mean_taylor(mu=mu, covariance=covariance, B=B)
-smA = qr.prnorm_sm_taylor(mu=mu, covariance=covariance, B=B)
+meanA = qr.prnorm_mean_taylor(mu=mu, covariance=covariance, B=B, c50=c50)
+smA = qr.prnorm_sm_taylor(mu=mu, covariance=covariance, B=B, c50=c50)
 covA = qr.secondM_2_cov(smA, meanA)
 
 # Plot covariances

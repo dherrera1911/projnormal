@@ -26,9 +26,9 @@ randMat2 = torch.randn(nDim, nDim)
 M2 = torch.matmul(randMat2, randMat2.transpose(0, 1))
 
 # Get empirical estimates
-momentsE = empirical_moments_quadratic_form(mu, covariance, M1,
+momentsE = qr.empirical_moments_quadratic_form(mu, covariance, M1,
                                                nSamples=nSamples)
-covE = empirical_covariance_quadratic_form(mu, covariance, M1, M2,
+covE = qr.empirical_covariance_quadratic_form(mu, covariance, M1, M2,
                                            nSamples=nSamples)
 
 # Get theoretical moments

@@ -275,13 +275,13 @@ def prnorm_mean_taylor(mu, covariance, B=None, c50=0):
     varV = v_var(mu=mu, covariance=covariance, weights=weights)
     covV = v_cov(mu=mu, covariance=covariance, weights=weights)
     ### Get the derivatives for the taylor approximation
-    dfdu2 = dfdu2(u=mu, v=meanV, b=weights, c50=c50)
-    dfdv2 = dfdv2(u=mu, v=meanV, b=weights, c50=c50)
-    dfdudv = dfdudv(u=mu, v=meanV, b=weights, c50=c50)
+    dfdu2Val = dfdu2(u=mu, v=meanV, b=weights, c50=c50)
+    dfdv2Val = dfdv2(u=mu, v=meanV, b=weights, c50=c50)
+    dfdudvVal = dfdudv(u=mu, v=meanV, b=weights, c50=c50)
     ### 0th order term
     term0 = f0(u=mu, v=meanV, b=weights, c50=c50)
     ### Compute Taylor approximation
-    YExpected = term0 + 0.5*dfdu2*variances + 0.5*dfdv2*varV + dfdudv*covV
+    YExpected = term0 + 0.5*dfdu2Val*variances + 0.5*dfdv2Val*varV + dfdudvVal*covV
     ### If B is not None, project back to original basis
     if B is not None:
         YExpected = torch.einsum('ij,j->i', P, YExpected)
