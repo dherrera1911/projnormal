@@ -314,7 +314,10 @@ def prnorm_sm_taylor(mu, covariance, B=None, c50=0):
     varD = quadratic_form_var(mu=mu, covariance=covariance, M=B)
     # Compute covariance between numerator and denominator for each
     # matrix A^{ij}
-    covB = torch.einsum('ij,jk->ik', covariance, B)
+    if B is not None:
+        covB = torch.einsum('ij,jk->ik', covariance, B)
+    else:
+        covB = covariance
     term1 = torch.einsum('ij,jk->ik', covB, covariance)
     term2 = torch.einsum('i,j,kj->ik', mu, mu, covB)
     covND = 2 * (term1 + term2 + term2.transpose(0,1))
