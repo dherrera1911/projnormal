@@ -377,6 +377,7 @@ def v_var(mu, covariance, weights=None):
         Bcovariance = torch.einsum('i,ij->ij', weights, covariance)
     else:
         weights = torch.ones(len(mu))
+        Bcovariance = covariance
     # Compute the variance of X'BX
     varX2 = 2 * product_trace(Bcovariance, Bcovariance) + \
         4 * torch.einsum('i,ij,j->', mu, Bcovariance, mu*weights)
