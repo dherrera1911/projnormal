@@ -8,7 +8,7 @@
 import pytest
 import torch
 import numpy as np
-import qr_library as qr
+import projected_normal as pn
 import torch.distributions.multivariate_normal as mvn
 from test_functions import *
 
@@ -24,7 +24,7 @@ sigma = 0.7
 covariance = make_covariance(nDim=nDim, sigmaScale=sigma, covType='isotropic')
 
 # Sample moments empirically
-qfSamples = qr.sample_quadratic_form(mu=mu, covariance=covariance,
+qfSamples = pn.sample_quadratic_form(mu=mu, covariance=covariance,
                                      M=torch.eye(nDim), nSamples=nSamples)
 
 normE = torch.mean(torch.sqrt(qfSamples))
@@ -33,10 +33,10 @@ invNormE = torch.mean(1/torch.sqrt(qfSamples))
 invNorm2E = torch.mean(1/qfSamples)
 
 # Compute moments theoretically
-normT = qr.nc_X2_moments(mu, sigma, 1/2)
-norm2T = qr.nc_X2_moments(mu, sigma, 1)
-invNormT = qr.nc_X2_moments(mu, sigma, -1/2)
-invNorm2T = qr.nc_X2_moments(mu, sigma, -1)
+normT = pn.nc_X2_moments(mu, sigma, 1/2)
+norm2T = pn.nc_X2_moments(mu, sigma, 1)
+invNormT = pn.nc_X2_moments(mu, sigma, -1/2)
+invNorm2T = pn.nc_X2_moments(mu, sigma, -1)
 
 # Compare moments
 error1 = (normE - normT)/normT

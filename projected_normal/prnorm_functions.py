@@ -20,9 +20,8 @@ import scipy.special as sps
 import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
-from torch.distributions import Normal
 import torch.distributions.multivariate_normal as mvn
-import scipy.linalg
+from torch.special import gammaln
 import geotorch
 import projected_normal as pn
 
@@ -117,7 +116,7 @@ def M_value(alpha, nDim):
       - M_vals: Value of M(alpha) (n).
     """
     # Create a standard normal distribution
-    normal_dist = Normal(0, 1)
+    normal_dist = torch.distributions.Normal(0, 1)
     # Calculate the cumulative distribution function (CDF) of alpha
     normcdf = normal_dist.cdf(alpha)
     # Calculate the probability density function (PDF) of alpha
@@ -494,10 +493,10 @@ def iso_sm_weights(mu, sigma, nc=None):
     # If precomputed weights are not given, compute them here
     nDim = len(mu)
     if nc is None:
-        nc = non_centrality(mu=mu, sigma=sigma)
-    hypFunNoise = sps.hyp1f1(a=1, b=nDim/2+1, c=-nc/2)
+        nc = pn.non_centrality(mu=mu, sigma=sigma)
+    hypFunNoise = sps.hyp1f1(1, nDim/2+1, -nc/2)
     noiseW = hypFunNoise * (1/nDim)
-    hypFunMean = sps.hyp1f1(a=1, b=nDim/2+2, c=-nc/2)
+    hypFunMean = sps.hyp1f1(1, nDim/2+2, -nc/2)
     meanW = hypFunMean * (1/(nDim+2))
     return noiseW, meanW
 

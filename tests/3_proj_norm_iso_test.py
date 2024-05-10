@@ -8,7 +8,7 @@
 #import pytest
 import torch
 import numpy as np
-import qr_library as qr
+import projected_normal as pn
 from einops import reduce
 from test_functions import *
 
@@ -25,17 +25,17 @@ nSamples = 500000
 
 # Parameters of distribution
 mu = make_mu_sin(nDim=nDim)
-sigma = 0.5
+sigma = 0.1
 covariance = make_covariance(nDim=nDim, sigmaScale=sigma, covType='isotropic')
 B = torch.eye(nDim)
 
 # Get analytical estimates
-meanA = qr.prnorm_mean_iso(mu=mu, sigma=sigma)
-smA = qr.prnorm_sm_iso(mu=mu, sigma=sigma)
-covA = qr.secondM_2_cov(secondM=smA, mean=meanA)
+meanA = pn.prnorm_mean_iso(mu=mu, sigma=sigma)
+smA = pn.prnorm_sm_iso(mu=mu, sigma=sigma)
+covA = pn.secondM_2_cov(secondM=smA, mean=meanA)
 
 # Get empirical estimates
-moments = qr.empirical_moments_prnorm(mu, covariance, nSamples=nSamples, B=B)
+moments = pn.empirical_moments_prnorm(mu, covariance, nSamples=nSamples, B=B)
 meanE = moments['mean']
 covE = moments['covariance']
 smE = moments['secondM']
@@ -82,12 +82,12 @@ mu = torch.zeros((nX, nDim))
 smA = torch.zeros((nX, nDim, nDim))
 for i in range(nX):
     mu[i,:] = make_mu_sin(nDim=nDim)
-    smA[i,:,:] = qr.prnorm_sm_iso(mu=mu[i], sigma=sigma)
+    smA[i,:,:] = pn.prnorm_sm_iso(mu=mu[i], sigma=sigma)
 
 # Average individually computed second moments
 avSMA = reduce(smA, 'n d b -> d b', 'mean')
 # Compute average second moment efficiently
-avSMA2 = qr.prnorm_sm_iso_batch(mu=mu, sigma=sigma)
+avSMA2 = pn.prnorm_sm_iso_batch(mu=mu, sigma=sigma)
 # Compute the error and print
 smADiff = torch.max(torch.abs(avSMA - avSMA2)/(torch.abs(avSMA)))
 print(f'SM batch error (max) = {smADiff*100:.2f}%')

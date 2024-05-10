@@ -7,7 +7,7 @@
 import pytest
 import torch
 import numpy as np
-import qr_library as qr
+import projected_normal as pn
 from einops import reduce
 from test_functions import *
 import time
@@ -29,7 +29,7 @@ i = torch.arange(nDim)
 B[i,i] = torch.exp(-i.float()*2/nDim)
 
 # Compute the mean the variable V = X^2 - Xi^2 for each Xi
-meanV = qr.v_mean(mu=mu, covariance=covariance, weights=B.diagonal())
+meanV = pn.v_mean(mu=mu, covariance=covariance, weights=B.diagonal())
 
 ############################
 ## TEST THE COMPUTING OF V-VARIABLE STATISTICS
@@ -38,13 +38,13 @@ meanV = qr.v_mean(mu=mu, covariance=covariance, weights=B.diagonal())
 # Efficient functions
 weights = B.diag()
 start = time.time()
-vMean = qr.v_mean(mu=mu, covariance=covariance, weights=weights)
-vVar = qr.v_var(mu=mu, covariance=covariance, weights=weights)
-vCov = qr.v_cov(mu=mu, covariance=covariance, weights=weights)
+vMean = pn.v_mean(mu=mu, covariance=covariance, weights=weights)
+vVar = pn.v_var(mu=mu, covariance=covariance, weights=weights)
+vCov = pn.v_cov(mu=mu, covariance=covariance, weights=weights)
 end = time.time()
 time1 = end - start
 
-qr.v_mean(mu=mu, covariance=covariance, weights=weights)
+pn.v_mean(mu=mu, covariance=covariance, weights=weights)
 
 # Compute naively
 vMean2 = torch.zeros(nDim)
@@ -65,15 +65,15 @@ for i in range(nDim):
     subCov = subCov[:,keepInds]
     subMu = mu[keepInds]
     # Compute moments with remaining elements
-    vMean2[i] = qr.quadratic_form_mean(mu=subMu, covariance=subCov, M=subB)
-    vVar2[i] = qr.quadratic_form_var(mu=subMu, covariance=subCov, M=subB)
+    vMean2[i] = pn.quadratic_form_mean(mu=subMu, covariance=subCov, M=subB)
+    vVar2[i] = pn.quadratic_form_var(mu=subMu, covariance=subCov, M=subB)
     # Compute covariance
     a = torch.zeros(nDim)
     A = torch.eye(nDim, nDim)
     a[i] = 1
     A = B.clone()
     A[i,i] = 0
-    vCov2[i] = qr.quadratic_linear_cov(mu=mu, covariance=covariance, M=A, b=a)
+    vCov2[i] = pn.quadratic_linear_cov(mu=mu, covariance=covariance, M=A, b=a)
 end = time.time()
 time2 = end - start
 
@@ -96,7 +96,7 @@ print(f'Daniel\'s trick is {time2/time1} times faster')
 ### EFFICIENT COMPUTATION OF TRACE OF SUB-MATRICES
 # Trace of full covariance product
 Bcov = torch.einsum('i,ij->ij', B.diagonal(), covariance)
-fullTrace = qr.product_trace(Bcov, Bcov)
+fullTrace = pn.product_trace(Bcov, Bcov)
 # Inner products of rows and columns of covariance
 innerProds = torch.einsum('ij,ji->i', Bcov, Bcov)
 # Trace of covariance products removing ith row and column

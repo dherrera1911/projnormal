@@ -8,7 +8,7 @@
 #import pytest
 import torch
 import numpy as np
-import qr_library as qr
+import projected_normal as pn
 from einops import reduce
 from test_functions import *
 
@@ -61,16 +61,16 @@ B[i,i] = torch.exp(-i.float()*3/nDim)
 #B[i,i] = 0
 
 # Get empirical moments
-momentsE = qr.empirical_moments_prnorm(mu, covariance, nSamples=nSamples,
+momentsE = pn.empirical_moments_prnorm(mu, covariance, nSamples=nSamples,
                                        B=B, c50=c50)
 meanE = momentsE['mean']
 covE = momentsE['covariance']
 smE = momentsE['secondM']
 
 # Get analytic moments
-meanA = qr.prnorm_mean_taylor(mu=mu, covariance=covariance, B=B, c50=c50)
-smA = qr.prnorm_sm_taylor(mu=mu, covariance=covariance, B=B, c50=c50)
-covA = qr.secondM_2_cov(smA, meanA)
+meanA = pn.prnorm_mean_taylor(mu=mu, covariance=covariance, B=B, c50=c50)
+smA = pn.prnorm_sm_taylor(mu=mu, covariance=covariance, B=B, c50=c50)
+covA = pn.secondM_2_cov(smA, meanA)
 
 # Plot covariances
 plotCovariances = True
