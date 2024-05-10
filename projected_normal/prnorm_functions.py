@@ -24,7 +24,7 @@ from torch.distributions import Normal
 import torch.distributions.multivariate_normal as mvn
 import scipy.linalg
 import geotorch
-import qr_library as qr
+import projected_normal as pn
 
 
 ##################################
@@ -169,7 +169,7 @@ def prnorm_mean_taylor(mu, covariance, B=None, c50=0):
           Shape (nDim)
     """
     if B is not None:
-        if qr.check_diagonal(B):
+        if pn.check_diagonal(B):
             weights = torch.diagonal(B)
             P = torch.eye(len(mu), dtype=mu.dtype, device=mu.device)
         else:
@@ -228,9 +228,9 @@ def prnorm_sm_taylor(mu, covariance, B=None, c50=0):
     # Compute the mean of numerator for each matrix A^{ij}
     muN = covariance + torch.einsum('d,b->db', mu, mu)
     # Compute denominator terms
-    muD = qr.quadratic_form_mean(mu=mu, covariance=covariance, M=B)
+    muD = pn.quadratic_form_mean(mu=mu, covariance=covariance, M=B)
     muD = muD + c50
-    varD = qr.quadratic_form_var(mu=mu, covariance=covariance, M=B)
+    varD = pn.quadratic_form_var(mu=mu, covariance=covariance, M=B)
     # Compute covariance between numerator and denominator for each
     # matrix A^{ij}
     if B is not None:
@@ -301,7 +301,7 @@ def v_var(mu, covariance, weights=None):
         weights = torch.ones(len(mu))
         Bcovariance = covariance
     # Compute the variance of X'BX
-    varX2 = 2 * qr.product_trace(Bcovariance, Bcovariance) + \
+    varX2 = 2 * pn.product_trace(Bcovariance, Bcovariance) + \
         4 * torch.einsum('i,ij,j->', mu, Bcovariance, mu*weights)
     # Note: In line above, we implement mu'*B'*Cov*B*mu. Because
     # we already multiplied Cov by B on the left, we just multiply
@@ -398,7 +398,7 @@ def prnorm_mean_iso(mu, sigma):
       - YExpected: Expected value of projected normal. Shape (nDim).
     """
     nDim = torch.as_tensor(len(mu))
-    nc = qr.non_centrality(mu, sigma)
+    nc = pn.non_centrality(mu, sigma)
     gammaln1 = gammaln((nDim+1)/2)
     gammaln2 = gammaln(nDim/2+1)
     gammaRatio = 1/(np.sqrt(2)*sigma) * torch.exp(gammaln1 - gammaln2)
@@ -551,7 +551,7 @@ def sample_prnorm(mu, covariance, nSamples, B=None, c50=0):
     # Take nSamples
     X = dist.sample([nSamples])
     # Compute normalizing quadratic form
-    if check_diagonal(B):
+    if pn.check_diagonal(B):
         D = torch.diagonal(B)
         q = torch.sqrt(torch.einsum('ni,i,in->n', X, D, X.t()) + c50)
     else:
@@ -662,7 +662,7 @@ class ProjNorm(nn.Module):
         """
         muOut = prnorm_mean_taylor(mu=self.mu, covariance=self.cov)
         smOut = prnorm_sm_taylor(mu=self.mu, covariance=self.cov)
-        covOut = qr.secondM_2_cov(secondM=smOut, mean=muOut)
+        covOut = pn.secondM_2_cov(secondM=smOut, mean=muOut)
         return muOut, covOut
 
 
