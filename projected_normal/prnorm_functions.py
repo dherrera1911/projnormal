@@ -82,7 +82,7 @@ def prnorm_logpdf(mu, covariance, y):
     n = torch.tensor(mu.size(0))
     # Compute the precision matrix
     precision = torch.linalg.inv(covariance)
-    # If y is a single point, add a dimension
+    # If y is a single point, add batch dimension
     if len(y.size()) == 1:
         y = y.unsqueeze(0)
     # Compute the terms
@@ -152,8 +152,6 @@ def prnorm_mean_taylor(mu, covariance, B=None, c50=0):
     Y = X/(X'BX + c50)^0.5, where X~N(mu, covariance). The approximation is
     based on the Taylor expansion of the function f(u,v) = u/sqrt(b*u^2 + v + c50),
     where u=X_i and v = (X'BX - B_{ii}X_i^2).
-      The approximation assumues that B is diagonal, so the problem is diagonalized
-    before the approximation is applied.
     ----------------
     Arguments:
     ----------------
@@ -681,7 +679,7 @@ class ProjNorm(nn.Module):
 
 
     def moment_match(self, muObs, covObs, nIter=100, lr=0.1, lrGamma=0.7, decayIter=10,
-            lossType="mse", nCycles=1, cycleMult=0.25, optimizerType='NAdam'):
+            lossType="mse", nCycles=1, cycleMult=0.25, covWeight=1, optimizerType='NAdam'):
         """ Optimize the parameters of the distribution to match the observed
         moments.
         ----------------
@@ -696,6 +694,7 @@ class ProjNorm(nn.Module):
           - lossType: Loss function to use. Options are "norm", "mse", and "wasserstein".
           - nCycles: Number of learning-rate cycles. Default is 1.
           - cycleMult: Multiplicative factor for learning rate in each cycle. Default is 0.25.
+          - covWeight: Weight for the covariance term in the loss. Default is 1.
           - optimizerType: Optimizer to use. Options are "SGD", "Adam", and "NAdam".
         ----------------
         Outputs:
@@ -730,7 +729,7 @@ class ProjNorm(nn.Module):
                 # Zero the gradients
                 optimizer.zero_grad()
                 muOut, covOut = self.get_moments()
-                loss = lossFun(muOut, covOut, muObs, covObs)
+                loss = lossFun(muOut, covOut*covWeight, muObs, covObs*covWeight)
                 # Compute the gradients
                 loss.backward()
                 # Optimize the parameters
