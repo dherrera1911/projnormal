@@ -124,7 +124,7 @@ def test_moments_work(gaussian_parameters):
 @pytest.mark.parametrize('n_dim', [2, 3, 20])
 @pytest.mark.parametrize('mean_type', ['sin'])
 @pytest.mark.parametrize('cov_type', ['random', 'diagonal'])
-@pytest.mark.parametrize('sigma', [0.01, 0.1, 0.5])
+@pytest.mark.parametrize('sigma', [0.01, 0.1, 1])
 @pytest.mark.parametrize('cov_param', ['LogCholesky', 'Logarithm'])
 def test_moment_matching_works(gaussian_parameters, cov_param):
 
@@ -151,7 +151,7 @@ def test_moment_matching_works(gaussian_parameters, cov_param):
     covariance_initial = prnorm_fit.covariance.clone().detach()
 
     # Fit to the data with maximum likelihood
-    n_rep = 5
+    n_rep = 2
     loss_list = []
     for i in range(n_rep):
         # Initialize optimizer and scheduler

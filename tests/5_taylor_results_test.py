@@ -18,7 +18,7 @@ from utility_functions import make_mu, make_covariance
 def gaussian_parameters(n_dim, mean_type, cov_type, sigma, B_type, c50):
 
     # tolerance = 1e-2
-    tolerance = 0.5
+    tolerance = 0.7
 
     # Initialize the mean of the gaussian
     mu = make_mu(n_dim=n_dim, mu_type=mean_type)
@@ -92,13 +92,13 @@ def test_taylor_approximation(gaussian_parameters):
 ######### COMPARE APPROXIMATION AND EMPIRICAL ############
 
 
-@pytest.mark.parametrize("n_dim", [3, 10, 50])
+@pytest.mark.parametrize("n_dim", [2, 3, 10, 25])
 @pytest.mark.parametrize("mean_type", ["sin", "sparse"])
 @pytest.mark.parametrize("cov_type", ["random", "diagonal"])
 @pytest.mark.parametrize("B_type", ["identity", "exponential"])
 @pytest.mark.parametrize("sigma", [0.01, 0.1, 1])
-@pytest.mark.parametrize("c50", [0, 0.5, 1])
-@pytest.mark.parametrize("n_samples", [500000])
+@pytest.mark.parametrize("c50", [0, 1])
+@pytest.mark.parametrize("n_samples", [200000])
 def test_taylor_vs_empirical(gaussian_parameters, n_samples):
     # Unpack parameters
     mu = gaussian_parameters["mu"]

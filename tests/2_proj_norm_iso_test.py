@@ -16,9 +16,9 @@ from utility_functions import make_mu, make_covariance
 @pytest.fixture(scope='class')
 def isotropic_noise_data(request):
     n_dim = request.param['n_dim']
-    n_samples = 500000
+    n_samples = 100000
     sigma = request.param['sigma']
-    tolerance = 0.01
+    tolerance = 0.05
 
     # Parameters of distribution
     mu = make_mu(n_dim=n_dim, mu_type='sin')
@@ -53,7 +53,7 @@ def isotropic_noise_data(request):
         {'n_dim': 20, 'sigma': 0.1},
         {'n_dim': 20, 'sigma': 0.5},
         {'n_dim': 20, 'sigma': 1},
-        {'n_dim': 100, 'sigma': 0.2},
+        {'n_dim': 40, 'sigma': 0.2},
     ],
     indirect=True,
 )

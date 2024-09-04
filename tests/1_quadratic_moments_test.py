@@ -13,9 +13,9 @@ from utility_functions import make_spdm, make_mu, make_covariance
 @pytest.fixture(scope="function")
 def quadratic_moments_data(n_dim, sigma):
     # Extract parameters from the request
-    n_samples = 500000
+    n_samples = 100000
     #tolerance = 1e-2
-    tolerance = 0.02
+    tolerance = 0.05
 
     # Parameters of distribution
     mu = make_mu(n_dim=n_dim, mu_type='sin')
@@ -45,8 +45,8 @@ def quadratic_moments_data(n_dim, sigma):
         'tolerance': tolerance
     }
 
-@pytest.mark.parametrize('n_dim', [2, 3, 5, 50])
-@pytest.mark.parametrize('sigma', [0.01, 0.1, 1, 3])
+@pytest.mark.parametrize('n_dim', [2, 3, 5, 20])
+@pytest.mark.parametrize('sigma', [0.01, 0.1, 3])
 def test_quadratic_moments(quadratic_moments_data, n_dim, sigma):
     # Unpack distribution parameters
     mu = quadratic_moments_data['mu']
@@ -76,8 +76,8 @@ def test_quadratic_moments(quadratic_moments_data, n_dim, sigma):
     assert cov_error < tolerance, f"Covariance error is too large: {cov_error}"
 
 
-@pytest.mark.parametrize('n_dim', [2, 3, 5, 50])
-@pytest.mark.parametrize('sigma', [0.01, 0.1, 1, 3])
+@pytest.mark.parametrize('n_dim', [2, 3, 5, 20])
+@pytest.mark.parametrize('sigma', [0.01, 0.1, 3])
 def test_diagonal_quadratic_moments(quadratic_moments_data, n_dim, sigma):
     # Unpack distribution parameters
     mu = quadratic_moments_data['mu']

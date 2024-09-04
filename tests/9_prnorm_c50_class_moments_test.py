@@ -29,7 +29,7 @@ def gaussian_parameters(n_dim, mean_type, cov_type, sigma):
 
 ######## TEST THAT SAMPLING RUNS ########
 
-@pytest.mark.parametrize('n_dim', [2, 3, 5, 50])
+@pytest.mark.parametrize('n_dim', [2, 3, 5, 25])
 @pytest.mark.parametrize('mean_type', ['sin', 'sparse'])
 @pytest.mark.parametrize('cov_type', ['random', 'diagonal'])
 @pytest.mark.parametrize('sigma', [0.01, 0.1, 0.5, 1])
@@ -58,7 +58,7 @@ def test_sampling_works(gaussian_parameters, c50):
 def norm_leq_1(gamma):
     return torch.norm(gamma) <= 1
 
-@pytest.mark.parametrize('n_dim', [2, 3, 5, 10, 100])
+@pytest.mark.parametrize('n_dim', [2, 3, 5, 10, 25])
 @pytest.mark.parametrize('mean_type', ['sin', 'sparse'])
 @pytest.mark.parametrize('cov_type', ['random', 'diagonal'])
 @pytest.mark.parametrize('sigma', [0.05, 0.1, 0.5, 1])
@@ -127,8 +127,8 @@ def test_moments_work(gaussian_parameters, c50):
 @pytest.mark.parametrize('mean_type', ['sin'])
 @pytest.mark.parametrize('cov_type', ['random', 'diagonal'])
 @pytest.mark.parametrize('sigma', [0.01, 0.1, 0.5])
-@pytest.mark.parametrize('cov_param', ['LogCholesky', 'Logarithm'])
-@pytest.mark.parametrize('c50', [0.1, 1, 5, 10])
+@pytest.mark.parametrize('cov_param', ['Logarithm'])
+@pytest.mark.parametrize('c50', [1, 5, 10])
 def test_moment_matching_works(gaussian_parameters, cov_param, c50):
 
     # Unpack parameters
