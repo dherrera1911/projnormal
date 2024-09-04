@@ -1,3 +1,6 @@
 # __init__.py
-from .quadratic_ratios import *
-from .prnorm_functions import *
+from .auxiliary import *
+from .qf_func import *
+from .prnorm_func import *
+from .prnorm_class import *
+
