@@ -104,3 +104,18 @@ def make_random_covariance(variances, eig):
     return covariance
 
 
+### LOSS FUNCTIONS
+
+def loss_function_mm(model, data):
+    """ Compute the distance between observed moments and model
+    moments. """
+    taylor_moments = model.moments_approx()
+    gamma_norm = torch.linalg.vector_norm(taylor_moments['gamma'] - data['gamma'])
+    sm_norm = torch.linalg.vector_norm(taylor_moments['second_moment'] - data['second_moment'])
+    return gamma_norm + sm_norm
+
+def loss_function_pdf(model, data):
+    """ Compute the log pdf of the data under the model."""
+    log_pdf = torch.mean(-model.log_pdf(data))
+    return log_pdf
+

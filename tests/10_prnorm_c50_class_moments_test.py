@@ -10,7 +10,7 @@ import pytest
 import torch
 from projected_normal.prnorm_class import ProjectedNormalC50
 from projected_normal.auxiliary import is_symmetric, is_positive_definite
-from utility_functions import make_mu, make_covariance
+from utility_functions import make_mu, make_covariance, loss_function_mm
 
 
 # Instantiate parameters
@@ -54,7 +54,8 @@ def test_sampling_works(gaussian_parameters, c50):
     assert not torch.any(norm_samples >= torch.tensor(1.0)), 'Samples norm is not smaller than 1.0'
 
 
-######### CHECK THAT THE MOMENT FUNCTIONS RUN ############
+######### CHECK THAT THE FUNCTIONS GENERATING MOMENTS RUN ############
+
 def norm_leq_1(gamma):
     return torch.norm(gamma) <= 1
 
@@ -123,11 +124,12 @@ def test_moments_work(gaussian_parameters, c50):
 
 
 ########## CHECK THAT THE MOMENT MATCHING WORKS ############
+
 @pytest.mark.parametrize('n_dim', [2, 3, 20])
 @pytest.mark.parametrize('mean_type', ['sin'])
 @pytest.mark.parametrize('cov_type', ['random', 'diagonal'])
 @pytest.mark.parametrize('sigma', [0.01, 0.1, 0.5])
-@pytest.mark.parametrize('cov_param', ['Logarithm'])
+@pytest.mark.parametrize('cov_param', ['Spectral'])
 @pytest.mark.parametrize('c50', [1, 5, 10])
 def test_moment_matching_works(gaussian_parameters, cov_param, c50):
 
@@ -166,10 +168,10 @@ def test_moment_matching_works(gaussian_parameters, cov_param, c50):
         )
 
         # Fit to the data with moment_matching
-        loss = prnorm_fit.moment_match(
-            gamma_obs=moments_taylor['gamma'],
-            psi_obs=moments_taylor['psi'],
+        loss = prnorm_fit.fit(
+            data=moments_taylor,
             optimizer=optimizer,
+            loss_function=loss_function_mm,
             scheduler=scheduler,
             n_iter=20
         )

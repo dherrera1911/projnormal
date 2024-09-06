@@ -11,7 +11,7 @@ import pytest
 import torch
 from projected_normal.prnorm_class import ProjectedNormal
 from projected_normal.auxiliary import is_symmetric, is_positive_definite
-from utility_functions import make_mu, make_covariance
+from utility_functions import make_mu, make_covariance, loss_function_pdf
 
 log = logging.getLogger(__name__)
 
@@ -106,7 +106,7 @@ def test_pdf_maximum(gaussian_parameters):
 @pytest.mark.parametrize('mean_type', ['sin'])
 @pytest.mark.parametrize('cov_type', ['random', 'diagonal'])
 @pytest.mark.parametrize('sigma', [0.01, 0.1, 0.5])
-@pytest.mark.parametrize('cov_param', ['Logarithm'])
+@pytest.mark.parametrize('cov_param', ['Logarithm', 'Spectral'])
 def test_ml_fitting_works(gaussian_parameters, cov_param):
 
     # Unpack parameters
@@ -151,8 +151,9 @@ def test_ml_fitting_works(gaussian_parameters, cov_param):
           decay_iter=5
         )
         # Fit to the data
-        loss = prnorm_fit.ml_fit(
-            y=samples, optimizer=optimizer, scheduler=scheduler, n_iter=20
+        loss = prnorm_fit.fit(
+            data=samples, optimizer=optimizer, loss_function=loss_function_pdf,
+          scheduler=scheduler, n_iter=20
         )
         loss_list.append(loss)
     loss = torch.cat(loss_list)

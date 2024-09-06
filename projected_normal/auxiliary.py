@@ -20,16 +20,34 @@ def second_moment_2_cov(second_moment, mean):
     Arguments:
     ----------------
       - second_moment: Second moment matrix.
-           (n_classes x nFilt x nFilt), or nFilt x nFilt)
-      - mean: mean matrix (n_classes x nFilt, or nFilt)
+           (n_dim x n_dim)
+      - mean: mean vector (n_dim)
     ----------------
     Outputs:
     ----------------
-      - covariance: Covariance matrices. (n_classes x nFilt x nFilt)
+      - covariance: Covariance matrix. (n_dim x n_dim)
     """
     # Get the multiplying factor to make covariance unbiased
     covariance = second_moment - torch.einsum("d,b->db", mean, mean)
     return covariance
+
+
+def cov_2_second_moment(covariance, mean):
+    """
+    Compute the second moment given the covariance and the mean vector.
+    ----------------
+    Arguments:
+    ----------------
+      - covariance: Covariance matrices. (n_dim x n_dim)
+      - mean: mean vector (n_dim)
+    ----------------
+    Outputs:
+    ----------------
+      - second_moment: Second moment matrix.
+           (n_dim x n_dim)
+    """
+    second_moment = covariance + torch.einsum("d,b->db", mean, mean)
+    return second_moment
 
 
 def cov_2_corr(covariance):
@@ -52,6 +70,7 @@ def cov_2_corr(covariance):
 #################################
 ## PROJECT TO B DIAGONAL BASIS
 #################################
+
 
 def diagonalize_B(mu, covariance, B):
     """
@@ -109,6 +128,7 @@ def project_back(mu, covariance, P):
 ## MATRIX CHECKS
 #################################
 
+
 def is_diagonal(matrix):
     """
     Check if a matrix is diagonal
@@ -153,87 +173,9 @@ def is_positive_definite(matrix):
 
 
 #################################
-## PARAMETRIZATIONS FOR CONSTRAINED PARAMETERS
-#################################
-
-# Define the sphere constraint
-class Sphere(nn.Module):
-    def forward(self, X):
-        """ Function to parametrize sphere vector S """
-        # X is any vector
-        S = X / torch.norm(X) # Unit norm vector
-        return S
-
-    def right_inverse(self, S):
-        """ Function to assign to parametrization""" 
-        return S * S.shape[0]
-
-# Define positive scalar constraint
-class PositiveScalar(nn.Module):
-    def forward(self, X):
-        # X is any scalar
-        P = torch.exp(X) # Positive number
-        return P
-
-    def right_inverse(self, P):
-        X = torch.log(P) # Log of positive number
-        return X
-
-# Define positive scalar constraint
-class SPDLogCholesky(nn.Module):
-    def __init__(self, scale=1.0, dtype=torch.float32):
-        super().__init__()
-        self.scale = torch.as_tensor(scale, dtype=dtype)
-
-    def forward(self, X):
-        # Take strictly lower triangular matrix
-        L_strict = X.tril(diagonal=-1)
-
-        # Exponentiate diagonal elements
-        D = torch.diag(torch.exp(X.diag()))
-
-        # Make the Cholesky decomposition matrix
-        L = L_strict + D
-
-        # Generate SPD matrix
-        SPD = torch.matmul(L, L.t())
-
-        return SPD
-
-    def right_inverse(self, SPD):
-        L = torch.linalg.cholesky(SPD)
-        L_strict = L.tril(diagonal=-1)
-        D = torch.diag(torch.log(L.diag()))
-        X = L_strict + D
-        return X
-
-# Define positive scalar constraint
-def symmetric(X):
-    # Use upper triangular part to construct symmetric matrix
-    return X.triu() + X.triu(1).transpose(0, 1)
-
-class SPDMatrixLog(nn.Module):
-    def __init__(self, scale=1.0, dtype=torch.float32):
-        super().__init__()
-        self.scale = torch.as_tensor(scale, dtype=dtype)
-
-    def forward(self, X):
-        # Make symmetric matrix and exponentiate
-        SPD = torch.linalg.matrix_exp(symmetric(X)) / self.scale
-        return SPD
-
-    def right_inverse(self, SPD):
-        # Take logarithm of matrix
-        dtype = SPD.dtype
-        symmetric = scipy.linalg.logm(SPD.numpy() * self.scale.numpy())
-        X = torch.triu(torch.tensor(symmetric))
-        X = torch.as_tensor(X, dtype=dtype)
-        return X
-
-
-#################################
 ## SIMPLE COMPUTATIONS
 #################################
+
 
 def non_centrality(mu, sigma):
     """
@@ -255,16 +197,16 @@ def non_centrality(mu, sigma):
     nc = mu_normalized.norm(dim=-1) ** 2
     return nc
 
+
 def product_trace(A, B):
     """
     Efficiently compute tr(A*B).
     """
     return torch.einsum("ij,ji->", A, B)
 
+
 def product_trace4(A, B, C, D):
     """
     Efficiently compute tr(A*B*C*D).
     """
     return torch.einsum("ij,jk,kl,li->", A, B, C, D)
-
-

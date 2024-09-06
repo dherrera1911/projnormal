@@ -22,8 +22,13 @@ import torch
 import torch.nn as nn
 import torch.distributions.multivariate_normal as mvn
 import projected_normal.qf_func as qf
-from projected_normal.auxiliary import non_centrality, is_symmetric, is_diagonal, product_trace, second_moment_2_cov
-
+from projected_normal.auxiliary import (
+    non_centrality,
+    is_symmetric,
+    is_diagonal,
+    product_trace,
+    second_moment_2_cov,
+)
 
 
 ##################################
@@ -63,9 +68,10 @@ def prnorm_pdf(mu, covariance, y):
 
     # Compute the PDF
     pdf = (
-        ( (2.0 * torch.pi) ** (- n_dim / 2) )
-        * 1 / torch.sqrt(torch.det(covariance))
-        * (1 / ( q3 ** (n_dim / 2.0) ) )
+        ((2.0 * torch.pi) ** (-n_dim / 2))
+        * 1
+        / torch.sqrt(torch.det(covariance))
+        * (1 / (q3 ** (n_dim / 2.0)))
         * torch.exp(0.5 * (alpha**2 - q1))
         * M
     )
@@ -137,8 +143,8 @@ def M_value(alpha, n_dim):
     M1 = torch.sqrt(torch.tensor(2.0) * torch.pi) * norm_cdf
     M2 = exp_alpha + alpha * M1
     M_vals = [M1, M2]
-    for i in range(3, n_dim+1):
-        M_next =  (i - 2) * M_vals[0] + alpha * M_vals[1]
+    for i in range(3, n_dim + 1):
+        M_next = (i - 2) * M_vals[0] + alpha * M_vals[1]
         M_vals[0] = M_vals[1].clone()
         M_vals[1] = M_next.clone()
 
@@ -167,6 +173,7 @@ def prnorm_c50_pdf(mu, covariance, c50, y):
     # Invert the projection
     pdf = torch.exp(log_pdf)
     return pdf
+
 
 def prnorm_c50_log_pdf(mu, covariance, c50, y):
     """
@@ -297,16 +304,12 @@ def prnorm_sm_taylor(mu, covariance, B_diagonal=None, c50=0):
 
     # Compute denominator terms
     denominator_mean = qf.quadratic_form_mean_diagonal(
-      mu=mu,
-      covariance=covariance,
-      M_diagonal=B_diagonal
+        mu=mu, covariance=covariance, M_diagonal=B_diagonal
     )
 
     denominator_mean = denominator_mean + c50
     denominator_var = qf.quadratic_form_var_diagonal(
-      mu=mu,
-      covariance=covariance,
-      M_diagonal=B_diagonal
+        mu=mu, covariance=covariance, M_diagonal=B_diagonal
     )
 
     # Compute covariance between numerator and denominator for each
@@ -316,12 +319,15 @@ def prnorm_sm_taylor(mu, covariance, B_diagonal=None, c50=0):
     numerator_denominator_cov = 2 * (term1 + term2 + term2.transpose(0, 1))
 
     # Compute second moment of projected normal
-    epsilon = 1e-6 # Small value to avoid division by zero
+    epsilon = 1e-6  # Small value to avoid division by zero
     second_moment = (
-        numerator_mean / denominator_mean *
-      (1 -
-       numerator_denominator_cov / (numerator_mean * denominator_mean + epsilon) +
-       denominator_var / denominator_mean**2)
+        numerator_mean
+        / denominator_mean
+        * (
+            1
+            - numerator_denominator_cov / (numerator_mean * denominator_mean + epsilon)
+            + denominator_var / denominator_mean**2
+        )
     )
 
     return second_moment
@@ -380,14 +386,15 @@ def get_v_var(mu, covariance, B_diagonal):
       - v_var : Variance of each element of V (n_dim)
     """
     # Compute the variance of the quadratic form X'BX
-    var_X2 = qf.quadratic_form_var_diagonal(mu=mu, covariance=covariance,
-                                            M_diagonal=B_diagonal)
+    var_X2 = qf.quadratic_form_var_diagonal(
+        mu=mu, covariance=covariance, M_diagonal=B_diagonal
+    )
 
     # Next, Compute the term to subtract for each X_i, with the
     # X_i-dependent elements
     term1 = (
-        2 * B_diagonal * torch.einsum("ij,ji->i", covariance * B_diagonal, covariance) -
-        B_diagonal**2 * covariance.diag()**2
+        2 * B_diagonal * torch.einsum("ij,ji->i", covariance * B_diagonal, covariance)
+        - B_diagonal**2 * covariance.diag() ** 2
     )  # Repeated terms in the trace
 
     term2 = (
@@ -522,11 +529,9 @@ def prnorm_sm_iso(mu, sigma):
     # Compute the second moment of each stimulus
     mu_normalized = mu / sigma
     # Get the outer product of the normalized stimulus, and multiply by weight
-    second_moment = torch.einsum("...d,...b,...->...db",
-                                 mu_normalized,
-                                 mu_normalized,
-                                 mean_w
-                                )
+    second_moment = torch.einsum(
+        "...d,...b,...->...db", mu_normalized, mu_normalized, mean_w
+    )
 
     # Add noise term to the diagonal
     diag_idx = torch.arange(n_dim)
@@ -617,6 +622,7 @@ def iso_sm_weights(mu, sigma):
 #### CASE WITH C50
 #############
 
+
 def invert_projection(y, c50):
     """
     Invert the projection y = X/(X'X + c50)^0.5
@@ -706,9 +712,11 @@ def invert_projection_log_det(y, c50):
     """
     n_dim = y.shape[-1]
     y_sq_norm = torch.sum(y**2, dim=-1)
-    scalar = torch.sqrt(c50 / (1 - y_sq_norm)) # Scalar from Jacobian matrix formula
-    det_1 = 1 + y_sq_norm / (1 - y_sq_norm) # Matrix determinant lemma
-    det = n_dim * torch.log(scalar) + torch.log(det_1) # Scalar multiplication determinant property
+    scalar = torch.sqrt(c50 / (1 - y_sq_norm))  # Scalar from Jacobian matrix formula
+    det_1 = 1 + y_sq_norm / (1 - y_sq_norm)  # Matrix determinant lemma
+    det = n_dim * torch.log(scalar) + torch.log(
+        det_1
+    )  # Scalar multiplication determinant property
     return det
 
 
@@ -721,6 +729,7 @@ def invert_projection_log_det(y, c50):
 ##################################
 
 ########## Change code to have B_diagonal, or not?
+
 
 def sample_prnorm(mu, covariance, n_samples, B=None, c50=0):
     """
@@ -785,4 +794,3 @@ def empirical_moments_prnorm(mu, covariance, n_samples, B=None, c50=0):
     second_moment = torch.einsum("in,nj->ij", samples.t(), samples) / n_samples
     psi = second_moment_2_cov(second_moment, gamma)
     return {"gamma": gamma, "psi": psi, "second_moment": second_moment}
-

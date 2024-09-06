@@ -22,7 +22,12 @@ import torch
 from torch.special import gammaln
 import scipy.special as sps
 import torch.distributions.multivariate_normal as mvn
-from projected_normal.auxiliary import is_diagonal, product_trace, product_trace4, non_centrality
+from projected_normal.auxiliary import (
+    is_diagonal,
+    product_trace,
+    product_trace4,
+    non_centrality,
+)
 
 
 ##################################
@@ -72,7 +77,7 @@ def quadratic_form_mean_diagonal(mu, covariance, M_diagonal):
     ----------------
       - gamma_quadratic: Expected value of the quadratic form.
     """
-    trace = torch.einsum('ii,i->', covariance, M_diagonal)
+    trace = torch.einsum("ii,i->", covariance, M_diagonal)
     mu_quadratic = torch.einsum("i,i,i->", mu, M_diagonal, mu)
 
     # Add terms
@@ -122,13 +127,14 @@ def quadratic_form_var_diagonal(mu, covariance, M_diagonal):
     """
     # Compute the trace of M*covariance*M*covariance
     covariance_scaled_columns = M_diagonal * covariance
-    #trace = product_trace(covariance_scaled_columns,
+    # trace = product_trace(covariance_scaled_columns,
     #                      covariance_scaled_columns)
-    trace = torch.einsum('i,ij,j,ji->', M_diagonal, covariance, M_diagonal, covariance)
+    trace = torch.einsum("i,ij,j,ji->", M_diagonal, covariance, M_diagonal, covariance)
 
     # Compute the quadratic form term
-    mu_quadratic = torch.einsum("d,d,dk,k,k->", mu, M_diagonal, covariance,
-                                M_diagonal, mu)
+    mu_quadratic = torch.einsum(
+        "d,d,dk,k,k->", mu, M_diagonal, covariance, M_diagonal, mu
+    )
     # Add terms
     psi_quadratic = 2 * trace + 4 * mu_quadratic
     return psi_quadratic
@@ -348,4 +354,3 @@ def empirical_covariance_quadratic_form(mu, covariance, M1, M2, n_samples):
     qf2 = torch.einsum("ni,ij,jn->n", X, M2, X.t())
     cov = torch.cov(torch.cat((qf1.unsqueeze(0), qf2.unsqueeze(0))))[0, 1]
     return cov
-

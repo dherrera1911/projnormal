@@ -10,7 +10,7 @@ import pytest
 import torch
 from projected_normal.prnorm_class import ProjectedNormal
 from projected_normal.auxiliary import is_symmetric, is_positive_definite
-from utility_functions import make_mu, make_covariance
+from utility_functions import make_mu, make_covariance, loss_function_mm
 
 
 # Instantiate parameters
@@ -121,11 +121,12 @@ def test_moments_work(gaussian_parameters):
 
 
 ######### CHECK THAT THE MOMENT MATCHING WORKS ############
+
 @pytest.mark.parametrize('n_dim', [2, 3, 20])
 @pytest.mark.parametrize('mean_type', ['sin'])
 @pytest.mark.parametrize('cov_type', ['random', 'diagonal'])
 @pytest.mark.parametrize('sigma', [0.01, 0.1, 1])
-@pytest.mark.parametrize('cov_param', ['LogCholesky', 'Logarithm'])
+@pytest.mark.parametrize('cov_param', ['LogCholesky', 'Spectral'])
 def test_moment_matching_works(gaussian_parameters, cov_param):
 
     # Unpack parameters
@@ -150,7 +151,7 @@ def test_moment_matching_works(gaussian_parameters, cov_param):
     mu_initial = prnorm_fit.mu.clone().detach()
     covariance_initial = prnorm_fit.covariance.clone().detach()
 
-    # Fit to the data with maximum likelihood
+    # Fit to the data with moment_matching
     n_rep = 2
     loss_list = []
     for i in range(n_rep):
@@ -161,14 +162,12 @@ def test_moment_matching_works(gaussian_parameters, cov_param):
           decay_iter=10
         )
 
-        # Fit to the data with moment_matching
-        loss = prnorm_fit.moment_match(
-            gamma_obs=moments_taylor['gamma'],
-            psi_obs=moments_taylor['psi'],
-            optimizer=optimizer,
-            scheduler=scheduler,
-            n_iter=20
-        )
+        # Fit
+        loss = prnorm_fit.fit(data=moments_taylor,
+                                         optimizer=optimizer,
+                                         loss_function=loss_function_mm,
+                                         scheduler=scheduler,
+                                         n_iter=20)
         loss_list.append(loss)
     loss = torch.cat(loss_list)
 

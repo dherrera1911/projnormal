@@ -16,13 +16,13 @@
 # gamma : Mean of Y
 # psi : Covariance of Y
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
-import geotorch
+import torch.linalg as LA
 import projected_normal.prnorm_func as pnf
 import projected_normal.auxiliary as pna
+import projected_normal.parametrizations as pnp
 
 
 ##################################
@@ -45,7 +45,8 @@ class ProjectedNormal(nn.Module):
       - requires_grad : Whether the parameters are learnable. Default is True.
       - dtype : Data type of the parameters. Default is torch.float32.
       - covariance_parametrization : Parametrization of the covariance matrix
-          for learnable parameters. Options are "LogCholesky" and "Logarithm".
+          for learnable parameters. Options are 'LogCholesky', 'Logarithm'
+          and 'Spectral'
     ----------------
     Attributes:
     ----------------
@@ -54,30 +55,35 @@ class ProjectedNormal(nn.Module):
     ----------------
     Methods:
     ----------------
-      - moment_match : Optimize distribution parameters to match observed moments
-      - ml_fit : Fit the distribution to observed data maximizing the log likelihood
-      - moments_approx : Compute the Taylor approximation to the mean and covariance
-                        of the projected normal.
       - log_pdf : Compute the log probability of observed points.
       - pdf: Compute the probability of observed points.
-      - sample : Sample from the distribution.
       - moments_empirical : Compute the mean and covariance the projected
                         normal by sampling from the distribution.
+      - moments_approx : Compute the Taylor approximation to the mean and covariance
+                        of the projected normal.
+      - sample : Sample from the distribution.
+      - fit: Fit the distribution to observed data. Requires a loss function
+          that determines what data is taken as input and how the loss is computed.
     """
 
     def __init__(
-      self, n_dim, mu=None, covariance=None, requires_grad=True, dtype=torch.float32,
-      covariance_parametrization="Logarithm"
+        self,
+        n_dim,
+        mu=None,
+        covariance=None,
+        requires_grad=True,
+        dtype=torch.float32,
+        covariance_parametrization="Spectral",
     ):
         super().__init__()
 
         # Initialize parameters
         if mu is None:
             mu = torch.randn(n_dim, dtype=dtype)
-            mu = mu / torch.norm(mu)
+            mu = mu / LA.vector_norm(mu)
         else:
             mu = torch.as_tensor(mu, dtype=dtype)
-            mu = mu / torch.norm(mu)
+            mu = mu / LA.vector_norm(mu)
 
         if covariance is None:
             covariance = torch.eye(n_dim, dtype=dtype)
@@ -91,16 +97,22 @@ class ProjectedNormal(nn.Module):
             self.covariance = nn.Parameter(covariance.clone())
 
             # Register mu parametrization
-            parametrize.register_parametrization(self, "mu", pna.Sphere())
+            parametrize.register_parametrization(self, "mu", pnp.Sphere())
             # Register covariance parametrization
-            scale = torch.trace(covariance) / torch.sqrt(torch.tensor(n_dim)) # Scale compared to the identity
+            scale = torch.trace(covariance) / torch.sqrt(
+                torch.tensor(n_dim)
+            )  # Scale compared to the identity
             if covariance_parametrization == "LogCholesky":
                 parametrize.register_parametrization(
-                  self, "covariance", pna.SPDLogCholesky(scale=scale, dtype=dtype)
+                    self, "covariance", pnp.SPDLogCholesky(scale=scale, dtype=dtype)
                 )
             elif covariance_parametrization == "Logarithm":
                 parametrize.register_parametrization(
-                  self, "covariance", pna.SPDMatrixLog(scale=scale, dtype=dtype)
+                    self, "covariance", pnp.SPDMatrixLog(scale=scale, dtype=dtype)
+                )
+            elif covariance_parametrization == "Spectral":
+                parametrize.register_parametrization(
+                    self, "covariance", pnp.SPDSpectral(dtype=dtype)
                 )
 
         else:
@@ -123,22 +135,22 @@ class ProjectedNormal(nn.Module):
         """
 
         gamma = pnf.prnorm_mean_taylor(
-          mu=self.mu,
-          covariance=self.covariance,
-          B_diagonal=self.B_diagonal,
-          c50=self.c50
+            mu=self.mu,
+            covariance=self.covariance,
+            B_diagonal=self.B_diagonal,
+            c50=self.c50,
         )
 
         second_moment = pnf.prnorm_sm_taylor(
-          mu=self.mu,
-          covariance=self.covariance,
-          B_diagonal=self.B_diagonal,
-          c50=self.c50
+            mu=self.mu,
+            covariance=self.covariance,
+            B_diagonal=self.B_diagonal,
+            c50=self.c50,
         )
 
         psi = pna.second_moment_2_cov(second_moment=second_moment, mean=gamma)
 
-        return {'gamma': gamma, 'psi': psi, 'second_moment': second_moment}
+        return {"gamma": gamma, "psi": psi, "second_moment": second_moment}
 
     def moments_empirical(self, n_samples=200000):
         """Compute the mean and covariance the normalized (Y) mean and covariance
@@ -222,63 +234,6 @@ class ProjectedNormal(nn.Module):
             )
         return samples_prnorm
 
-    def moment_match(self, gamma_obs, psi_obs, optimizer, loss_function=None,
-                     scheduler=None, n_iter=100):
-        """
-        Optimize the parameters of the distribution to match the observed
-        moments.
-        ----------------
-        Inputs:
-        ----------------
-          - gamma_obs : Observed mean. Shape (n).
-          - psi_obs : Observed covariance (observed). Shape (n x n).
-          - optimizer : Optimizer to use for parameter updates.
-          - loss_function: Function that computes the loss. Takes `self` and `data` as input.
-          - scheduler : Learning rate scheduler to adjust the learning rate during training. Optional.
-          - n_iter : Number of iterations. Default is 100.
-        ----------------
-        Outputs:
-        ----------------
-          - loss : Tensor of moment losses
-        """
-        # Initialize the loss function
-        if loss_function is None:
-            loss_function = loss_moment_match_norm
-        # Initialize the data
-        data = {'gamma': gamma_obs, 'psi': psi_obs}
-        # Run the training cycle
-        loss = self.run_training_cycle(data=data,
-                                       optimizer=optimizer,
-                                       loss_function=loss_function,
-                                       scheduler=scheduler,
-                                       n_iter=n_iter)
-        return loss
-
-    def ml_fit(self, y, optimizer, loss_function=None, scheduler=None, n_iter=100):
-        """
-        Find the maximum likelihood parameters given the observed data.
-        ----------------
-        Inputs:
-        ----------------
-          - y : Observed points from the distribution. Shape (n_points x n).
-          - optimizer : Optimizer to use for parameter updates.
-          - loss_function: Function that computes the loss. Takes `self` and `data` as input.
-          - scheduler : Learning rate scheduler to adjust the learning rate during training. Optional.
-          - n_iter : Number of iterations. Default is 100.
-        ----------------
-        Outputs:
-        ----------------
-          - Loss : Tensor of negative log_likelihood at each iteration.
-        """
-        if loss_function is None:
-            loss_function = loss_log_pdf
-        loss = self.run_training_cycle(data=y,
-                                       optimizer=optimizer,
-                                       loss_function=loss_function,
-                                       scheduler=scheduler,
-                                       n_iter=n_iter)
-        return loss
-
     def initialize_optimizer_and_scheduler(self, lr=0.1, lr_gamma=0.7, decay_iter=10):
         """
         Initialize the optimizer and learning rate scheduler for training.
@@ -296,16 +251,13 @@ class ProjectedNormal(nn.Module):
         """
         # Initialize the optimizer
         optimizer = torch.optim.NAdam(self.parameters(), lr=lr)
-        #optimizer = torch.optim.Adam(self.parameters(), lr=lr)
-        #optimizer = torch.optim.Adadelta(self.parameters(), lr=lr)
-        #optimizer = torch.optim.SGD(self.parameters(), lr=lr)
         # Initialize the scheduler
         scheduler = torch.optim.lr_scheduler.StepLR(
             optimizer, step_size=decay_iter, gamma=lr_gamma
         )
         return optimizer, scheduler
 
-    def run_training_cycle(self, data, optimizer, loss_function, scheduler=None, n_iter=100):
+    def fit(self, data, optimizer, loss_function, scheduler=None, n_iter=100):
         """
         Perform a training cycle to optimize the model parameters.
         ----------------
@@ -343,6 +295,7 @@ class ProjectedNormal(nn.Module):
 ## PROJECTED NORMAL WITH C50
 ##################################
 
+
 class ProjectedNormalC50(ProjectedNormal):
     """
     The ProjNormC50 class implements a projected normal distirbution
@@ -358,7 +311,7 @@ class ProjectedNormalC50(ProjectedNormal):
       - requires_grad : Whether the parameters are learnable. Default is True.
       - dtype : Data type of the parameters. Default is torch.float32.
       - covariance_parametrization : Parametrization of the covariance matrix
-          for learnable parameters. Options are "LogCholesky" and "Logarithm".
+          for learnable parameters. Options are 'LogCholesky' and 'Logarithm'.
     ----------------
     Attributes:
     ----------------
@@ -377,13 +330,24 @@ class ProjectedNormalC50(ProjectedNormal):
       - moments_empirical : Compute the mean and covariance the projected
                         normal by sampling from the distribution.
     """
+
     def __init__(
-      self, n_dim, mu=None, covariance=None, c50=None, requires_grad=True, dtype=torch.float32,
-      covariance_parametrization="Logarithm"
+        self,
+        n_dim,
+        mu=None,
+        covariance=None,
+        c50=None,
+        requires_grad=True,
+        dtype=torch.float32,
+        covariance_parametrization="Logarithm",
     ):
         super().__init__(
-          n_dim=n_dim, mu=mu, covariance=covariance, requires_grad=requires_grad, dtype=dtype,
-          covariance_parametrization=covariance_parametrization
+            n_dim=n_dim,
+            mu=mu,
+            covariance=covariance,
+            requires_grad=requires_grad,
+            dtype=dtype,
+            covariance_parametrization=covariance_parametrization,
         )
         if c50 is None:
             c50 = torch.tensor(1, dtype=dtype)
@@ -392,7 +356,7 @@ class ProjectedNormalC50(ProjectedNormal):
 
         if requires_grad:
             self.c50 = nn.Parameter(c50.clone())
-            parametrize.register_parametrization(self, "c50", pna.PositiveScalar())
+            parametrize.register_parametrization(self, "c50", pnp.SoftMax())
         else:
             self.c50 = c50
 
@@ -414,7 +378,9 @@ class ProjectedNormalC50(ProjectedNormal):
         # Make input same dtype as the parameters
         y = y.to(self.mu.dtype)
         # Compute the log probability
-        lpdf = pnf.prnorm_c50_log_pdf(mu=self.mu, covariance=self.covariance, c50=self.c50, y=y)
+        lpdf = pnf.prnorm_c50_log_pdf(
+            mu=self.mu, covariance=self.covariance, c50=self.c50, y=y
+        )
         return lpdf
 
     def pdf(self, y):
@@ -435,14 +401,16 @@ class ProjectedNormalC50(ProjectedNormal):
         # Make input same dtype as the parameters
         y = y.to(self.mu.dtype)
         # Compute the log probability
-        lpdf = pnf.prnorm_c50_pdf(mu=self.mu, covariance=self.covariance, c50=self.c50, y=y)
+        lpdf = pnf.prnorm_c50_pdf(
+            mu=self.mu, covariance=self.covariance, c50=self.c50, y=y
+        )
         return lpdf
-
 
 
 ############### Loss functions ###################
 
-def loss_moment_match_norm(model, data):
+
+def loss_mm_norm(model, data):
     """Compute the norm of the difference between the observed and predicted moments.
     ----------------
     Inputs:
@@ -455,13 +423,13 @@ def loss_moment_match_norm(model, data):
       - loss: Loss between the observed and predicted moments.
     """
     taylor_moments = model.moments_approx()
-    gamma_norm = (taylor_moments["gamma"] - data['gamma']).norm()
-    psi_norm = (taylor_moments["psi"] - data['psi']).norm()
+    gamma_norm = LA.vector_norm(taylor_moments["gamma"] - data["gamma"])
+    psi_norm = LA.matrix_norm(taylor_moments["psi"] - data["psi"])
     loss = gamma_norm + psi_norm
     return loss
 
 
-def loss_moment_match_mse(model, data):
+def loss_mm_mse(model, data):
     """Compute the mean squared error between the observed and predicted moments.
     ----------------
     Inputs:
@@ -474,9 +442,51 @@ def loss_moment_match_mse(model, data):
       - loss: Loss between the observed and predicted moments.
     """
     taylor_moments = model.moments_approx()
-    gamma_mse = (taylor_moments["gamma"] - data['gamma']).pow(2).sum()
-    psi_mse = (taylor_moments["psi"] - data['psi']).pow(2).sum()
+    gamma_mse = torch.sum((taylor_moments["gamma"] - data["gamma"]) ** 2)
+    psi_mse = torch.sum((taylor_moments["psi"] - data["psi"]) ** 2)
     loss = gamma_mse + psi_mse
+    return loss
+
+
+def loss_mm_norm_sm(model, data):
+    """Compute the norm of the difference between the observed and predicted
+    moments, using the second moment matrix instead of the covariance.
+    ----------------
+    Inputs:
+    ----------------
+      - model: ProjectedNormal model.
+      - data: Dictionary with the observed moments.
+    ----------------
+    Outputs:
+    ----------------
+      - loss: Loss between the observed and predicted moments.
+    """
+    sm_observed = pna.cov_2_second_moment(covariance=data["psi"], mean=data["gamma"])
+    taylor_moments = model.moments_approx()
+    gamma_norm = LA.vector_norm(taylor_moments["gamma"] - data["gamma"])
+    sm_norm = LA.matrix_norm(taylor_moments["second_moment"] - sm_observed)
+    loss = gamma_norm + sm_norm
+    return loss
+
+
+def loss_mm_mse_sm(model, data):
+    """Compute the mean squared error between the observed and predicted
+    moments, using the second moment matrix instead of the covariance.
+    ----------------
+    Inputs:
+    ----------------
+      - model: ProjectedNormal model.
+      - data: Dictionary with the observed moments.
+    ----------------
+    Outputs:
+    ----------------
+      - loss: Loss between the observed and predicted moments.
+    """
+    sm_observed = pna.cov_2_second_moment(covariance=data["psi"], mean=data["gamma"])
+    taylor_moments = model.moments_approx()
+    gamma_mse = torch.sum((taylor_moments["gamma"] - data["gamma"]) ** 2)
+    sm_mse = torch.sum((taylor_moments["second_moment"] - sm_observed) ** 2)
+    loss = gamma_mse + sm_mse
     return loss
 
 
@@ -494,4 +504,3 @@ def loss_log_pdf(model, data):
     """
     loss = torch.mean(-model.log_pdf(data))
     return loss
-
