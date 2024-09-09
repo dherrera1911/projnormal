@@ -104,7 +104,11 @@ class ProjectedNormal(nn.Module):
             )  # Scale compared to the identity
             if covariance_parametrization == "LogCholesky":
                 parametrize.register_parametrization(
-                    self, "covariance", pnp.SPDLogCholesky(scale=scale, dtype=dtype)
+                    self, "covariance", pnp.SPDLogCholesky(dtype=dtype)
+                )
+            if covariance_parametrization == "SoftmaxCholesky":
+                parametrize.register_parametrization(
+                    self, "covariance", pnp.SPDSoftmaxCholesky(dtype=dtype)
                 )
             elif covariance_parametrization == "Logarithm":
                 parametrize.register_parametrization(

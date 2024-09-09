@@ -7,6 +7,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.linalg as LA
 import scipy
 
 ################
@@ -18,7 +19,7 @@ class Sphere(nn.Module):
     def forward(self, X):
         """ Function to parametrize sphere vector S """
         # X is any vector
-        S = X / torch.norm(X) # Unit norm vector
+        S = X / LA.vector_norm(X) # Unit norm vector
         return S
 
     def right_inverse(self, S):
@@ -64,7 +65,7 @@ def mat_2_orthogonal(X):
     # Convert matrix to skew symmetric matrix
     S = mat_2_skew(X)
     # Convert skew symmetric matrix to orthogonal matrix
-    Q = torch.linalg.matrix_exp(S)
+    Q = LA.matrix_exp(S)
     return Q
 
 def orthogonal_2_triu(Q):
@@ -90,9 +91,8 @@ class Orthogonal(nn.Module):
 # LOG CHOLESKY PARAMETRIZATION
 
 class SPDLogCholesky(nn.Module):
-    def __init__(self, scale=1.0, dtype=torch.float32):
+    def __init__(self, dtype=torch.float32):
         super().__init__()
-        self.scale = torch.as_tensor(scale, dtype=dtype)
 
     def forward(self, X):
         # Take strictly lower triangular matrix
@@ -113,6 +113,34 @@ class SPDLogCholesky(nn.Module):
         L = torch.linalg.cholesky(SPD)
         L_strict = L.tril(diagonal=-1)
         D = torch.diag(torch.log(L.diag()))
+        X = L_strict + D
+        return X
+
+# SOFTMAX CHOLESKY PARAMETRIZATION
+
+class SPDSoftmaxCholesky(nn.Module):
+    def __init__(self, dtype=torch.float32):
+        super().__init__()
+
+    def forward(self, X):
+        # Take strictly lower triangular matrix
+        L_strict = X.tril(diagonal=-1)
+
+        # Exponentiate diagonal elements
+        D = torch.diag(softmax(X.diag()))
+
+        # Make the Cholesky decomposition matrix
+        L = L_strict + D
+
+        # Generate SPD matrix
+        SPD = torch.matmul(L, L.t())
+
+        return SPD
+
+    def right_inverse(self, SPD):
+        L = torch.linalg.cholesky(SPD)
+        L_strict = L.tril(diagonal=-1)
+        D = torch.diag(inv_softmax(L.diag()))
         X = L_strict + D
         return X
 
