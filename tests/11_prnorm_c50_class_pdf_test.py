@@ -76,7 +76,7 @@ def test_pdf_works(gaussian_parameters, c50):
 @pytest.mark.parametrize('mean_type', ['sin'])
 @pytest.mark.parametrize('cov_type', ['random', 'diagonal'])
 @pytest.mark.parametrize('sigma', [0.1, 0.5])
-@pytest.mark.parametrize('cov_param', ['Logarithm'])
+@pytest.mark.parametrize('cov_param', ['Spectral'])
 @pytest.mark.parametrize('c50', [1, 5])
 def test_ml_fitting_works(gaussian_parameters, cov_param, c50):
 
