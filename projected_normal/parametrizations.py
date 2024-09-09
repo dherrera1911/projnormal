@@ -91,7 +91,7 @@ class Orthogonal(nn.Module):
 # LOG CHOLESKY PARAMETRIZATION
 
 class SPDLogCholesky(nn.Module):
-    def __init__(self, dtype=torch.float32):
+    def __init__(self):
         super().__init__()
 
     def forward(self, X):
@@ -119,7 +119,7 @@ class SPDLogCholesky(nn.Module):
 # SOFTMAX CHOLESKY PARAMETRIZATION
 
 class SPDSoftmaxCholesky(nn.Module):
-    def __init__(self, dtype=torch.float32):
+    def __init__(self):
         super().__init__()
 
     def forward(self, X):
@@ -151,19 +151,18 @@ def symmetric(X):
     return X.triu() + X.triu(1).transpose(0, 1)
 
 class SPDMatrixLog(nn.Module):
-    def __init__(self, scale=1.0, dtype=torch.float32):
+    def __init__(self):
         super().__init__()
-        self.scale = torch.as_tensor(scale, dtype=dtype)
 
     def forward(self, X):
         # Make symmetric matrix and exponentiate
-        SPD = torch.linalg.matrix_exp(symmetric(X)) / self.scale
+        SPD = torch.linalg.matrix_exp(symmetric(X))
         return SPD
 
     def right_inverse(self, SPD):
         # Take logarithm of matrix
         dtype = SPD.dtype
-        symmetric = scipy.linalg.logm(SPD.numpy() * self.scale.numpy())
+        symmetric = scipy.linalg.logm(SPD.numpy())
         X = torch.triu(torch.tensor(symmetric))
         X = torch.as_tensor(X, dtype=dtype)
         return X
@@ -172,7 +171,7 @@ class SPDMatrixLog(nn.Module):
 # SPECTRAL DECOMPOSITION PARAMETRIZATION
 
 class SPDSpectral(nn.Module):
-    def __init__(self, dtype=torch.float32):
+    def __init__(self):
         super().__init__()
 
     def forward(self, X, Y):

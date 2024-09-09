@@ -1,4 +1,4 @@
-##################################
+#################################
 ##################################
 #
 ## PROJECTED NORMAL CLASS FOR FITTING
@@ -73,59 +73,77 @@ class ProjectedNormal(nn.Module):
         covariance=None,
         requires_grad=True,
         dtype=torch.float32,
+        device="cpu",
         covariance_parametrization="Spectral",
     ):
         super().__init__()
 
+        self.dtype = dtype
+        self.device = torch.device(device)
+        self.n_dim = n_dim
+
+        # Initialize or tidy parameters
+        distribution_parameters = self._process_inputs(mu, covariance)
+        # Register parameters
+        self._initialize_parameters(distribution_parameters, requires_grad=requires_grad)
+        # Register parameter constraints
+        if requires_grad:
+            self._register_parametrization(covariance_parametrization)
+
+    ### INITIALIZATION METHODS
+
+    def _process_inputs(self, mu, covariance):
+        """ Make sure the parameters are in the correct format and initialize
+        them if they are not provided."""
         # Initialize parameters
         if mu is None:
-            mu = torch.randn(n_dim, dtype=dtype)
-            mu = mu / LA.vector_norm(mu)
+            mu = torch.randn(self.n_dim, dtype=self.dtype, device=self.device)
+            mu = mu / torch.norm(mu)
         else:
-            mu = torch.as_tensor(mu, dtype=dtype)
-            mu = mu / LA.vector_norm(mu)
-
+            mu = torch.as_tensor(mu, dtype=self.dtype, device=self.device)
+            mu = mu / torch.norm(mu)
         if covariance is None:
-            covariance = torch.eye(n_dim, dtype=dtype)
+            covariance = torch.eye(self.n_dim, dtype=self.dtype, device=self.device)
         else:
-            covariance = torch.as_tensor(covariance, dtype=dtype)
+            covariance = torch.as_tensor(covariance, dtype=self.dtype, device=self.device)
+        return {'mu': mu, 'covariance': covariance}
 
-        # Convert to parametrized nn.Parameters
+    def _initialize_parameters(self, distribution_parameters, requires_grad=True):
+        """ Initialize the model parameters as learnable or fixed."""
+        mu = distribution_parameters['mu']
+        covariance = distribution_parameters['covariance']
+        # Register parameters
         if requires_grad:
             # Initialize parameters
             self.mu = nn.Parameter(mu.clone())
             self.covariance = nn.Parameter(covariance.clone())
-
-            # Register mu parametrization
-            parametrize.register_parametrization(self, "mu", pnp.Sphere())
-            # Register covariance parametrization
-            scale = torch.trace(covariance) / torch.sqrt(
-                torch.tensor(n_dim)
-            )  # Scale compared to the identity
-            if covariance_parametrization == "LogCholesky":
-                parametrize.register_parametrization(
-                    self, "covariance", pnp.SPDLogCholesky(dtype=dtype)
-                )
-            if covariance_parametrization == "SoftmaxCholesky":
-                parametrize.register_parametrization(
-                    self, "covariance", pnp.SPDSoftmaxCholesky(dtype=dtype)
-                )
-            elif covariance_parametrization == "Logarithm":
-                parametrize.register_parametrization(
-                    self, "covariance", pnp.SPDMatrixLog(scale=scale, dtype=dtype)
-                )
-            elif covariance_parametrization == "Spectral":
-                parametrize.register_parametrization(
-                    self, "covariance", pnp.SPDSpectral(dtype=dtype)
-                )
-
         else:
-            self.mu = mu
-            self.covariance = covariance
+            self.register_buffer('mu', mu)
+            self.register_buffer('covariance', covariance)
+        # Register fixed parameters
+        self._register_fixed_parameters()
 
-        # Set C50 and B to default constants
-        self.c50 = torch.tensor(0, dtype=dtype)
-        self.B_diagonal = torch.ones(n_dim, dtype=dtype)
+    def _register_fixed_parameters(self):
+        """ Register fixed parameters that are not used in the optimization."""
+        # Register buffer of fixed parameters that are not used in vanilla projected normal
+        self.register_buffer('c50', torch.tensor(0, dtype=self.dtype, device=self.device))
+        self.register_buffer('B_diagonal', torch.ones(self.n_dim, dtype=self.dtype, device=self.device))
+
+    def _register_parametrization(self, covariance_parametrization='Spectral'):
+        """ Register model parameters constraints."""
+        # Register mu parametrization
+        parametrize.register_parametrization(self, "mu", pnp.Sphere())
+        # Register covariance parametrization
+        if covariance_parametrization == "Spectral":
+            parametrize.register_parametrization( self, "covariance", pnp.SPDSpectral())
+        elif covariance_parametrization == "LogCholesky":
+            parametrize.register_parametrization( self, "covariance", pnp.SPDLogCholesky())
+        elif covariance_parametrization == "SoftmaxCholesky":
+            parametrize.register_parametrization( self, "covariance", pnp.SPDSoftmaxCholesky())
+        elif covariance_parametrization == "Logarithm":
+            parametrize.register_parametrization( self, "covariance", pnp.SPDMatrixLog())
+
+    ### METHODS FOR MOMENTS
 
     def moments_approx(self):
         """
@@ -179,6 +197,8 @@ class ProjectedNormal(nn.Module):
             )
         return stats_dict
 
+    ### METHODS FOR PDF
+
     def log_pdf(self, y):
         """
         Compute the log probability density of a given point under the projected
@@ -193,7 +213,7 @@ class ProjectedNormal(nn.Module):
           - lpdf : Log probability of the point. (n_points)
         """
         # Make input same dtype as the parameters
-        y = y.to(self.mu.dtype)
+        y = y.to(dtype=self.dtype, device=self.device)
         # Compute the log probability
         lpdf = pnf.prnorm_log_pdf(mu=self.mu, covariance=self.covariance, y=y)
         return lpdf
@@ -212,7 +232,7 @@ class ProjectedNormal(nn.Module):
           - pdf : Log probability of the point. (n_points)
         """
         # Make input same dtype as the parameters
-        y = y.to(self.mu.dtype)
+        y = y.to(dtype=self.dtype, device=self.device)
         # Compute the log probability
         lpdf = pnf.prnorm_pdf(mu=self.mu, covariance=self.covariance, y=y)
         return lpdf
@@ -237,6 +257,8 @@ class ProjectedNormal(nn.Module):
                 n_samples=n_samples,
             )
         return samples_prnorm
+
+    ### METHODS FOR FITTING
 
     def initialize_optimizer_and_scheduler(self, lr=0.1, lr_gamma=0.7, decay_iter=10):
         """
@@ -343,7 +365,8 @@ class ProjectedNormalC50(ProjectedNormal):
         c50=None,
         requires_grad=True,
         dtype=torch.float32,
-        covariance_parametrization="Logarithm",
+        device="cpu",
+        covariance_parametrization="Spectral",
     ):
         super().__init__(
             n_dim=n_dim,
@@ -351,18 +374,40 @@ class ProjectedNormalC50(ProjectedNormal):
             covariance=covariance,
             requires_grad=requires_grad,
             dtype=dtype,
+            device=device,
             covariance_parametrization=covariance_parametrization,
         )
-        if c50 is None:
-            c50 = torch.tensor(1, dtype=dtype)
-        else:
-            c50 = torch.as_tensor(c50, dtype=dtype)
+        # If c50 was given as an input, set the value of the already
+        # initialized c50 parameter
+        if c50 is not None:
+            self.c50 = torch.as_tensor(c50, dtype=self.dtype, device=self.device)
 
+    ### METHODS FOR INITIALIZATION
+
+    def _initialize_parameters(self, distribution_parameters, requires_grad=True):
+        """ Initialize the model parameters as learnable or fixed."""
+        # Initialize the mean and covariance as parameters
+        super()._initialize_parameters(distribution_parameters, requires_grad=requires_grad)
+        # ADD THE C50 PARAMETER
+        c50 = torch.tensor(1.0, dtype=self.dtype, device=self.device)
         if requires_grad:
             self.c50 = nn.Parameter(c50.clone())
-            parametrize.register_parametrization(self, "c50", pnp.SoftMax())
         else:
-            self.c50 = c50
+            self.register_buffer('c50', c50)
+
+    def _register_fixed_parameters(self):
+        """ Register fixed parameters that are not used in the optimization."""
+        # Remove the c50 parameter from the fixed parameters
+        self.register_buffer('B_diagonal', torch.ones(self.n_dim, dtype=self.dtype, device=self.device))
+
+    def _register_parametrization(self, covariance_parametrization='Spectral'):
+        """ Register model parameters constraints."""
+        super()._register_parametrization(covariance_parametrization=covariance_parametrization)
+        # ADD C50 PARAMETRIZATION 
+        parametrize.register_parametrization(self, "c50", pnp.SoftMax())
+
+
+    ### METHODS FOR PDF
 
     def log_pdf(self, y):
         """
@@ -380,7 +425,7 @@ class ProjectedNormalC50(ProjectedNormal):
         # Check that c50 is positive
         assert self.c50 > 0, "C50 must be positive for the pdf to be valid."
         # Make input same dtype as the parameters
-        y = y.to(self.mu.dtype)
+        y = y.to(dtype=self.dtype, device=self.device)
         # Compute the log probability
         lpdf = pnf.prnorm_c50_log_pdf(
             mu=self.mu, covariance=self.covariance, c50=self.c50, y=y
@@ -403,7 +448,7 @@ class ProjectedNormalC50(ProjectedNormal):
         # Check that c50 is positive
         assert self.c50 > 0, "C50 must be positive for the pdf to be valid."
         # Make input same dtype as the parameters
-        y = y.to(self.mu.dtype)
+        y = y.to(dtype=self.dtype, device=self.device)
         # Compute the log probability
         lpdf = pnf.prnorm_c50_pdf(
             mu=self.mu, covariance=self.covariance, c50=self.c50, y=y
