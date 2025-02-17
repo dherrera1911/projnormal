@@ -125,7 +125,7 @@ class ProjectedNormal(nn.Module):
 
     def _register_fixed_parameters(self):
         """ Register fixed parameters that are not used in the optimization."""
-        # Register buffer of fixed parameters that are not used in vanilla projected normal
+        # Register buffer of fixed parameters that are not optimized
         self.register_buffer('c50', torch.tensor(0, dtype=self.dtype, device=self.device))
         self.register_buffer('B_diagonal', torch.ones(self.n_dim, dtype=self.dtype, device=self.device))
 
