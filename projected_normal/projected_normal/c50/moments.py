@@ -1,4 +1,4 @@
-"""Probability density function (PDF) for the general projected normal distribution."""
+"""Moments for the general projected normal distribution with additive C50 term in denominagor."""
 import torch
 
 
@@ -9,20 +9,19 @@ def __dir__():
     return __all__
 
 
-def mean(mu, covariance, B_diagonal=None, c50=0):
+def mean(mu, covariance, c50=0):
     """
-    Compute the Taylor approximation to the variable Y = X/(X'BX + c50)^0.5,
-    where X~N(mu, covariance) and B is a diagonal matrix. Y has a projected
-    normal distribution with an extra constant c50 added to the denominator.
+    Compute the Taylor approximation to the variable Y = X/(X'X + c50)^0.5,
+    where X~N(mu, covariance). Y has a projected normal distribution with an extra
+    constant c50 added to the denominator.
 
     The approximation is based on the function
-    f(u,v) = u/sqrt(b*u^2 + v + c50), where u=X_i and v = (X'BX - B_{ii}X_i^2).
+    f(u,v) = u/sqrt(u^2 + v + c50), where u=X_i and v = (X'X - X_i^2).
 
     Parameters:
     ----------------
       - mu : Means of normal distributions X. (n_dim)
       - covariance : covariance of X. (n_dim x n_dim)
-      - B_diagonal : Diagonal elements of B. Default is B=I (n_dim)
       - c50 : Constant added to the denominator. Scalar
 
     Returns:
@@ -30,24 +29,22 @@ def mean(mu, covariance, B_diagonal=None, c50=0):
       Expected mean value for each projected normal. Shape (n_dim)
     """
     # Process inputs
-    if B_diagonal is None:
-        B_diagonal = torch.ones(len(mu))
     variances = torch.diagonal(covariance)
 
     ### Get moments of variable v (||X||^2 - X_i^2) required for the formula
     # Note, these don't depend on c50
-    v_mean = get_v_mean(mu=mu, covariance=covariance, B_diagonal=B_diagonal)
-    v_var = get_v_var(mu=mu, covariance=covariance, B_diagonal=B_diagonal)
-    v_cov = get_v_cov(mu=mu, covariance=covariance, B_diagonal=B_diagonal)
+    v_mean = _get_v_mean(mu=mu, covariance=covariance)
+    v_var = _get_v_var(mu=mu, covariance=covariance)
+    v_cov = _get_v_cov(mu=mu, covariance=covariance)
 
     ### Get the derivatives for the taylor approximation evaluated
     ### at the mean of u and v
-    dfdu2_val = dfdu2(u=mu, v=v_mean, b=B_diagonal, c50=c50)
-    dfdv2_val = dfdv2(u=mu, v=v_mean, b=B_diagonal, c50=c50)
-    dfdudv_val = dfdudv(u=mu, v=v_mean, b=B_diagonal, c50=c50)
+    dfdu2_val = _get_dfdu2(u=mu, v=v_mean, c50=c50)
+    dfdv2_val = _get_dfdv2(u=mu, v=v_mean, c50=c50)
+    dfdudv_val = _get_dfdudv(u=mu, v=v_mean, c50=c50)
 
     ### 0th order term
-    term0 = f0(u=mu, v=v_mean, b=B_diagonal, c50=c50)
+    term0 = f0(u=mu, v=v_mean, c50=c50)
 
     ### Compute Taylor approximation
     gamma = (
@@ -60,48 +57,41 @@ def mean(mu, covariance, B_diagonal=None, c50=0):
     return gamma
 
 
-def prnorm_sm_taylor(mu, covariance, B_diagonal=None, c50=0):
+def second_moment(mu, covariance, c50=0):
     """
     Approximate the second moment matrix of the generalized projected normal
     distribution with a Taylor expansion. The projected normal is
-    Y = X/(X'BX + c50)^0.5, where X~N(mu, covariance).
+    Y = X/(X'X + c50)^0.5, where X~N(mu, covariance).
 
     The approximation is based on the Taylor expansion of the
-    function f(n,d) = n/d, where n = X_i*X_j and d = X'BX + c50.
-    ----------------
-    Arguments:
+    function f(n,d) = n/d, where n = X_i*X_j and d = X'X + c50.
+
+    Parameters
     ----------------
       - mu : Means of normal distributions X. (n_dim)
       - covariance : Covariance of the normal distributions (n_dim x n_dim)
-      - B_diagonal : Diagonal elements of B. (n_dim) Default is B=I
       - c50 : Constant added to the denominator. Scalar
-    ----------------
-    Outputs:
-    ----------------
-      - second_moment : Second moment of each projected gaussian.
-          Shape (n_dim x n_dim)
-    """
-    # Process inputs
-    if B_diagonal is None:
-        B_diagonal = torch.ones(len(mu))
 
+    Returns
+    ----------------
+      Second moment matrix of Y
+    """
     # Compute the mean of numerator for each matrix A^{ij}
     numerator_mean = covariance + torch.einsum("d,b->db", mu, mu)
 
     # Compute denominator terms
     denominator_mean = qf.quadratic_form_mean_diagonal(
-        mu=mu, covariance=covariance, M_diagonal=B_diagonal
+        mu=mu, covariance=covariance
     )
-
     denominator_mean = denominator_mean + c50
     denominator_var = qf.quadratic_form_var_diagonal(
-        mu=mu, covariance=covariance, M_diagonal=B_diagonal
+        mu=mu, covariance=covariance
     )
 
     # Compute covariance between numerator and denominator for each
     # matrix A^{ij}
-    term1 = torch.einsum("ij,j,jk->ik", covariance, B_diagonal, covariance)
-    term2 = torch.einsum("i,j,j,jk->ik", mu, mu, B_diagonal, covariance)
+    term1 = torch.einsum("ij,jk->ik", covariance, covariance)
+    term2 = torch.einsum("i,j,jk->ik", mu, mu, covariance)
     numerator_denominator_cov = 2 * (term1 + term2 + term2.transpose(0, 1))
 
     # Compute second moment of projected normal
@@ -119,74 +109,68 @@ def prnorm_sm_taylor(mu, covariance, B_diagonal=None, c50=0):
     return second_moment
 
 
-def get_v_mean(mu, covariance, B_diagonal):
+def _get_v_mean(mu, covariance):
     """
     Compute the expected value of the auxiliary variables
-    v_i = (X'BX - B_{ii}X_i^2) used in the Taylor approximation
+    v_i = (X'X - X_i^2) used in the Taylor approximation
     of the projected normal mean, where X~N(mu, covariance).
 
     Computes the expected value of each v_i.
-    ----------------
-    Arguments:
+
+    Parameters:
     ----------------
       - mu : Mean of X. (n_dim)
       - covariance : Covariance of X. (n_dim x n_dim)
-      - B_diagonal : Diagonal elements of matrix B (n_dim).
-    ----------------
-    Outputs:
+
+    Returns:
     ----------------
       - v_mean : Expected value of V (n_dim)
     """
     # Get variances
     variances = covariance.diagonal()
-    variances = B_diagonal * variances
-
-    # Compute the expected value of X'BX
-    mean_X2 = torch.sum(variances) + torch.einsum("i,i->", mu, mu * B_diagonal)
-
+    # Compute the expected value of X'X
+    mean_X2 = torch.sum(variances) + torch.einsum("i,i->", mu, mu)
     # Compute expected value of each elements individual quadratic form
-    # i.e. E(B_i*X_i^2) vector
-    mean_Xi2 = mu**2 * B_diagonal + variances
-
-    # Subtract to get E(X'BX - B_i*X_i^2)
+    # i.e. E(X_i^2) vector
+    mean_Xi2 = mu**2 + variances
+    # Subtract to get E(X'X - X_i^2)
     v_mean = mean_X2 - mean_Xi2
 
     return v_mean
 
 
-def get_v_var(mu, covariance, B_diagonal):
+def _get_v_var(mu, covariance):
     """
     Compute the variance of the auxiliary variables
-    v_i = (X'BX - B_{ii}X_i^2) used in the Taylor approximation
+    v_i = (X'X - X_i^2) used in the Taylor approximation
     of the projected normal mean, where X~N(mu, covariance).
     Computes the variance of each v_i.
-    ----------------
-    Arguments:
+
+    Parameters:
     ----------------
       - mu : Mean of X. (n_dim)
       - covariance : Covariance of X. (n_dim x n_dim)
-      - B_diagonal : Diagonal elements of matrix B (n_dim).
-    ----------------
-    Outputs:
+
+    Returns:
     ----------------
       - v_var : Variance of each element of V (n_dim)
     """
-    # Compute the variance of the quadratic form X'BX
+    # Compute the variance of the quadratic form X'X
     var_X2 = qf.quadratic_form_var_diagonal(
-        mu=mu, covariance=covariance, M_diagonal=B_diagonal
+        mu=mu, covariance=covariance
     )
 
     # Next, Compute the term to subtract for each X_i, with the
     # X_i-dependent elements
     term1 = (
-        2 * B_diagonal * torch.einsum("ij,ji->i", covariance * B_diagonal, covariance)
-        - B_diagonal**2 * covariance.diag() ** 2
+        2 * torch.einsum("ij,ji->i", covariance, covariance)
+        - * covariance.diag() ** 2
     )  # Repeated terms in the trace
 
     term2 = (
-        2 * torch.einsum("i,ij,j->i", mu * B_diagonal, covariance, mu * B_diagonal)
-        - mu**2 * covariance.diag() * B_diagonal**2
-    )  # Repeated terms in (mu' B Cov B mu)
+        2 * torch.einsum("i,ij,j->i", mu, covariance, mu)
+        - mu**2 * covariance.diag()
+    )  # Repeated terms in (mu' Cov mu)
 
     # Subtract to get variance
     v_var = var_X2 - 2 * term1 - 4 * term2
@@ -194,67 +178,63 @@ def get_v_var(mu, covariance, B_diagonal):
     return v_var
 
 
-def get_v_cov(mu, covariance, B_diagonal):
+def _get_v_cov(mu, covariance):
     """
     Compute the covariance between the auxiliary variables
-    v_i = (X'BX - B_{ii}X_i^2) used in the Taylor approximation
+    v_i = (X'X - X_i^2) used in the Taylor approximation
     of the projected normal mean, where X~N(mu, covariance).
     Computes the covariance between each element of V and the
     corresponding X_i.
-    ----------------
-    Arguments:
+
+    Parameters:
     ----------------
       - mu : Means of normal distributions X. (n_dim)
       - covariance : covariance of X. (n_dim x n_dim)
-      - B_diagonal : Diagonal elements of matrix B (n_dim).
+
+    Returns:
     ----------------
-    Outputs:
-    ----------------
-      - v_cov : Covariance between each element of V and the
-          corresponding X_i (n_dim)
+      Covariance between each element of V and the corresponding X_i (n_dim)
     """
     v_cov = 2 * (
-        torch.einsum("i,ij->j", mu * B_diagonal, covariance)
-        - mu * B_diagonal * torch.diagonal(covariance)
+        torch.einsum("i,ij->j", mu, covariance)
+        - mu * torch.diagonal(covariance)
     )
     return v_cov
 
 
 # Derivatives of the function f(u,v) = u/sqrt(u^2 + v + c50)
 # that is used in the taylor approximation to the mean
-def f0(u, v, b, c50):
+def _get_f0(u, v, c50):
     """
-    First term of the Taylor approximation of f(u,v) = u/sqrt(b*u^2 + v),
-    evaluated at point u,v. b is a constant
+    First term of the Taylor approximation of f(u,v) = u/sqrt(u^2 + v),
+    evaluated at point u,v.
     """
-    f0 = u / torch.sqrt(b * u**2 + v + c50)
+    f0 = u / torch.sqrt(u**2 + v + c50)
     return f0
 
 
-def dfdu2(u, v, b, c50):
+def _get_dfdu2(u, v, c50):
     """
     Second derivative of f(u,v) = u/sqrt(c*u^2 + v) wrt u,
-    evaluated at point u,v. b is a constant
+    evaluated at point u,v.
     """
-    dfdu2 = -3 * b * u * (v + c50) / (b * u**2 + v + c50) ** (5 / 2)
+    dfdu2 = -3 * u * (v + c50) / (u**2 + v + c50) ** (5 / 2)
     return dfdu2
 
 
-def dfdv2(u, v, b, c50):
+def _get_dfdv2(u, v, c50):
     """
-    Second derivative of f(u,v) = u/sqrt(b*u^2 + v) wrt v,
-    evaluated at point u,v. b is a constant
+    Second derivative of f(u,v) = u/sqrt(u^2 + v) wrt v,
+    evaluated at point u,v.
     """
-    dfdv2 = 0.75 * u / (b * u**2 + v + c50) ** (5 / 2)
+    dfdv2 = 0.75 * u / (u**2 + v + c50) ** (5 / 2)
     return dfdv2
 
 
-def dfdudv(u, v, b, c50):
+def _get_dfdudv(u, v, c50):
     """
-    Mixed second derivative of f(u,v) = u/sqrt(b*u^2 + v),
-    evaluated at point u,v. b is a constant
+    Mixed second derivative of f(u,v) = u/sqrt(u^2 + v),
+    evaluated at point u,v.
     """
-    dfdudv = (b * u**2 - 0.5 * (v + c50)) / (b * u**2 + v + c50) ** (5 / 2)
+    dfdudv = (u**2 - 0.5 * (v + c50)) / (u**2 + v + c50) ** (5 / 2)
     return dfdudv
-
-
