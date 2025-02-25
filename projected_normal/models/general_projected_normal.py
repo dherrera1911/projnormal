@@ -303,6 +303,8 @@ class ProjectedNormal(nn.Module):
                     training_time.append(training_time_cycle)
                 else:
                     training_time.append(training_time_cycle + training_time[-1])
+            loss = torch.cat(loss)
+            training_time = torch.cat(training_time)
 
         elif optimizer == "LBFGS":
             loss, training_time = lbfgs_loop(
@@ -396,6 +398,8 @@ class ProjectedNormal(nn.Module):
                     training_time.append(training_time_cycle)
                 else:
                     training_time.append(training_time_cycle + training_time[-1])
+            loss = torch.cat(loss)
+            training_time = torch.cat(training_time)
 
         elif optimizer == "LBFGS":
             loss, training_time = lbfgs_loop(
