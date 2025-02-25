@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
 import projected_normal.distribution as prnorm
 from ._constraints import Sphere, SPD
-from ._optim import lbfgs_loop
+from ._optim import lbfgs_loop, nadam_loop
 
 
 __all__ = [
@@ -214,10 +214,14 @@ class ProjectedNormal(nn.Module):
     def moment_match(
         self,
         data_moments,
-        max_epochs=300,
+        max_epochs=200,
         lr=0.1,
+        optimizer="NAdam",
+        loss_fun=None,
         show_progress=True,
         return_loss=False,
+        n_cycles=3,
+        cycle_gamma=0.5,
         **kwargs,
     ):
         """
@@ -225,11 +229,11 @@ class ProjectedNormal(nn.Module):
 
         Parameters
         ----------------
-          data : dict
-            Dictionary containing the observed moments. Must contain the keys
-              - 'mean': torch.Tensor, shape (n_dim)
-              - 'covariance': torch.Tensor, shape (n_dim x n_dim)
-              - 'second_moment': torch.Tensor, shape (n_dim x n_dim)
+        data_moments : dict
+          Dictionary containing the observed moments. Must contain the keys
+            - 'mean': torch.Tensor, shape (n_dim)
+            - 'covariance': torch.Tensor, shape (n_dim x n_dim)
+            - 'second_moment': torch.Tensor, shape (n_dim x n_dim)
 
         max_epochs : int, optional
             Number of max training epochs. By default 50.
@@ -237,14 +241,30 @@ class ProjectedNormal(nn.Module):
         lr : float
             Learning rate for the optimizer. Default is 0.1.
 
+        optimizer : str
+            Optimizer to use for training. Options are 'LBFGS' and 'NAdam'.
+            Default is 'NAdam'.
+
+        loss_fun : callable
+            Loss function to use for moment matching. Default is MSE loss.
+
         show_progress : bool
             If True, show a progress bar during training. Default is True.
 
         return_loss : bool
             If True, return the loss after training. Default is False.
 
+        n_cycles : int
+            For the NAdam optimier, the number of times to run the optimization loop.
+
+        cycle_gamma : float
+            For the NAdam optimizer, the factor by which lr is reduced after each run
+            of the optimization loop.
+
         **kwargs
-            Additional keyword arguments passed to the NAdam optimizer.
+            Additional keyword arguments passed to the lbfgs_lopp or nadam_loop function.
+            For the NAdam optimizer, the parameters `gamma` and `step_size` can be passed
+            to control the learning rate schedule.
 
         Returns
         ----------------
@@ -261,17 +281,42 @@ class ProjectedNormal(nn.Module):
               "Data must contain the keys 'mean', 'covariance' and 'second_moment'."
             )
 
-        loss, training_time = lbfgs_loop(
-            model=self,
-            data=data_moments,
-            fit_type="mm",
-            max_epochs=max_epochs,
-            lr=lr,
-            atol=1e-7,
-            show_progress=show_progress,
-            return_loss=True,
-            **kwargs,
-        )
+        if optimizer == "NAdam":
+            loss = []
+            training_time = []
+            # Run the NAdam optimizer for n_cycles
+            for c in range(n_cycles):
+                lr_cycle = lr * cycle_gamma ** c
+                loss_cycle, training_time_cycle = nadam_loop(
+                    model=self,
+                    data=data_moments,
+                    fit_type="mm",
+                    max_epochs=max_epochs,
+                    lr=lr_cycle,
+                    loss_fun=loss_fun,
+                    show_progress=show_progress,
+                    return_loss=True,
+                    **kwargs,
+                )
+                loss.append(loss_cycle)
+                if c == 0:
+                    training_time.append(training_time_cycle)
+                else:
+                    training_time.append(training_time_cycle + training_time[-1])
+
+        elif optimizer == "LBFGS":
+            loss, training_time = lbfgs_loop(
+                model=self,
+                data=data_moments,
+                fit_type="mm",
+                max_epochs=max_epochs,
+                lr=lr,
+                show_progress=show_progress,
+                return_loss=True,
+                **kwargs,
+            )
+        else:
+            raise ValueError("Optimizer must be 'LBFGS' or 'NAdam'.")
         if return_loss:
             return {"loss": loss, "training_time": training_time}
 
@@ -281,8 +326,11 @@ class ProjectedNormal(nn.Module):
         y,
         max_epochs=300,
         lr=0.1,
+        optimizer="NAdam",
         show_progress=True,
         return_loss=False,
+        n_cycles=3,
+        cycle_gamma=0.5,
         **kwargs,
     ):
         """
@@ -299,11 +347,22 @@ class ProjectedNormal(nn.Module):
         lr : float
             Learning rate for the optimizer. Default is 0.1.
 
+        optimizer : str
+            Optimizer to use for training. Options are 'LBFGS' and 'NAdam'.
+            Default is 'NAdam'.
+
         show_progress : bool
             If True, show a progress bar during training. Default is True.
 
         return_loss : bool
             If True, return the loss after training. Default is False.
+
+        n_cycles : int
+            For the NAdam optimier, the number of times to run the optimization loop.
+
+        cycle_gamma : float
+            For the NAdam optimizer, the factor by which lr is reduced after each run
+            of the optimization loop.
 
         **kwargs
             Additional keyword arguments passed to the NAdam optimizer.
@@ -316,21 +375,64 @@ class ProjectedNormal(nn.Module):
         if not isinstance(y, torch.Tensor):
             raise ValueError("y must be a torch.Tensor for log-likelihood fitting.")
 
-        loss, training_time = lbfgs_loop(
-            model=self,
-            data=y,
-            fit_type="ml",
-            max_epochs=max_epochs,
-            lr=lr,
-            atol=1e-7,
-            show_progress=show_progress,
-            return_loss=True,
-            **kwargs,
-        )
+        if optimizer == "NAdam":
+            loss = []
+            training_time = []
+            # Run the NAdam optimizer for n_cycles
+            for c in range(n_cycles):
+                lr_cycle = lr * cycle_gamma ** c
+                loss_cycle, training_time_cycle = nadam_loop(
+                    model=self,
+                    data=y,
+                    fit_type="ml",
+                    max_epochs=max_epochs,
+                    lr=lr_cycle,
+                    show_progress=show_progress,
+                    return_loss=True,
+                    **kwargs,
+                )
+                loss.append(loss_cycle)
+                if c == 0:
+                    training_time.append(training_time_cycle)
+                else:
+                    training_time.append(training_time_cycle + training_time[-1])
+
+        elif optimizer == "LBFGS":
+            loss, training_time = lbfgs_loop(
+                model=self,
+                data=y,
+                fit_type="ml",
+                max_epochs=max_epochs,
+                lr=lr,
+                show_progress=show_progress,
+                return_loss=True,
+                **kwargs,
+            )
+        else:
+            raise ValueError("Optimizer must be 'LBFGS' or 'NAdam'.")
+
         if return_loss:
             return {"loss": loss, "training_time": training_time}
 
 
+    def moment_init(self, data_moments):
+        """
+        Initialize the distribution parameters using the observed moments
+        as the initial guess.
+
+        Parameters
+        ----------------
+          data : dict
+            Dictionary containing the observed moments. Must contain the keys
+              - 'mean': torch.Tensor, shape (n_dim)
+              - 'covariance': torch.Tensor, shape (n_dim x n_dim)
+              - 'second_moment': torch.Tensor, shape (n_dim x n_dim)
+        """
+        data_mean_normalized = data_moments["mean"] / torch.norm(data_moments["mean"])
+        self.mean_x = data_mean_normalized
+        self.covariance_x = data_moments["covariance"]
+
+
     def __dir__(self):
         return ["mean_x", "covariance_x", "moments", "log_pdf", "pdf",
-                "moments_empirical", "sample", "moment_match"]
+                "moments_empirical", "sample", "moment_match", "moment_init"]
