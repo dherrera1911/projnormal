@@ -6,17 +6,17 @@ import torch
 from torch import optim
 from tqdm import tqdm
 
-__all__ = ["lbfgs_loop"]
+__all__ = ["lbfgs_loop", "nadam_loop"]
 
 
 def __dir__():
     return __all__
 
 
-EPSILON = 1e-7
 STOP_EPOCHS = 3 # Consecutive epochs to stop training if loss change is below atol
 
-def euclidean_loss(momentsA, momentsB):
+
+def mse_loss(momentsA, momentsB):
     """ Compute the Euclidean distance between the observed and model moments. """
     distance_means_sq = torch.sum(
         (momentsA["mean"] - momentsB["mean"])**2
@@ -24,16 +24,8 @@ def euclidean_loss(momentsA, momentsB):
     distance_sm_sq = torch.sum(
         (momentsA["second_moment"] - momentsB["second_moment"])**2
     )
-    #distance_means = torch.sqrt(distance_means_sq + EPSILON)
-    #distance_sm = torch.sqrt(distance_sm_sq + EPSILON)
-    #distance_means = torch.sqrt(distance_means_sq)
-    #distance_sm = torch.sqrt(distance_sm_sq)
-    #distance_cov_sq = torch.sum(
-    #    (momentsA["covariance"] - momentsB["covariance"])**2
-    #)
-    #distance_cov = torch.sqrt(distance_cov_sq + EPSILON)
-    #return distance_means + distance_sm
     return distance_means_sq + distance_sm_sq
+
 
 def _mm_data_check(data):
     """ Check that data is of type expected for moment matching. """
@@ -64,10 +56,11 @@ def _ll_data_check(data, n_dim):
 def lbfgs_loop(
     model,
     data,
-    fit_type="moment_matching",
+    fit_type="mm",
     max_epochs=200,
     lr=0.1,
-    atol=1e-7,
+    atol=1e-10,
+    loss_fun=None,
     show_progress=True,
     return_loss=False,
     **kwargs,
@@ -80,11 +73,13 @@ def lbfgs_loop(
     model : Object of class ProjectedNormal or subclass
         The model used for fitting.
 
-    data_moments : dict
-        Dictionary containing the data statistics. It should contain the following keys:
+    data :
+      If fit_type is 'mm', data should be a dictionary containing the data statistics
+      in the following format:
             - 'mean': torch.Tensor of shape (n_dim).
             - 'covariance': torch.Tensor of shape (n_dim, n_dim).
             - 'second_moment': torch.Tensor of shape (n_dim, n_dim).
+      If fit_type is 'ml', data should be a torch.Tensor of shape (n_samples, n_dim).
 
     fit_type : str, optional
         Type of fitting to perform. Can be either 'mm' standing
@@ -98,7 +93,10 @@ def lbfgs_loop(
         Learning rate, by default 0.1.
 
     atol : float, optional
-        Tolerance for stopping training, by default 1e-6.
+        Tolerance for stopping training, by default 1e-10.
+
+    loss_fun : callable, optional
+        Loss function to use for moment matchin. By default None, which uses the MSE loss.
 
     show_progress : bool
         If True, show a progress bar during training. Default is True.
@@ -114,13 +112,15 @@ def lbfgs_loop(
     dict
         Dictionary containing the loss and training time at each epoch.
     """
+    if loss_fun is None:
+        loss_fun = mse_loss
+
+    # Define the closure function depending on the type of fit
     optimizer = optim.LBFGS(
         model.parameters(),
         lr=lr,
         **kwargs,
     )
-
-    # Define the closure function depending on the type of fit
     if fit_type == "mm":
         _mm_data_check(data)
         def closure():
@@ -138,6 +138,7 @@ def lbfgs_loop(
             loss.backward()
             return loss
 
+    # Initialize variables
     loss_list = []
     training_time = []
     total_start_time = time.time()
@@ -150,7 +151,6 @@ def lbfgs_loop(
     ):
         epoch_loss = optimizer.step(closure)
         epoch_time = time.time() - total_start_time
-
         loss_change = abs(prev_loss - epoch_loss.item())
 
         # Check if loss change is below atol
@@ -166,15 +166,123 @@ def lbfgs_loop(
         # Stop if loss change is below atol for 3 consecutive epochs
         if consecutive_stopping_criteria_met >= STOP_EPOCHS:
             tqdm.write(
-                f"Loss change below {atol} for {STOP_EPOCHS} consecutive epochs. Stopping training at epoch {e + 1}/{max_epochs}."
+                f"Loss change below {atol} for {STOP_EPOCHS} consecutive epochs. "
+                + f"Stopping training at epoch {e + 1}/{max_epochs}."
             )
             break
+        else:  # Executes if no break occurs
+            print(
+                f"Reached max_epochs ({max_epochs}) without meeting stopping criteria."
+                + "Consider increasing max_epochs, changing initialization or using dtype=torch.float64."
+            )
 
-    else:  # Executes if no break occurs
-        print(
-            f"Reached max_epochs ({max_epochs}) without meeting stopping criteria."
-            + "Consider increasing max_epochs, changing initialization or using dtype=torch.float64."
-        )
+    if return_loss:
+        return torch.tensor(loss_list), torch.tensor(training_time)
+    else:
+        return None
+
+
+def nadam_loop(
+    model,
+    data,
+    fit_type="mm",
+    max_epochs=200,
+    lr=0.1,
+    step_size=10,
+    gamma=0.85,
+    loss_fun=None,
+    show_progress=True,
+    return_loss=False,
+):
+    """
+    Fit the model parameters to the observed data moments using the NAdam optimizer
+    and a StepLR scheduler.
+
+    Parameters
+    ----------
+    model : ProjectedNormal (or subclass)
+        The model used for fitting.
+
+    data :
+      If fit_type is 'mm', data should be a dictionary containing the data statistics
+      in the following format:
+            - 'mean': torch.Tensor of shape (n_dim).
+            - 'covariance': torch.Tensor of shape (n_dim, n_dim).
+            - 'second_moment': torch.Tensor of shape (n_dim, n_dim).
+      If fit_type is 'ml', data should be a torch.Tensor of shape (n_samples, n_dim).
+
+    fit_type : str, optional
+        Type of fitting to perform. Can be either 'mm' standing
+        for moment-matching, or 'ml' standing for maximum-likelihood.
+        By default 'mm'.
+
+    max_epochs : int, optional
+        Maximum number of training epochs (default = 200).
+
+    lr : float, optional
+        Initial learning rate (default = 0.1).
+
+    loss_fun : callable, optional
+        Loss function to use for moment matchin. By default None, which uses the MSE loss.
+
+    step_size : int, optional
+        Period of learning rate decay in epochs (default = 10).
+
+    gamma : float, optional
+        Multiplicative factor of learning rate decay (default = 0.1).
+
+    show_progress : bool
+        If True, display a progress bar (default = True).
+
+    return_loss : bool
+        If True, return the loss values at each epoch (default = False).
+
+    Returns
+    -------
+    None or (torch.Tensor, torch.Tensor)
+        If `return_loss` is True, returns (loss_list, training_time).
+        Otherwise returns None.
+    """
+    if loss_fun is None:
+        loss_fun = mse_loss
+
+    if fit_type == "mm":
+        _mm_data_check(data)
+    elif fit_type == "ml":
+        _ll_data_check(data, model.n_dim)
+
+    # Initialize NAdam optimizer
+    optimizer = optim.NAdam(model.parameters(), lr=lr)
+    # StepLR scheduler: decay LR by gamma every `step_size` epochs
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+
+    loss_list = []
+    training_time = []
+    total_start_time = time.time()
+
+    for e in tqdm(
+        range(max_epochs), desc="Epochs", unit="epoch", disable=not show_progress
+    ):
+        # Forward pass
+        if fit_type == "mm":
+            model_moments = model.moments()
+            loss = loss_fun(model_moments, data)
+        elif fit_type == "ml":
+            log_likelihood = model.log_pdf(data)
+            loss = -torch.sum(log_likelihood)
+
+        # Backprop
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        # Scheduler step at each epoch
+        scheduler.step()
+
+        # Record loss and time
+        epoch_time = time.time() - total_start_time
+        training_time.append(epoch_time)
+        loss_list.append(loss.item())
 
     if return_loss:
         return torch.tensor(loss_list), torch.tensor(training_time)
