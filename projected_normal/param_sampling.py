@@ -42,9 +42,11 @@ def make_spdm(n_dim, eigvals='uniform', eigvecs='random'):
     if isinstance(eigvals, str):
         if eigvals == 'uniform':
             eigvals = torch.rand(n_dim) * 0.9 + 0.1
+            eigvals = eigvals / eigvals.mean()
         elif eigvals == 'exponential':
             u = torch.rand(n_dim)
             eigvals = - torch.log(u)
+            eigvals = eigvals / eigvals.mean()
         else:
             raise ValueError("Invalid eigenvalue option.")
     else:
