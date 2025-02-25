@@ -126,7 +126,7 @@ def lbfgs_loop(
         def closure():
             optimizer.zero_grad()
             model_moments = model.moments()
-            loss = euclidean_loss(model_moments, data)
+            loss = loss_fun(model_moments, data)
             loss.backward()
             return loss
     elif fit_type == "ml":
