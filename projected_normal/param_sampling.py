@@ -99,4 +99,5 @@ def make_mean(n_dim, shape='gaussian', sparsity=0.1):
         mean[indices] = 1
     else:
         raise ValueError("Invalid shape option.")
+    mean = mean / mean.norm()
     return mean
