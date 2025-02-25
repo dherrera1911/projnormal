@@ -165,7 +165,8 @@ def test_pdf(n_dim, gaussian_parameters):
 @pytest.mark.parametrize('n_dim', [2, 3, 5])
 @pytest.mark.parametrize('mean_type', ['sin'])
 @pytest.mark.parametrize('sigma', [0.5])
-def test_moment_matching(n_dim, gaussian_parameters):
+@pytest.mark.parametrize('optimizer', ['NAdam', 'LBFGS'])
+def test_moment_matching(n_dim, optimizer, gaussian_parameters):
     """Test moment matching algorithm."""
     # Unpack parameters
     mean_x = gaussian_parameters['mean_x']
@@ -183,9 +184,16 @@ def test_moment_matching(n_dim, gaussian_parameters):
       n_dim=n_dim
     )
 
+    # Initialize parameters to observed moments
+    prnorm.moment_init(moments_target)
+
     # Fit to the data with moment_matching
     loss = prnorm.moment_match(
       data_moments=moments_target,
+      optimizer=optimizer,
+      max_epochs=50,
+      n_cycles=2,
+      cycle_gamma=0.2,
       show_progress=False,
       return_loss=True,
     )
@@ -211,13 +219,21 @@ def test_moment_matching(n_dim, gaussian_parameters):
 @pytest.mark.parametrize('n_dim', [2, 3, 5])
 @pytest.mark.parametrize('mean_type', ['sin'])
 @pytest.mark.parametrize('sigma', [0.5])
-def test_maximum_likelihood(n_dim, gaussian_parameters):
+@pytest.mark.parametrize('optimizer', ['NAdam', 'LBFGS'])
+def test_maximum_likelihood(n_dim, optimizer, gaussian_parameters):
     """Test moment matching algorithm."""
     # Unpack parameters
     mean_x = gaussian_parameters['mean_x']
     covariance_x = gaussian_parameters['covariance_x']
 
     # Make observed moments
+    moments_target = png.sampling.empirical_moments(
+      mean_x=mean_x,
+      covariance_x=covariance_x,
+      n_samples=100000
+    )
+
+    # Make observed samples
     y_samples = png.sampling.sample(
       mean_x=mean_x,
       covariance_x=covariance_x,
@@ -229,11 +245,19 @@ def test_maximum_likelihood(n_dim, gaussian_parameters):
       n_dim=n_dim
     )
 
+    # Initialize parameters to observed moments
+    prnorm.moment_init(moments_target)
+
     # Fit to the data with maximum likelihood
     loss = prnorm.max_likelihood(
       y=y_samples,
+      optimizer=optimizer,
+      max_epochs=50,
+      n_cycles=2,
+      cycle_gamma=0.2,
       show_progress=False,
       return_loss=True,
+
     )
     loss = loss['loss']
 
