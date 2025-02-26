@@ -18,14 +18,22 @@ def pdf(mean_x, covariance_x, c50, y):
 
     Parameters
     ----------------
-      - mean_x : Mean of the non-projected Gaussian. Shape (n_dim).
-      - covariance_x : Covariance matrix of the non-projected Gaussian. Shape (n_dim x n_dim).
-      - c50 : Constant added to the denominator. Scalar
-      - y : Points where to evaluate the PDF. Shape (n_points x n_dim).
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      var_x : torch.Tensor, shape ()
+          Variance of X elements.
+
+      c50 : torch.Tensor, shape ()
+          Constant added to the denominator.
+
+      y : torch.Tensor, shape (n_points, n_dim)
+          Points where to evaluate the PDF.
 
     Returns
     ----------------
-      PDF evaluated at y. Shape (n_points).
+      torch.Tensor, shape (n_points)
+          PDF evaluated at each y.
     """
     lpdf = log_pdf(mean_x, covariance_x, c50, y)
     pdf = torch.exp(lpdf)
@@ -40,14 +48,22 @@ def log_pdf(mean_x, covariance_x, c50, y):
 
     Parameters
     ----------------
-      - mean_x : Mean of the non-projected Gaussian. Shape (n_dim).
-      - covariance_x : Covariance matrix of the non-projected Gaussian. Shape (n_dim x n_dim).
-      - c50 : Constant added to the denominator. Scalar
-      - y : Points where to evaluate the PDF. Shape (n_points x n_dim).
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      var_x : torch.Tensor, shape ()
+          Variance of X elements.
+
+      c50 : torch.Tensor, shape ()
+          Constant added to the denominator.
+
+      y : torch.Tensor, shape (n_points, n_dim)
+          Points where to evaluate the PDF.
 
     Returns
     ----------------
-      Log-PDF evaluated at y. Shape (n_points).
+      torch.Tensor, shape (n_points)
+          Log-PDF evaluated at each y.
     """
     # Verify that c50 is positive
     if c50 <= 0:
@@ -70,12 +86,16 @@ def _invert_projection(y, c50):
 
     Parameters
     ----------------
-      - y : Observed points in the ball. (n_points x n_dim)
-      - c50 : Constant added to the denominator. Scalar
+      y : torch.Tensor, shape (n_points, n_dim)
+          Observed points in the ball.
+
+      c50 : torch.Tensor, shape ()
+          Constant added to the denominator.
 
     Returns
     ----------------
-      Pre-projection points. (n_points x n_dim)
+      torch.Tensor, shape (n_points, n_dim)
+          Pre-projection points.
     """
     scaling = torch.sqrt(c50 / (1 - torch.sum(y**2, dim=-1)))
     X = torch.einsum("...d,...->...d", y, scaling)
@@ -86,14 +106,18 @@ def _invert_projection_jacobian_matrix(y, c50):
     """
     Compute the jacobian matrix of the inverse projection.
 
-    Parameters 
+    Parameters
     ----------------
-      - y : Observed points in the ball. (n_points x n_dim)
-      - c50 : Constant added to the denominator. Scalar
+      y : torch.Tensor, shape (n_points, n_dim)
+          Observed points in the ball.
+
+      c50 : torch.Tensor, shape ()
+          Constant added to the denominator.
 
     Returns
     ----------------
-      Jacobian matrix of the inverse projection. (n_points x n_dim x n_dim)
+      torch.Tensor, shape (n_points, n_dim, n_dim)
+          Jacobian matrix of the inverse projection.
     """
     n_dim = y.shape[-1]
     y_sq_norm = torch.sum(y**2, dim=-1)
@@ -121,12 +145,16 @@ def _invert_projection_det(y, c50):
 
     Parameters
     ----------------
-      - y : Observed points in the ball. (n_points x n_dim)
-      - c50 : Constant added to the denominator. Scalar
+      y : torch.Tensor, shape (n_points, n_dim)
+          Observed points in the ball.
+
+      c50 : torch.Tensor, shape ()
+          Constant added to the denominator.
 
     Returns
     ----------------
-      Determinant of the jacobian matrix. (n_points)
+      torch.Tensor, shape (n_points)
+          Determinant of the Jacobian matrix of the inverse projection.
     """
     log_det = _invert_projection_log_det(y, c50)
     det = torch.exp(log_det)
@@ -144,12 +172,16 @@ def _invert_projection_log_det(y, c50):
 
     Parameters
     ----------------
-      - y : Observed points in the ball. (n_points x n_dim)
-      - c50 : Constant added to the denominator. Scalar
+      y : torch.Tensor, shape (n_points, n_dim)
+          Observed points in the ball.
+
+      c50 : torch.Tensor, shape ()
+          Constant added to the denominator.
 
     Returns
     ----------------
-      - det : Determinant of the jacobian matrix. (n_points)
+      torch.Tensor, shape (n_points)
+          Log-determinant of the Jacobian matrix of the inverse projection.
     """
     n_dim = y.shape[-1]
     y_sq_norm = torch.sum(y**2, dim=-1)

@@ -17,13 +17,19 @@ def pdf(mean_x, covariance_x, y):
 
     Parameters
     ----------------
-      - mean_x : Mean of the non-projected Gaussian. Shape (n_dim).
-      - covariance_x : Covariance matrix of the non-projected Gaussian. Shape (n_dim x n_dim).
-      - y : Points where to evaluate the PDF. Shape (n_points x n_dim).
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      var_x : torch.Tensor, shape ()
+          Variance of X elements.
+
+      y : torch.Tensor, shape (n_points, n_dim)
+          Points where to evaluate the PDF.
 
     Returns
     ----------------
-      PDF evaluated at y. Shape (n_points).
+      torch.Tensor, shape (n_points)
+          PDF evaluated at each y.
     """
     lpdf = log_pdf(mean_x, covariance_x, y)
     pdf = torch.exp(lpdf)
@@ -38,13 +44,19 @@ def log_pdf(mean_x, covariance_x, y):
 
     Parameters
     ----------------
-      - mean_x : Mean of the non-projected Gaussian. Shape (n_dim).
-      - covariance_x : Covariance matrix of the non-projected Gaussian. Shape (n_dim x n_dim).
-      - y : Points where to evaluate the PDF. Shape (n_points x n_dim).
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      var_x : torch.Tensor, shape ()
+          Variance of X elements.
+
+      y : torch.Tensor, shape (n_points, n_dim)
+          Points where to evaluate the PDF.
 
     Returns
     ----------------
-      log-PDF evaluated at y. Shape (n_points).
+      torch.Tensor, shape (n_points)
+          Log-PDF evaluated at each y.
     """
     n_dim = torch.tensor(mean_x.size(0))
     # Compute the precision matrix
@@ -73,12 +85,16 @@ def _M_value(alpha, n_dim):
 
     Parameters
     ----------------
-      - alpha : Input to function M (n).
-      - n_dim : Dimension of the non-projected Gaussian.
+      alpha : torch.Tensor, shape (n_points)
+          Input to function M.
+
+      n_dim : int
+          Dimension of the non-projected Gaussian.
 
     Returns
     ----------------
-      Value of M(alpha) (n).
+      torch.Tensor, shape(n_points)
+          Value of M(alpha).
     """
     # Create a standard normal distribution
     normal_dist = torch.distributions.Normal(0, 1)
@@ -99,4 +115,3 @@ def _M_value(alpha, n_dim):
         M_vals[1] = M_next.clone()
 
     return M_vals[1]
-

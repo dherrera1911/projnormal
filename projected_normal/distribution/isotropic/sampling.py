@@ -18,13 +18,19 @@ def sample(mean_x, var_x, n_samples):
 
     Parameters:
     -----------------
-      - mean_x : Mean of X. (n_dim)
-      - var_x : Variance of X elements (Scalar)
-      - n_samples : Number of samples.
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      var_x : torch.Tensor, shape ()
+          Variance of X elements.
+
+      n_samples : int
+          Number of samples.
 
     Returns:
     -----------------
-      Samples from the projected normal. (n_samples x n_dim)
+      torch.Tensor, shape (n_samples, n_dim)
+          Samples from the projected normal.
     """
     covariance_x = var_x * torch.eye(
       len(mean_x), device=mean_x.device, dtype=mean_x.dtype
@@ -43,16 +49,25 @@ def empirical_moments(mean_x, var_x, n_samples):
 
     Parameters:
     -----------------
-      - mean_x : Mean. (n_dim)
-      - var_x : Variance of X elements (Scalar)
-      - n_samples : Number of samples.
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      var_x : torch.Tensor, shape ()
+          Variance of X elements.
+
+      n_samples : int
+          Number of samples.
 
     Returns:
     -----------------
-      Dictionary with the following keys:
-      - gamma : Mean of the projected normal. (n_dim)
-      - psi : Covariance of the projected normal. (n_dim x n_dim)
-      - second_moment : Second moment of the projected normal. (n_dim x n_dim)
+      dict
+          Dictionary with the following keys and values
+            'mean' : torch.Tensor, shape (n_dim,)
+                Mean of the projected normal.
+            'covariance' : torch.Tensor, shape (n_dim, n_dim)
+                Covariance of the projected normal.
+            'second_moment' : torch.Tensor, shape (n_dim, n_dim)
+                Second moment of the projected normal.
     """
     covariance_x = var_x * torch.eye(
       len(mean_x), device=mean_x.device, dtype=mean_x.dtype

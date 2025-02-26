@@ -21,12 +21,16 @@ def mean(mean_x, covariance_x):
 
     Parameters:
     ----------------
-      - mean_x : Means of normal distributions X. (n_dim)
-      - covariance_x : covariance of X. (n_dim x n_dim)
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      covariance_x : torch.Tensor, shape (n_dim, n_dim)
+        Covariance matrix of X elements.
 
     Returns:
     ----------------
-      Expected mean value for each projected normal. Shape (n_dim)
+      torch.Tensor, shape (n_dim,)
+          Expected value for the projected normal.
     """
     gamma = c50_moments.mean(mean_x, covariance_x)
     return gamma
@@ -43,12 +47,16 @@ def second_moment(mean_x, covariance_x):
 
     Parameters
     ----------------
-      - mean_x : Means of normal distributions X. (n_dim)
-      - covariance_x : Covariance of the normal distributions (n_dim x n_dim)
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      covariance_x : torch.Tensor, shape (n_dim, n_dim)
+        Covariance matrix of X elements.
 
     Returns
     ----------------
-      Second moment matrix of Y
+      torch.Tensor, shape (n_dim, n_dim)
+          Second moment matrix of Y
     """
     sm = c50_moments.second_moment(mean_x, covariance_x)
     return sm

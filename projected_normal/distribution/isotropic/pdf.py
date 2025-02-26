@@ -19,13 +19,19 @@ def pdf(mean_x, var_x, y):
 
     Parameters
     ----------------
-      - mean_x : Mean of the non-projected Gaussian. Shape (n_dim).
-      - var_x : Variance of the isotropic Gaussian. Shape (n_dim x n_dim).
-      - y : Points where to evaluate the PDF. Shape (n_points x n_dim).
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      var_x : torch.Tensor, shape ()
+          Variance of X elements.
+
+      y : torch.Tensor, shape (n_points, n_dim)
+          Points where to evaluate the PDF.
 
     Returns
     ----------------
-      PDF evaluated at y. Shape (n_points).
+      torch.Tensor, shape (n_points)
+          PDF evaluated at each y.
     """
     lpdf = log_pdf(mean_x, var_x, y)
     pdf = torch.exp(lpdf)
@@ -39,13 +45,19 @@ def log_pdf(mean_x, var_x, y):
 
     Parameters
     ----------------
-      - mean_x : Mean of the non-projected Gaussian. Shape (n_dim).
-      - var_x : Variance of the isotropic Gaussian. Shape (n_dim x n_dim).
-      - y : Points where to evaluate the PDF. Shape (n_points x n_dim).
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      var_x : torch.Tensor, shape ()
+          Variance of X elements.
+
+      y : torch.Tensor, shape (n_points, n_dim)
+          Points where to evaluate the PDF.
 
     Returns
     ----------------
-      log-PDF evaluated at y. Shape (n_points).
+      torch.Tensor, shape (n_points)
+          log-PDF evaluated at each y.
     """
     iso_cov = torch.eye(
       mean_x.shape[0], device=var_x.device, dtype=var_x.dtype

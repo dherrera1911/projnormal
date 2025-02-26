@@ -17,13 +17,19 @@ def sample(mean_x, covariance_x, n_samples):
 
     Parameters:
     -----------------
-      - mean_x : Mean of X. (n_dim)
-      - covariance_x : Covariance matrix of X. (n_dim x n_dim)
-      - n_samples : Number of samples.
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      covariance_x : torch.Tensor, shape (n_dim, n_dim)
+          Covariance matrix of X elements.
+
+      n_samples : int
+          Number of samples.
 
     Returns:
     -----------------
-      Samples from the general projected normal. (n_samples x n_dim)
+      torch.Tensor, shape (n_samples, n_dim)
+          Samples from the projected normal.
     """
     samples_prnorm = _c50_sampling.sample(
       mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples, c50=0
@@ -39,16 +45,25 @@ def empirical_moments(mean_x, covariance_x, n_samples):
 
     Parameters:
     -----------------
-      - mean_x : Mean. (n_dim)
-      - covariance _x: Covariance matrix. (n_dim x n_dim)
-      - n_samples : Number of samples.
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      covariance_x : torch.Tensor, shape (n_dim, n_dim)
+          Covariance matrix of X elements.
+
+      n_samples : int
+          Number of samples.
 
     Returns:
     -----------------
-      Dictionary with the following keys:
-      - gamma : Mean of the projected normal. (n_dim)
-      - psi : Covariance of the projected normal. (n_dim x n_dim)
-      - second_moment : Second moment of the projected normal. (n_dim x n_dim)
+      dict
+          Dictionary with the following keys and values
+            'mean' : torch.Tensor, shape (n_dim,)
+                Mean of the projected normal.
+            'covariance' : torch.Tensor, shape (n_dim, n_dim)
+                Covariance of the projected normal.
+            'second_moment' : torch.Tensor, shape (n_dim, n_dim)
+                Second moment of the projected normal.
     """
     moment_dict = _c50_sampling.empirical_moments(
       mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples, c50=0

@@ -21,13 +21,19 @@ def mean(mean_x, covariance_x, c50=0):
 
     Parameters:
     ----------------
-      - mean_x : Means of normal distributions X. (n_dim)
-      - covariance_x : covariance of X. (n_dim x n_dim)
-      - c50 : Constant added to the denominator. Scalar
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      covariance_x : torch.Tensor, shape (n_dim, n_dim)
+        Covariance matrix of X elements.
+
+      c50 : torch.Tensor, shape ()
+        Constant added to the denominator.
 
     Returns:
     ----------------
-      Expected mean value for each projected normal. Shape (n_dim)
+      torch.Tensor, shape (n_dim,)
+          Expected value for the projected normal.
     """
     # Process inputs
     variances = torch.diagonal(covariance_x)
@@ -69,13 +75,19 @@ def second_moment(mean_x, covariance_x, c50=0):
 
     Parameters
     ----------------
-      - mean_x : Means of normal distributions X. (n_dim)
-      - covariance_x : Covariance of the normal distributions (n_dim x n_dim)
-      - c50 : Constant added to the denominator. Scalar
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      covariance_x : torch.Tensor, shape (n_dim, n_dim)
+        Covariance matrix of X elements.
+
+      c50 : torch.Tensor, shape ()
+        Constant added to the denominator.
 
     Returns
     ----------------
-      Second moment matrix of Y
+      torch.Tensor, shape (n_dim, n_dim)
+          Second moment matrix of Y
     """
     # Compute the mean of numerator for each matrix A^{ij}
     numerator_mean = covariance_x + torch.einsum("d,b->db", mean_x, mean_x)
@@ -120,12 +132,16 @@ def _get_v_mean(mean_x, covariance_x):
 
     Parameters:
     ----------------
-      - mean_x : Mean of X. (n_dim)
-      - covariance_x : Covariance of X. (n_dim x n_dim)
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      covariance_x : torch.Tensor, shape (n_dim, n_dim)
+        Covariance matrix of X elements.
 
     Returns:
     ----------------
-      - v_mean : Expected value of V (n_dim)
+      torch.Tensor, shape (n_dim,)
+          Expected value of auxiliary variable V.
     """
     # Get variances
     variances = covariance_x.diagonal()
@@ -149,12 +165,16 @@ def _get_v_var(mean_x, covariance_x):
 
     Parameters:
     ----------------
-      - mean_x : Mean of X. (n_dim)
-      - covariance_x : Covariance of X. (n_dim x n_dim)
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      covariance_x : torch.Tensor, shape (n_dim, n_dim)
+        Covariance matrix of X elements.
 
     Returns:
     ----------------
-      - v_var : Variance of each element of V (n_dim)
+      torch.Tensor, shape (n_dim,)
+          Variance of auxiliary variable V.
     """
     # Compute the variance of the quadratic form X'X
     var_X2 = qfm.variance(
@@ -189,12 +209,16 @@ def _get_v_cov(mean_x, covariance_x):
 
     Parameters:
     ----------------
-      - mean_x : Means of normal distributions X. (n_dim)
-      - covariance_x : covariance_x of X. (n_dim x n_dim)
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      covariance_x : torch.Tensor, shape (n_dim, n_dim)
+        Covariance matrix of X elements.
 
     Returns:
     ----------------
-      Covariance between each element of V and the corresponding X_i (n_dim)
+      torch.Tensor, shape (n_dim,)
+          Covariance between each element of V and the corresponding X_i.
     """
     v_cov = 2 * (
         torch.einsum("i,ij->j", mean_x, covariance_x)

@@ -17,12 +17,16 @@ def mean(mean_x, var_x):
 
     Parameters:
     ----------------
-      - mean_x : Mean of X. (n_dim)
-      - var_x : Variance of X elements (Scalar)
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      var_x : torch.Tensor, shape ()
+          Variance of X elements.
 
     Returns:
     ----------------
-      Expected value of projected normal. Shape (n_dim).
+      torch.Tensor, shape (n_dim,)
+          Expected value of projected normal.
     """
     sigma = torch.sqrt(var_x)
     n_dim = torch.as_tensor(mean_x.shape[-1])
@@ -49,12 +53,16 @@ def second_moment(mean_x, var_x):
 
     Parameters:
     ----------------
-      - mean_x : Mean of X (n_dim)
-      - var_x : Variance of X elements (Scalar)
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      var_x : torch.Tensor, shape ()
+          Variance of X elements.
 
     Returns:
     ----------------
-      Second moment matrix of the projected normal. Shape (n_dim x n_dim)
+      torch.Tensor, shape (n_dim, n_dim)
+          Second moment matrix of the projected normal.
     """
     sigma = torch.sqrt(var_x)
     n_dim = torch.as_tensor(mean_x.shape[-1])
@@ -90,12 +98,16 @@ def batch_second_moment(mean_x, var_x):
 
     Parameters:
     ----------------
-      - mean_x : Means of normal distributions X. (n_points x n_dim)
-      - var_x : Variance of X elements (Scalar)
+      mean_x : torch.Tensor, shape (n_points, n_dim)
+          Mean of X.
+
+      var_x : torch.Tensor, shape ()
+          Variance of X elements.
 
     Returns:
     ----------------
-      Average second moment of projected gaussians. Shape (n_dim x n_dim)
+      torch.Tensor, shape (n_dim, n_dim)
+          Average second moment of projected gaussians.
     """
     sigma = torch.sqrt(var_x)
     n_points = mean_x.shape[0]
@@ -130,14 +142,20 @@ def _iso_sm_weights(mean_x, sigma):
 
     Parameters:
     ----------------
-      - mean_x : Mean of X. (n_points x n_dim)
-      - sigma : Standard deviation of the noise
+      mean_x : torch.Tensor, shape (n_dim,)
+          Mean of X.
+
+      sigma : torch.Tensor, shape ()
+          Standard deviation of the noise.
 
     Returns:
     ----------------
-      - mean_w : Weigths for the outer products of the means for
-          each random variable. (n_points)
-      - noise_w : Weights for the identity matrices. (n_points)
+      torch.Tensor, shape (n_points) 
+          Weigths for the outer products of the means for
+          each random variable.
+
+      torch.Tensor, shape (n_points)
+          Weights for the identity matrices.
     """
     n_dim = mean_x.shape[-1]
     non_centrality = torch.norm(mean_x / sigma, dim=-1) ** 2
