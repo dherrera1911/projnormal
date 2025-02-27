@@ -74,12 +74,12 @@ def lbfgs_loop(
         The model used for fitting.
 
     data :
-      If fit_type is 'mm', data should be a dictionary containing the data statistics
-      in the following format:
-            - 'mean': torch.Tensor of shape (n_dim).
-            - 'covariance': torch.Tensor of shape (n_dim, n_dim).
-            - 'second_moment': torch.Tensor of shape (n_dim, n_dim).
-      If fit_type is 'ml', data should be a torch.Tensor of shape (n_samples, n_dim).
+        If fit_type is 'mm', data should be a dictionary containing the data statistics
+        in the following format:
+              - 'mean': torch.Tensor of shape (n_dim).
+              - 'covariance': torch.Tensor of shape (n_dim, n_dim).
+              - 'second_moment': torch.Tensor of shape (n_dim, n_dim).
+        If fit_type is 'ml', data should be a torch.Tensor of shape (n_samples, n_dim).
 
     fit_type : str, optional
         Type of fitting to perform. Can be either 'mm' standing
@@ -204,12 +204,12 @@ def nadam_loop(
         The model used for fitting.
 
     data :
-      If fit_type is 'mm', data should be a dictionary containing the data statistics
-      in the following format:
-            - 'mean': torch.Tensor of shape (n_dim).
-            - 'covariance': torch.Tensor of shape (n_dim, n_dim).
-            - 'second_moment': torch.Tensor of shape (n_dim, n_dim).
-      If fit_type is 'ml', data should be a torch.Tensor of shape (n_samples, n_dim).
+        If fit_type is 'mm', data should be a dictionary containing the data statistics
+        in the following format:
+              - 'mean': torch.Tensor of shape (n_dim).
+              - 'covariance': torch.Tensor of shape (n_dim, n_dim).
+              - 'second_moment': torch.Tensor of shape (n_dim, n_dim).
+        If fit_type is 'ml', data should be a torch.Tensor of shape (n_samples, n_dim).
 
     fit_type : str, optional
         Type of fitting to perform. Can be either 'mm' standing
