@@ -5,7 +5,6 @@ import torch.nn.utils.parametrize as parametrize
 import projected_normal.distribution as prnorm
 from ._constraints import Sphere, SPD
 from ._optim import lbfgs_loop, nadam_loop
-import geotorch
 
 
 __all__ = [
@@ -85,6 +84,7 @@ class ProjectedNormal(nn.Module):
             else:
                 n_dim = mean_x.shape[0]
         self.n_dim = n_dim
+
         if mean_x is None:
             mean_x = torch.randn(self.n_dim)
         elif mean_x.shape[0] != self.n_dim:
@@ -93,12 +93,13 @@ class ProjectedNormal(nn.Module):
             covariance_x = torch.eye(self.n_dim)
         elif covariance_x.shape[0] != self.n_dim or covariance_x.shape[1] != self.n_dim:
             raise ValueError("The input covariance does not match n_dim")
+
         self.mean_x = nn.Parameter(mean_x)
         self.covariance_x = nn.Parameter(covariance_x)
         parametrize.register_parametrization(self, "mean_x", Sphere())
-        #parametrize.register_parametrization(self, "covariance_x", SPD())
-        geotorch.positive_definite(self, "covariance_x")
+        parametrize.register_parametrization(self, "covariance_x", SPD(n_dim))
         self.covariance_x = torch.eye(self.n_dim)
+
         # Add c50 as buffer set to 0 to make child models easier
         self.register_buffer("c50", torch.tensor(0), persistent=False)
 
