@@ -5,6 +5,7 @@ import torch.nn.utils.parametrize as parametrize
 import projected_normal.distribution as prnorm
 from ._constraints import Sphere, SPD
 from ._optim import lbfgs_loop, nadam_loop
+import geotorch
 
 
 __all__ = [
@@ -67,14 +68,14 @@ class ProjectedNormal(nn.Module):
         Parameters
         ------------
           n_dim : int, optional
-            Dimension of the underlying Gaussian distribution. If mean
-            and covariance are provided, this is not required.
+              Dimension of the underlying Gaussian distribution. If mean
+              and covariance are provided, this is not required.
 
           mean : torch.Tensor, shape (n_dim), optional
-            Mean of X. It is converted to unit norm. Default is random.
+              Mean of X. It is converted to unit norm. Default is random.
 
           covariance : torch.Tensor, shape (n_dim x n_dim), optional
-            Initial covariance. Default is the identity.
+              Initial covariance. Default is the identity.
         """
         super().__init__()
         # Initialize parameters
@@ -95,7 +96,9 @@ class ProjectedNormal(nn.Module):
         self.mean_x = nn.Parameter(mean_x)
         self.covariance_x = nn.Parameter(covariance_x)
         parametrize.register_parametrization(self, "mean_x", Sphere())
-        parametrize.register_parametrization(self, "covariance_x", SPD())
+        #parametrize.register_parametrization(self, "covariance_x", SPD())
+        geotorch.positive_definite(self, "covariance_x")
+        self.covariance_x = torch.eye(self.n_dim)
         # Add c50 as buffer set to 0 to make child models easier
         self.register_buffer("c50", torch.tensor(0), persistent=False)
 
@@ -108,8 +111,8 @@ class ProjectedNormal(nn.Module):
         Returns
         ---------
         dict
-          Dictionary containing the mean, covariance and second moment
-          of the projected normal.
+            Dictionary containing the mean, covariance and second moment
+            of the projected normal.
         """
         gamma = prnorm.c50.moments.mean(
             mean_x=self.mean_x,
@@ -133,8 +136,8 @@ class ProjectedNormal(nn.Module):
         Returns
         ----------------
         dict
-          Dictionary containing the mean, covariance and second moment
-          of the projected normal.
+            Dictionary containing the mean, covariance and second moment
+            of the projected normal.
         """
         with torch.no_grad():
             stats_dict = prnorm.c50.sampling.empirical_moments(
@@ -150,12 +153,12 @@ class ProjectedNormal(nn.Module):
         """
         Compute the log pdf at points y under the projected normal distribution.
 
-        Parameters 
+        Parameters
         ----------------
           y : torch.Tensor, shape (n_points x n_dim)
-              Points to evaluate
+              Points to evaluate the log pdf.
 
-        Outputs:
+        Returns
         ----------------
           torch.Tensor, shape (n_points)
               Log PDF of the point. (n_points)
@@ -172,15 +175,15 @@ class ProjectedNormal(nn.Module):
         """
         Compute the pdf at points y under the projected normal distribution.
 
-        Parameters 
+        Parameters
         ----------------
           y : torch.Tensor, shape (n_points x n_dim)
-              Points to evaluate
+              Points to evaluate the pdf.
 
-        Outputs:
+        Returns
         ----------------
           torch.Tensor, shape (n_points)
-              PDF of the point. (n_points)
+              PDF of the point.
         """
         pdf = prnorm.general.pdf.pdf(
             mean_x=self.mean_x,
@@ -192,14 +195,16 @@ class ProjectedNormal(nn.Module):
 
     def sample(self, n_samples):
         """Sample from the distribution.
+
+        Parameters
         ----------------
-        Inputs:
+          n_samples : int
+              Number of samples to draw.
+
+        Returns
         ----------------
-          - n_samples : Number of samples to draw.
-        ----------------
-        Outputs:
-        ----------------
-          - samples_prnorm : Samples from the distribution. Shape (n_samples x n).
+          torch.Tensor, shape (n_samples x n_dim)
+              Samples from the distribution.
         """
         with torch.no_grad():
             samples = prnorm.c50.sampling.sample(
@@ -269,7 +274,7 @@ class ProjectedNormal(nn.Module):
         Returns
         ----------------
         dict
-          Dictionary containing the loss and training time.
+            Dictionary containing the loss and training time.
         """
         # Check data_moments is a dictionary
         if not isinstance(data_moments, dict):
@@ -372,7 +377,7 @@ class ProjectedNormal(nn.Module):
         Returns
         ----------------
         dict
-          Dictionary containing the loss and training time.
+            Dictionary containing the loss and training time.
         """
         if not isinstance(y, torch.Tensor):
             raise ValueError("y must be a torch.Tensor for log-likelihood fitting.")
@@ -422,7 +427,7 @@ class ProjectedNormal(nn.Module):
     def moment_init(self, data_moments):
         """
         Initialize the distribution parameters using the observed moments
-        as the initial guess.
+        as the initial guess (making sure the mean is normalized).
 
         Parameters
         ----------------
