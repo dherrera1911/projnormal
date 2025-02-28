@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch.nn.utils.parametrizations import orthogonal
 
-__all__ = ["Sphere", "SoftMax", "SPD"]
+__all__ = ["Sphere", "SoftMax"]
 
 
 def __dir__():
@@ -114,54 +114,3 @@ class SoftMax(nn.Module):
             Scalar.
         """
         return _inv_softmax(P)
-
-
-################
-# SYMMETRIC POSITIVE DEFINITE MATRIX PARAMETRIZATION
-################
-
-
-class SPD(nn.Module):
-    """Constrains the matrix to be symmetric positive definite."""
-
-
-    def __init__(self, n_dim):
-        super().__init__()
-        self.ortho = nn.Parameter(torch.eye(n_dim))
-        orthogonal(self, "ortho")
-        self.ortho = torch.eye(n_dim)
-
-
-    def forward(self, Y):
-        """
-        Transform vectors X and Y, parametrizing the orthogonal matrix
-        of eigenvectors and the positive eigenvalues respectively
-        to a symmetric positive definite matrix.
-
-        Parameters
-        ----------
-        Y : torch.Tensor. Shape (n_dim)
-            Vector with values to be turned into eigenvalues.
-
-        Returns
-        -------
-        torch.Tensor
-            Symmetric positive definite matrix.
-        """
-        # Turn vector Y into positive vector
-        eigvals = _softmax(Y)
-        # Generate SPD matrix
-        SPD = torch.einsum(
-          'ij,j,jk->ik', self.ortho, eigvals, self.ortho.t()
-        )
-        return SPD
-
-
-    def right_inverse(self, SPD):
-        # Take spectral decomposition of matrix
-        eigvals, ortho = torch.linalg.eigh(SPD)
-        # Update orthogonal matrix
-        self.ortho = ortho
-        # Convert positive vector to vector
-        Y = _inv_softmax(eigvals)
-        return Y

@@ -3,7 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
 import projnormal.distribution as prnorm
-from ._constraints import Sphere, SPD
+import geotorch
+from ._constraints import Sphere
 from ._optim import lbfgs_loop, nadam_loop
 
 
@@ -97,7 +98,7 @@ class ProjectedNormal(nn.Module):
         self.mean_x = nn.Parameter(mean_x)
         self.covariance_x = nn.Parameter(covariance_x)
         parametrize.register_parametrization(self, "mean_x", Sphere())
-        parametrize.register_parametrization(self, "covariance_x", SPD(n_dim))
+        geotorch.positive_definite(self, "covariance_x")
         self.covariance_x = torch.eye(self.n_dim)
 
         # Add c50 as buffer set to 0 to make child models easier

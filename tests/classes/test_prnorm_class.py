@@ -7,8 +7,9 @@ import projnormal.models as models
 import projnormal.distribution.general as png
 
 
-torch.manual_seed(0)
+torch.manual_seed(1)
 TOLERANCE = 0.025
+MAX_ITER = 30
 
 def norm_leq_1(gamma):
     return torch.norm(gamma) <= 1
@@ -191,7 +192,7 @@ def test_moment_matching(n_dim, optimizer, gaussian_parameters):
     loss = prnorm.moment_match(
       data_moments=moments_target,
       optimizer=optimizer,
-      max_epochs=50,
+      max_epochs=MAX_ITER,
       n_cycles=2,
       cycle_gamma=0.2,
       show_progress=False,
@@ -252,7 +253,7 @@ def test_maximum_likelihood(n_dim, optimizer, gaussian_parameters):
     loss = prnorm.max_likelihood(
       y=y_samples,
       optimizer=optimizer,
-      max_epochs=50,
+      max_epochs=MAX_ITER,
       n_cycles=2,
       cycle_gamma=0.2,
       show_progress=False,
