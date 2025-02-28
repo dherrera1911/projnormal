@@ -1,6 +1,6 @@
 """Approximation to the moments of the general projected normal distribution with additive C50 term in denominagor."""
 import torch
-import projected_normal.quadratic_forms.moments as qfm
+import projnormal.quadratic_forms.moments as qfm
 
 
 __all__ = ["mean", "second_moment"]

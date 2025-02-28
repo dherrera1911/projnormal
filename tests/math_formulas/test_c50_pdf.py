@@ -1,8 +1,8 @@
 """Test the c50 PDF implementation in the projected normal distribution."""
 import pytest
 import torch
-import projected_normal.distribution.c50 as pnc
-import projected_normal.param_sampling as par_samp
+import projnormal.distribution.c50 as pnc
+import projnormal.param_sampling as par_samp
 
 torch.manual_seed(1)
 

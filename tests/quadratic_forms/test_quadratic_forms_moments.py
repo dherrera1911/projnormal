@@ -1,8 +1,8 @@
 """Tests for quadratic moments formulas of quadratic forms of random variables."""
 import pytest
 import torch
-import projected_normal.quadratic_forms as qf
-import projected_normal.param_sampling as par_samp
+import projnormal.quadratic_forms as qf
+import projnormal.param_sampling as par_samp
 
 @pytest.fixture(scope="function")
 def quadratic_moments_data(n_dim, sigma):

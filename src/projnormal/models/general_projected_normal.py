@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
-import projected_normal.distribution as prnorm
+import projnormal.distribution as prnorm
 from ._constraints import Sphere, SPD
 from ._optim import lbfgs_loop, nadam_loop
 

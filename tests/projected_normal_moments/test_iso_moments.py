@@ -2,8 +2,8 @@
 
 import pytest
 import torch
-import projected_normal.distribution.isotropic as iso
-import projected_normal.param_sampling as par_samp
+import projnormal.distribution.isotropic as iso
+import projnormal.param_sampling as par_samp
 
 
 def relative_error(x, y):

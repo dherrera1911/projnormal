@@ -1,10 +1,10 @@
 """Test the Taylor approximation to projected normal moments"""
 import pytest
 import torch
-import projected_normal.param_sampling as par_samp
-import projected_normal.matrix_checks as checks
-import projected_normal.models as models
-import projected_normal.distribution.general as png
+import projnormal.param_sampling as par_samp
+import projnormal.matrix_checks as checks
+import projnormal.models as models
+import projnormal.distribution.general as png
 
 
 torch.manual_seed(0)

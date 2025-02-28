@@ -1,8 +1,8 @@
 """Test the formulas of the Taylor approximation to the moments."""
 import pytest
 import torch
-import projected_normal.distribution.c50 as pnc
-import projected_normal.param_sampling as par_samp
+import projnormal.distribution.c50 as pnc
+import projnormal.param_sampling as par_samp
 
 
 def relative_error(x, y):

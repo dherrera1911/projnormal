@@ -1,9 +1,9 @@
 """Test the Taylor approximation to projected normal moments"""
 import pytest
 import torch
-import projected_normal.distribution.c50 as pnc
-import projected_normal.param_sampling as par_samp
-import projected_normal.matrix_checks as checks
+import projnormal.distribution.c50 as pnc
+import projnormal.param_sampling as par_samp
+import projnormal.matrix_checks as checks
 
 torch.manual_seed(0)
 TOLERANCE = 0.04

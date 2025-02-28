@@ -2,9 +2,9 @@
 import time
 import pytest
 import torch
-import projected_normal.distribution.c50 as pnc
-import projected_normal.param_sampling as par_samp
-import projected_normal.quadratic_forms as qf
+import projnormal.distribution.c50 as pnc
+import projnormal.param_sampling as par_samp
+import projnormal.quadratic_forms as qf
 
 
 def v_moments_naive(mean_x, covariance_x, method='analytic'):
