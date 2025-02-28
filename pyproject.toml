@@ -13,7 +13,7 @@ description = "A PyTorch implementation of the Projected Normal distribution wit
 readme = "README.md"
 license = {text = "MIT License"}
 
-dependencies = ["torch>=2.0", "tqdm>=4.29", "scipy"]
+dependencies = ["torch>=2.0", "tqdm>=4.29", "scipy", "geotorch"]
 
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
