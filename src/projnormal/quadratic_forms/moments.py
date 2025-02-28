@@ -2,7 +2,6 @@
 
 import torch
 import torch.special as spt
-import scipy.special as sps
 
 __all__ = [
   "mean",
@@ -205,76 +204,6 @@ def qf_linear_covariance(mean_x, covariance_x, M, b):
     """
     cov_quadratic = 2 * torch.einsum("i,ij,jk,k->", mean_x, M, covariance_x, b)
     return cov_quadratic
-
-
-def non_central_x2_moments(mean_x, sigma_x, s):
-    """
-    Compute the s-th moment of y=X'X where X ~ N(mean_x, sigma_X^2 I) (y is a non-central chi-square distribution).
-
-    Parameters
-    ----------------
-      mean_x : torch.Tensor, shape (n_dim,)
-        Mean of normal distribution X.
-
-      sigma_x : torch.Tensor, shape ()
-        Standard deviation of isotropic noise.
-
-      s : int
-        Order of the moment to compute.
-
-    Returns
-    ----------------
-      torch.Tensor, shape ()
-          s-th moment of X'X.
-    """
-    n_dim = torch.as_tensor(len(mean_x))
-    non_centrality = torch.norm(mean_x / sigma_x, dim=-1) ** 2
-    if s == 1:
-        moment = (non_centrality + n_dim) * sigma_x**2
-    elif s == 2:
-        moment = (
-          n_dim**2 + 2 * n_dim + 4 * non_centrality + non_centrality**2 + 2 * n_dim * non_centrality
-        ) * sigma_x**4
-    else:
-        # Get gamma and hyp1f1 values
-        hyp_val = sps.hyp1f1(n_dim / 2 + s, n_dim / 2, non_centrality / 2)
-        gammaln1 = spt.gammaln(n_dim / 2 + s)
-        gammaln2 = spt.gammaln(n_dim / 2)
-        gamma_ratio = (
-          2**s / torch.exp(non_centrality / 2)
-        ) * torch.exp(gammaln1 - gammaln2)
-        moment = (gamma_ratio * hyp_val) * (sigma_x ** (s * 2))
-    return moment
-
-
-def inverse_non_central_x_mean(mean_x, sigma_x):
-    """
-    Compute the expected value of 1/||X|| where X ~ N(mean_x, sigma_x^2 I) (||X|| has a non-chentral chi distribution).
-
-    Parameters
-    ----------------
-      mean_x : torch.Tensor, shape (n_dim,)
-        Mean of normal distribution X.
-
-      sigma_x : torch.Tensor, shape ()
-        Standard deviation of isotropic noise.
-
-    Returns
-    ----------------
-      torch.Tensor, shape ()
-        Expected value of 1/||X||
-    """
-    n_dim = torch.as_tensor(len(mean_x))
-    non_centrality = torch.norm(mean_x / sigma_x, dim=-1) ** 2
-    # Corresponding hypergeometric function values
-    hyp_val = sps.hyp1f1(1 / 2, n_dim / 2, - non_centrality / 2)
-    gammaln1 = spt.gammaln((n_dim - 1) / 2)
-    gammaln2 = spt.gammaln(n_dim / 2)
-    gamma_ratio = (
-      1 / torch.sqrt(torch.as_tensor(2))
-    ) * torch.exp(gammaln1 - gammaln2)
-    gamma_invncx = (gamma_ratio * hyp_val) / sigma_x  # This is a torch tensor
-    return gamma_invncx
 
 
 def _product_trace(A, B):
