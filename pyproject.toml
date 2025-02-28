@@ -1,0 +1,165 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "projnormal"
+dynamic = ["version"]
+requires-python = ">= 3.9"
+authors = [
+  {name = "Daniel Herrera-Esposito", email = "dherrera1911@gmail.com"}
+]
+description = "A PyTorch implementation of the Projected Normal distribution with fitting capabilities."
+readme = "README.md"
+license = {text = "MIT License"}
+
+dependencies = ["torch>=2.0", "tqdm>=4.29"]
+
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Science/Research",
+]
+
+keywords = ['Statistics', 'Geometry', 'Sphere', 'Hypersphere', 'Angular statistics', 'PyTorch']
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=5.1.2",
+    'pytest-cov',
+    'pytest-xdist',
+]
+
+# Copied from plenoptic
+docs = [
+     'sphinx',
+     'myst-nb',
+     # fix sphinx 7 incompatibility issue
+     'sphinx_rtd_theme>=1.3.0rc1',
+     'numpydoc',
+     'nbsphinx',
+     'nbsphinx_link',
+     'sphinxcontrib-apidoc',
+     'sphinx-autodoc-typehints',
+     # because of this issue:
+     # https://nbsphinx.readthedocs.io/en/0.6.0/installation.html#Pygments-Lexer-for-Syntax-Highlighting
+     'ipython',
+     'sphinx-copybutton',
+     'sphinxemoji',
+     'sphinx-inline-tabs',
+     'docutils>=0.18.1,<0.21',
+]
+
+test = [
+    'pytest>=5.1.2',
+    'pytest-cov',
+    'pytest-xdist',
+]
+
+[project.urls]
+Repository = "https://github.com/dherrera1911/projnormal"
+Source = "https://github.com/dherrera1911/projnormal"
+"Bug Reports" = "https://github.com/dherrera1911/projnormal/issues"
+
+
+[tool.hatch.version]
+source = "vcs"
+style = "pep440"  # or another style that doesn't produce local versions
+
+
+[tool.hatch.version.vcs]
+local_scheme = "no-local"
+unreleased_scheme = "dev"
+
+
+[tool.pytest.ini_options]
+addopts = "--cov=projnormal --cov-report term-missing -n auto"
+testpaths = ["tests"]
+
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+
+[tool.ruff]
+extend-include = ["*.ipynb"]
+src = ["src", "tests"]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".github",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+    "docs",
+    ]
+
+# Set the maximum line length (same as Black)
+line-length = 88
+
+indent-width = 4 # same as Black
+
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes: basic static analzsis for common errors like undefined names
+    # and missing imports.
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    "D",
+]
+ignore = ["SIM105", "D205", "E501"]
+
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
