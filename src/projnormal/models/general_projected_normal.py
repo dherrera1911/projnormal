@@ -96,10 +96,10 @@ class ProjectedNormal(nn.Module):
             raise ValueError("The input covariance does not match n_dim")
 
         self.mean_x = nn.Parameter(mean_x)
-        self.covariance_x = nn.Parameter(covariance_x)
+        self.covariance_x = nn.Parameter(covariance_x.clone())
         parametrize.register_parametrization(self, "mean_x", Sphere())
         geotorch.positive_definite(self, "covariance_x")
-        self.covariance_x = torch.eye(self.n_dim)
+        self.covariance_x = covariance_x.clone()
 
         # Add c50 as buffer set to 0 to make child models easier
         self.register_buffer("c50", torch.tensor(0), persistent=False)
