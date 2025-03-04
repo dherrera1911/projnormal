@@ -41,10 +41,10 @@ def make_spdm(n_dim, eigvals='uniform', eigvecs='random'):
     # Generate eigvals
     if isinstance(eigvals, str):
         if eigvals == 'uniform':
-            eigvals = torch.rand(n_dim) * 0.9 + 0.1
+            eigvals = torch.rand(n_dim) * 0.95 + 0.05
             eigvals = eigvals / eigvals.mean()
         elif eigvals == 'exponential':
-            u = torch.rand(n_dim)
+            u = torch.rand(n_dim) * 0.95 + 0.05
             eigvals = - torch.log(u)
             eigvals = eigvals / eigvals.mean()
         else:
