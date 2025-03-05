@@ -70,7 +70,7 @@ def lbfgs_loop(
 
     Parameters
     ----------
-    model : Object of class ProjectedNormal or subclass
+    model : Object of class ProjNormal or subclass
         The model used for fitting.
 
     data :
@@ -200,7 +200,7 @@ def nadam_loop(
 
     Parameters
     ----------
-    model : ProjectedNormal (or subclass)
+    model : ProjNormal (or subclass)
         The model used for fitting.
 
     data :

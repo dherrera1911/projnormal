@@ -38,19 +38,16 @@ def gaussian_parameters(n_dim, mean_type, sigma):
 
 @pytest.mark.parametrize('n_dim', [2, 3, 10])
 def test_init(n_dim):
-    """Test the initialization of the ProjectedNormal class."""
+    """Test the initialization of the ProjNormal class."""
     # Initialize without input parameters
-    prnorm = models.ProjectedNormal(n_dim=n_dim)
+    prnorm = models.ProjNormal(n_dim=n_dim)
 
     # Initialize parameters
     mean_x = torch.ones(n_dim) / torch.sqrt(torch.as_tensor(n_dim))
     covariance_x = torch.eye(n_dim)
-    prnorm = models.ProjectedNormal(
+    prnorm = models.ProjNormal(
       mean_x=mean_x,
       covariance_x=covariance_x,
-    )
-    prnorm = models.ProjectedNormal(
-      n_dim=n_dim,
     )
 
     assert prnorm.mean_x.shape[0] == n_dim, \
@@ -58,16 +55,20 @@ def test_init(n_dim):
     assert torch.allclose(prnorm.mean_x, mean_x), \
         'Mean is not initialized correctly'
 
+    prnorm = models.ProjNormal(
+      n_dim=n_dim,
+    )
+
     # Check that value error is raised if n_dim doesn't match the statistics
     with pytest.raises(ValueError):
-        prnorm = models.ProjectedNormal(
+        prnorm = models.ProjNormal(
           n_dim=n_dim+1,
           mean_x=mean_x,
           covariance_x=covariance_x
         )
     with pytest.raises(ValueError):
         covariance_dim = torch.eye(n_dim+1)
-        prnorm = models.ProjectedNormal(
+        prnorm = models.ProjNormal(
           n_dim=n_dim,
           mean_x=mean_x,
           covariance_x=covariance_dim
@@ -80,13 +81,13 @@ def test_init(n_dim):
 @pytest.mark.parametrize('mean_type', ['sparse'])
 @pytest.mark.parametrize('sigma', [0.1])
 def test_sampling(n_dim, gaussian_parameters):
-    """Test the sampling of the ProjectedNormal class."""
+    """Test the sampling of the ProjNormal class."""
     # Unpack parameters
     mean_x = gaussian_parameters['mean_x']
     covariance_x = gaussian_parameters['covariance_x']
 
     # Initialize the projected normal class
-    prnorm = models.ProjectedNormal(
+    prnorm = models.ProjNormal(
       mean_x=mean_x,
       covariance_x=covariance_x
     )
@@ -103,13 +104,13 @@ def test_sampling(n_dim, gaussian_parameters):
 @pytest.mark.parametrize('mean_type', ['sin', 'sparse'])
 @pytest.mark.parametrize('sigma', [0.05, 0.1, 1])
 def test_moments(n_dim, gaussian_parameters):
-    """Test the moment computation of the ProjectedNormal class."""
+    """Test the moment computation of the ProjNormal class."""
     # Unpack parameters
     mean_x = gaussian_parameters['mean_x']
     covariance_x = gaussian_parameters['covariance_x']
 
     # Initialize the projected normal class
-    prnorm = models.ProjectedNormal(
+    prnorm = models.ProjNormal(
       mean_x=mean_x,
       covariance_x=covariance_x
     )
@@ -139,13 +140,13 @@ def test_moments(n_dim, gaussian_parameters):
 @pytest.mark.parametrize('mean_type', ['sin', 'sparse'])
 @pytest.mark.parametrize('sigma', [0.05, 0.1])
 def test_pdf(n_dim, gaussian_parameters):
-    """Test the moment computation of the ProjectedNormal class."""
+    """Test the moment computation of the ProjNormal class."""
     # Unpack parameters
     mean_x = gaussian_parameters['mean_x']
     covariance_x = gaussian_parameters['covariance_x']
 
     # Initialize the projected normal class
-    prnorm = models.ProjectedNormal(
+    prnorm = models.ProjNormal(
       mean_x=mean_x,
       covariance_x=covariance_x
     )
@@ -183,7 +184,7 @@ def test_moment_matching(n_dim, optimizer, gaussian_parameters):
     )
 
     # Initialize the projected normal class
-    prnorm = models.ProjectedNormal(
+    prnorm = models.ProjNormal(
       n_dim=n_dim
     )
 
@@ -244,7 +245,7 @@ def test_maximum_likelihood(n_dim, optimizer, gaussian_parameters):
     )
 
     # Initialize the projected normal class
-    prnorm = models.ProjectedNormal(
+    prnorm = models.ProjNormal(
       n_dim=n_dim
     )
 

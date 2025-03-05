@@ -9,7 +9,7 @@ from ._optim import lbfgs_loop, nadam_loop
 
 
 __all__ = [
-  "ProjectedNormal",
+  "ProjNormal",
 ]
 
 
@@ -18,7 +18,7 @@ def __dir__():
 
 
 #### Class for the projected normal distribution with learnable parameters
-class ProjectedNormal(nn.Module):
+class ProjNormal(nn.Module):
     """
     This class implements the general projected normal distirbution,
     which described the variable Y= X/||X||, where X~N(mean_x, covariance_x).
@@ -63,7 +63,7 @@ class ProjectedNormal(nn.Module):
         mean_x=None,
         covariance_x=None,
     ):
-        """Initialize an instance of the ProjectedNormal class.
+        """Initialize an instance of the ProjNormal class.
 
         Parameters
         ------------

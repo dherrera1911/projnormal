@@ -6,11 +6,11 @@ import projnormal.distribution as prnorm
 import geotorch
 from ._constraints import Sphere, Positive
 from ._optim import lbfgs_loop, nadam_loop
-from .general_projected_normal import ProjectedNormal
+from .general_projected_normal import ProjNormal
 
 
 __all__ = [
-  "ProjectedNormalConst",
+  "ProjNormalConst",
 ]
 
 
@@ -18,7 +18,7 @@ def __dir__():
     return __all__
 
 
-class ProjectedNormalConst(ProjectedNormal):
+class ProjNormalConst(ProjNormal):
     """
     This class implements the general projected normal distirbution with
     a c50 denominator constant. The variable Y following the distribution
@@ -68,7 +68,7 @@ class ProjectedNormalConst(ProjectedNormal):
         covariance_x=None,
         c50=None,
     ):
-        """Initialize an instance of the C50ProjectedNormal class.
+        """Initialize an instance of the ProjNormalConst class.
 
         Parameters
         ------------

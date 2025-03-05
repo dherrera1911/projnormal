@@ -3,5 +3,5 @@
 dist/
 build/
 __pycache__/
-.coverage
+*.coverage*
 mini.py
