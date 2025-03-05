@@ -1,4 +1,4 @@
-"""Test the Taylor approximation to projected normal moments"""
+"""Test the projected normal class."""
 import pytest
 import torch
 import projnormal.param_sampling as par_samp
@@ -46,9 +46,11 @@ def test_init(n_dim):
     mean_x = torch.ones(n_dim) / torch.sqrt(torch.as_tensor(n_dim))
     covariance_x = torch.eye(n_dim)
     prnorm = models.ProjectedNormal(
-      n_dim=n_dim,
       mean_x=mean_x,
-      covariance_x=covariance_x
+      covariance_x=covariance_x,
+    )
+    prnorm = models.ProjectedNormal(
+      n_dim=n_dim,
     )
 
     assert prnorm.mean_x.shape[0] == n_dim, \
