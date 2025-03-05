@@ -78,9 +78,8 @@ def _inv_softmax(P):
     return X
 
 
-class SoftMax(nn.Module):
-    """Constrains the input tensor to lie on the sphere."""
-
+class Positive(nn.Module):
+    """Constrains the input number to be positive."""
 
     def forward(self, X):
         """

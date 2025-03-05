@@ -187,11 +187,7 @@ class ProjectedNormal(nn.Module):
           torch.Tensor, shape (n_points)
               PDF of the point.
         """
-        pdf = prnorm.general.pdf.pdf(
-            mean_x=self.mean_x,
-            covariance_x=self.covariance_x,
-            y=y,
-        )
+        pdf = torch.exp(self.log_pdf(y))
         return pdf
 
 
