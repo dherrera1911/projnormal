@@ -1,10 +1,10 @@
-"""Test the c50 projected normal class"""
+"""Test the const projected normal class"""
 import pytest
 import torch
 import projnormal.param_sampling as par_samp
 import projnormal.matrix_checks as checks
 import projnormal.models as models
-import projnormal.distribution.c50 as pnc
+import projnormal.distribution.const as pnc
 
 
 torch.manual_seed(1)
@@ -27,12 +27,12 @@ def gaussian_parameters(n_dim, mean_type, sigma):
     covariance_x = par_samp.make_spdm(
       n_dim=n_dim
     ) * sigma**2
-    c50 = torch.rand(1).squeeze() + 0.05
+    const = torch.rand(1).squeeze() + 0.05
 
     return {
         "mean_x": mean_x,
         "covariance_x": covariance_x,
-        "c50": c50
+        "const": const
     }
 
 
@@ -47,12 +47,12 @@ def test_init(n_dim):
     # Initialize parameters
     mean_x = torch.ones(n_dim) / torch.sqrt(torch.as_tensor(n_dim))
     covariance_x = torch.eye(n_dim)
-    c50 = torch.tensor(0.1)
+    const = torch.tensor(0.1)
 
     prnorm = models.ProjNormalConst(
       mean_x=mean_x,
       covariance_x=covariance_x,
-      c50=c50
+      const=const
     )
 
     assert prnorm.mean_x.shape[0] == n_dim, \
@@ -64,7 +64,7 @@ def test_init(n_dim):
     with pytest.raises(ValueError):
         prnorm = models.ProjNormalConst(
           n_dim=n_dim,
-          c50=torch.tensor(-0.01),
+          const=torch.tensor(-0.01),
         )
 
 ######### TEST BASIC METHODS
@@ -82,7 +82,7 @@ def test_sampling(n_dim, gaussian_parameters):
     prnorm = models.ProjNormalConst(
       mean_x=mean_x,
       covariance_x=covariance_x,
-      c50=gaussian_parameters['c50']
+      const=gaussian_parameters['const']
     )
     # Sample from the distribution
     samples = prnorm.sample(n_samples=500)
@@ -101,13 +101,13 @@ def test_moments(n_dim, gaussian_parameters):
     # Unpack parameters
     mean_x = gaussian_parameters['mean_x']
     covariance_x = gaussian_parameters['covariance_x']
-    c50 = gaussian_parameters['c50']
+    const = gaussian_parameters['const']
 
     # Initialize the projected normal class
     prnorm = models.ProjNormalConst(
       mean_x=mean_x,
       covariance_x=covariance_x,
-      c50=c50
+      const=const
     )
 
     # Compute Taylor approximation of the moments
@@ -140,13 +140,13 @@ def test_pdf(n_dim, gaussian_parameters):
     # Unpack parameters
     mean_x = gaussian_parameters['mean_x']
     covariance_x = gaussian_parameters['covariance_x']
-    c50 = gaussian_parameters['c50']
+    const = gaussian_parameters['const']
 
     # Initialize the projected normal class
     prnorm = models.ProjNormalConst(
       mean_x=mean_x,
       covariance_x=covariance_x,
-      c50=c50
+      const=const
     )
     # Sample from the distribution
     with torch.no_grad():
@@ -173,13 +173,13 @@ def test_moment_matching(n_dim, optimizer, gaussian_parameters):
     # Unpack parameters
     mean_x = gaussian_parameters['mean_x']
     covariance_x = gaussian_parameters['covariance_x']
-    c50 = gaussian_parameters['c50']
+    const = gaussian_parameters['const']
 
     # Make observed moments
     moments_target = pnc.sampling.empirical_moments(
       mean_x=mean_x,
       covariance_x=covariance_x,
-      c50=c50,
+      const=const,
       n_samples=100000
     )
 

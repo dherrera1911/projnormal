@@ -1,4 +1,4 @@
-"""Approximation to the moments of the general projected normal distribution with additive C50 term in denominagor."""
+"""Approximation to the moments of the general projected normal distribution with additive const term in denominator."""
 import torch
 import projnormal.quadratic_forms.moments as qfm
 
@@ -10,14 +10,14 @@ def __dir__():
     return __all__
 
 
-def mean(mean_x, covariance_x, c50=0):
+def mean(mean_x, covariance_x, const=0):
     """
-    Compute the Taylor approximation to the variable Y = X/(X'X + c50)^0.5,
+    Compute the Taylor approximation to the variable Y = X/(X'X + const)^0.5,
     where X~N(mean_x, covariance_x). Y has a projected normal distribution with an extra
-    constant c50 added to the denominator.
+    constant const added to the denominator.
 
     The approximation is based on the function
-    f(u,v) = u/sqrt(u^2 + v + c50), where u=X_i and v = (X'X - X_i^2).
+    f(u,v) = u/sqrt(u^2 + v + const), where u=X_i and v = (X'X - X_i^2).
 
     Parameters:
     ----------------
@@ -27,7 +27,7 @@ def mean(mean_x, covariance_x, c50=0):
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
         Covariance matrix of X elements.
 
-      c50 : torch.Tensor, shape ()
+      const : torch.Tensor, shape ()
         Constant added to the denominator.
 
     Returns:
@@ -39,19 +39,19 @@ def mean(mean_x, covariance_x, c50=0):
     variances = torch.diagonal(covariance_x)
 
     ### Get moments of variable v (||X||^2 - X_i^2) required for the formula
-    # Note, these don't depend on c50
+    # Note, these don't depend on const
     v_mean = _get_v_mean(mean_x=mean_x, covariance_x=covariance_x)
     v_var = _get_v_var(mean_x=mean_x, covariance_x=covariance_x)
     v_cov = _get_v_cov(mean_x=mean_x, covariance_x=covariance_x)
 
     ### Get the derivatives for the taylor approximation evaluated
     ### at the mean of u and v
-    dfdu2_val = _get_dfdu2(u=mean_x, v=v_mean, c50=c50)
-    dfdv2_val = _get_dfdv2(u=mean_x, v=v_mean, c50=c50)
-    dfdudv_val = _get_dfdudv(u=mean_x, v=v_mean, c50=c50)
+    dfdu2_val = _get_dfdu2(u=mean_x, v=v_mean, const=const)
+    dfdv2_val = _get_dfdv2(u=mean_x, v=v_mean, const=const)
+    dfdudv_val = _get_dfdudv(u=mean_x, v=v_mean, const=const)
 
     ### 0th order term
-    term0 = _get_f0(u=mean_x, v=v_mean, c50=c50)
+    term0 = _get_f0(u=mean_x, v=v_mean, const=const)
 
     ### Compute Taylor approximation
     gamma = (
@@ -64,14 +64,14 @@ def mean(mean_x, covariance_x, c50=0):
     return gamma
 
 
-def second_moment(mean_x, covariance_x, c50=0):
+def second_moment(mean_x, covariance_x, const=0):
     """
     Compute the Taylor approximation to the second moment matrix of the
-    variable Y = X/(X'X + c50)^0.5, where X~N(mean_x, covariance_x). Y has a
-    projected normal distribution with an extra constant c50 added to the denominator.
+    variable Y = X/(X'X + const)^0.5, where X~N(mean_x, covariance_x). Y has a
+    projected normal distribution with an extra constant const added to the denominator.
 
     The approximation is based on the Taylor expansion of the
-    function f(n,d) = n/d, where n = X_i*X_j and d = X'X + c50.
+    function f(n,d) = n/d, where n = X_i*X_j and d = X'X + const.
 
     Parameters
     ----------------
@@ -81,7 +81,7 @@ def second_moment(mean_x, covariance_x, c50=0):
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
         Covariance matrix of X elements.
 
-      c50 : torch.Tensor, shape ()
+      const : torch.Tensor, shape ()
         Constant added to the denominator.
 
     Returns
@@ -96,7 +96,7 @@ def second_moment(mean_x, covariance_x, c50=0):
     denominator_mean = qfm.mean(
         mean_x=mean_x, covariance_x=covariance_x
     )
-    denominator_mean = denominator_mean + c50
+    denominator_mean = denominator_mean + const
     denominator_var = qfm.variance(
         mean_x=mean_x, covariance_x=covariance_x
     )
@@ -227,39 +227,39 @@ def _get_v_cov(mean_x, covariance_x):
     return v_cov
 
 
-# Derivatives of the function f(u,v) = u/sqrt(u^2 + v + c50)
+# Derivatives of the function f(u,v) = u/sqrt(u^2 + v + const)
 # that is used in the taylor approximation to the mean
-def _get_f0(u, v, c50):
+def _get_f0(u, v, const):
     """
     First term of the Taylor approximation of f(u,v) = u/sqrt(u^2 + v),
     evaluated at point u,v.
     """
-    f0 = u / torch.sqrt(u**2 + v + c50)
+    f0 = u / torch.sqrt(u**2 + v + const)
     return f0
 
 
-def _get_dfdu2(u, v, c50):
+def _get_dfdu2(u, v, const):
     """
     Second derivative of f(u,v) = u/sqrt(c*u^2 + v) wrt u,
     evaluated at point u,v.
     """
-    dfdu2 = -3 * u * (v + c50) / (u**2 + v + c50) ** (5 / 2)
+    dfdu2 = -3 * u * (v + const) / (u**2 + v + const) ** (5 / 2)
     return dfdu2
 
 
-def _get_dfdv2(u, v, c50):
+def _get_dfdv2(u, v, const):
     """
     Second derivative of f(u,v) = u/sqrt(u^2 + v) wrt v,
     evaluated at point u,v.
     """
-    dfdv2 = 0.75 * u / (u**2 + v + c50) ** (5 / 2)
+    dfdv2 = 0.75 * u / (u**2 + v + const) ** (5 / 2)
     return dfdv2
 
 
-def _get_dfdudv(u, v, c50):
+def _get_dfdudv(u, v, const):
     """
     Mixed second derivative of f(u,v) = u/sqrt(u^2 + v),
     evaluated at point u,v.
     """
-    dfdudv = (u**2 - 0.5 * (v + c50)) / (u**2 + v + c50) ** (5 / 2)
+    dfdudv = (u**2 - 0.5 * (v + const)) / (u**2 + v + const) ** (5 / 2)
     return dfdudv

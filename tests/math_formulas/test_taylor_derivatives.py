@@ -1,7 +1,7 @@
 """Test the formulas of the Taylor approximation to the moments."""
 import pytest
 import torch
-import projnormal.distribution.c50 as pnc
+import projnormal.distribution.const as pnc
 import projnormal.param_sampling as par_samp
 
 
@@ -11,32 +11,32 @@ def relative_error(x, y):
 
 
 # Function of taylor approximation
-def f(u, v, c50=0):
+def f(u, v, const=0):
     ' f = u/sqrt(b*u^2+v) '
-    return u / (torch.sqrt( u**2 + v + c50))
+    return u / (torch.sqrt( u**2 + v + const))
 
 
-def d2f_du2_autograd(u, v, c50=0):
-    df_du = torch.autograd.grad(f(u, v, c50), u, create_graph=True)[0]
+def d2f_du2_autograd(u, v, const=0):
+    df_du = torch.autograd.grad(f(u, v, const), u, create_graph=True)[0]
     d2f_du2 = torch.autograd.grad(df_du, u)[0]
     return d2f_du2
 
 
-def d2f_dv2_autograd(u, v, c50=0):
-    df_dv = torch.autograd.grad(f(u, v, c50), v, create_graph=True)[0]
+def d2f_dv2_autograd(u, v, const=0):
+    df_dv = torch.autograd.grad(f(u, v, const), v, create_graph=True)[0]
     d2f_dv2 = torch.autograd.grad(df_dv, v)[0]
     return d2f_dv2
 
 
-def d2f_dudv_autograd(u, v, c50=0):
-    df_du = torch.autograd.grad(f(u, v, c50), u, create_graph=True)[0]
+def d2f_dudv_autograd(u, v, const=0):
+    df_du = torch.autograd.grad(f(u, v, const), u, create_graph=True)[0]
     d2f_dudv = torch.autograd.grad(df_du, v)[0]
     return d2f_dudv
 
 
 # Fixture to set up the parameters and compute gradients
 @pytest.fixture(scope='function')
-def taylor_derivatives_data(n_dim, sigma, c50, cov_type):
+def taylor_derivatives_data(n_dim, sigma, const, cov_type):
     """Sample parameters and compute the taylor derivatives using autograd."""
     # Instantiate parameters
     mean_x = par_samp.make_mean(
@@ -55,15 +55,15 @@ def taylor_derivatives_data(n_dim, sigma, c50, cov_type):
     for i in range(n_dim):
         x = mean_x[i].clone().detach().requires_grad_(True)
         y = v_mean[i].clone().detach().requires_grad_(True)
-        du2_autograd[i] = d2f_du2_autograd(x, y, c50)
-        dv2_autograd[i] = d2f_dv2_autograd(x, y, c50)
-        dudv_autograd[i] = d2f_dudv_autograd(x, y, c50)
+        du2_autograd[i] = d2f_du2_autograd(x, y, const)
+        dv2_autograd[i] = d2f_dv2_autograd(x, y, const)
+        dudv_autograd[i] = d2f_dudv_autograd(x, y, const)
 
     return {
         'n_dim': n_dim,
         'mean_x': mean_x,
         'v_mean': v_mean,
-        'c50': c50,
+        'const': const,
         'du2_autograd': du2_autograd,
         'dv2_autograd': dv2_autograd,
         'dudv_autograd': dudv_autograd
@@ -72,15 +72,15 @@ def taylor_derivatives_data(n_dim, sigma, c50, cov_type):
 
 @pytest.mark.parametrize('n_dim', [2, 3, 5, 10, 50])
 @pytest.mark.parametrize('sigma', [0.01, 0.5, 1])
-@pytest.mark.parametrize('c50', [0, 0.1, 1])
+@pytest.mark.parametrize('const', [0, 0.1, 1])
 @pytest.mark.parametrize('cov_type', ['random', 'diagonal'])
-def test_taylor_approximation_derivatives(taylor_derivatives_data, n_dim, sigma, c50, cov_type):
+def test_taylor_approximation_derivatives(taylor_derivatives_data, n_dim, sigma, const, cov_type):
     # Unpack data
 
     # Distribution parameters
     mean_x = taylor_derivatives_data['mean_x']
     v_mean = taylor_derivatives_data['v_mean']
-    c50 = taylor_derivatives_data['c50']
+    const = taylor_derivatives_data['const']
 
     # Autograd results
     du2_autograd = taylor_derivatives_data['du2_autograd']
@@ -88,9 +88,9 @@ def test_taylor_approximation_derivatives(taylor_derivatives_data, n_dim, sigma,
     dudv_autograd = taylor_derivatives_data['dudv_autograd']
 
     # Compute derivatives using the function being tested
-    du2 = pnc.moments._get_dfdu2(u=mean_x, v=v_mean, c50=c50)
-    dv2 = pnc.moments._get_dfdv2(u=mean_x, v=v_mean, c50=c50)
-    dudv = pnc.moments._get_dfdudv(u=mean_x, v=v_mean, c50=c50)
+    du2 = pnc.moments._get_dfdu2(u=mean_x, v=v_mean, const=const)
+    dv2 = pnc.moments._get_dfdv2(u=mean_x, v=v_mean, const=const)
+    dudv = pnc.moments._get_dfdudv(u=mean_x, v=v_mean, const=const)
 
     # Compute the relative error
     du2_error = relative_error(du2, du2_autograd)

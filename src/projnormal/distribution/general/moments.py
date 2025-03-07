@@ -1,7 +1,7 @@
 """Approximation to the moments of the general projected normal distribution."""
 import torch
 
-from ..c50 import moments as c50_moments
+from ..const import moments as const_moments
 
 __all__ = ["mean", "second_moment"]
 
@@ -32,7 +32,7 @@ def mean(mean_x, covariance_x):
       torch.Tensor, shape (n_dim,)
           Expected value for the projected normal.
     """
-    gamma = c50_moments.mean(mean_x, covariance_x)
+    gamma = const_moments.mean(mean_x, covariance_x)
     return gamma
 
 
@@ -58,5 +58,5 @@ def second_moment(mean_x, covariance_x):
       torch.Tensor, shape (n_dim, n_dim)
           Second moment matrix of Y
     """
-    sm = c50_moments.second_moment(mean_x, covariance_x)
+    sm = const_moments.second_moment(mean_x, covariance_x)
     return sm

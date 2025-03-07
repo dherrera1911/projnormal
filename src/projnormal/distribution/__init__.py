@@ -1,3 +1,3 @@
-from . import c50 as c50
+from . import const as const
 from . import general as general
 from . import isotropic as isotropic

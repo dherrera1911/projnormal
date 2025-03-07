@@ -1,7 +1,7 @@
 """Sampling functions for the general projected normal distribution."""
 import torch
 
-from ..c50 import sampling as _c50_sampling
+from ..const import sampling as _const_sampling
 
 __all__ = ["sample", "empirical_moments"]
 
@@ -31,8 +31,8 @@ def sample(mean_x, covariance_x, n_samples):
       torch.Tensor, shape (n_samples, n_dim)
           Samples from the projected normal.
     """
-    samples_prnorm = _c50_sampling.sample(
-      mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples, c50=0
+    samples_prnorm = _const_sampling.sample(
+      mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples, const=0
     )
     return samples_prnorm
 
@@ -65,7 +65,7 @@ def empirical_moments(mean_x, covariance_x, n_samples):
             'second_moment' : torch.Tensor, shape (n_dim, n_dim)
                 Second moment of the projected normal.
     """
-    moment_dict = _c50_sampling.empirical_moments(
-      mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples, c50=0
+    moment_dict = _const_sampling.empirical_moments(
+      mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples, const=0
     )
     return moment_dict

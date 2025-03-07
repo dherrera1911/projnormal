@@ -1,7 +1,7 @@
 """Test the Taylor approximation to projected normal moments"""
 import pytest
 import torch
-import projnormal.distribution.c50 as pnc
+import projnormal.distribution.const as pnc
 import projnormal.param_sampling as par_samp
 import projnormal.matrix_checks as checks
 
@@ -16,7 +16,7 @@ def relative_error(x, y):
 
 # Instantiate parameters
 @pytest.fixture(scope="function")
-def gaussian_parameters(n_dim, mean_type, eigvals, eigvecs, sigma, c50):
+def gaussian_parameters(n_dim, mean_type, eigvals, eigvecs, sigma, const):
     """ Fixture to generate Gaussian parameters for tests."""
 
     # Initialize the mean of the gaussian
@@ -31,7 +31,7 @@ def gaussian_parameters(n_dim, mean_type, eigvals, eigvecs, sigma, c50):
     return {
         "mean_x": mean_x,
         "covariance_x": covariance_x,
-        "c50": c50,
+        "const": const,
     }
 
 
@@ -41,19 +41,19 @@ def gaussian_parameters(n_dim, mean_type, eigvals, eigvecs, sigma, c50):
 @pytest.mark.parametrize("eigvals", ["uniform", "exponential"])
 @pytest.mark.parametrize("eigvecs", ["random", "identity"])
 @pytest.mark.parametrize("sigma", [0.1])
-@pytest.mark.parametrize("c50", [0, 0.1])
+@pytest.mark.parametrize("const", [0, 0.1])
 def test_taylor_stability(gaussian_parameters):
     # Unpack parameters
     mean_x = gaussian_parameters["mean_x"]
     covariance_x = gaussian_parameters["covariance_x"]
-    c50 = gaussian_parameters["c50"]
+    const = gaussian_parameters["const"]
 
     # Get taylor approximation moments
     gamma_taylor = pnc.moments.mean(
-      mean_x=mean_x, covariance_x=covariance_x, c50=c50
+      mean_x=mean_x, covariance_x=covariance_x, const=const
     )
     sm_taylor = pnc.moments.second_moment(
-        mean_x=mean_x, covariance_x=covariance_x, c50=c50
+        mean_x=mean_x, covariance_x=covariance_x, const=const
     )
 
     # Check that outputs are not nan, and matrices are as expected
@@ -77,35 +77,35 @@ def test_taylor_stability(gaussian_parameters):
 @pytest.mark.parametrize("eigvals", ["uniform", "exponential"])
 @pytest.mark.parametrize("eigvecs", ["random", "identity"])
 @pytest.mark.parametrize("sigma", [0.01, 0.1])
-@pytest.mark.parametrize("c50", [0, 1])
+@pytest.mark.parametrize("const", [0, 1])
 @pytest.mark.parametrize("n_samples", [200000])
 def test_taylor_vs_empirical(gaussian_parameters, n_samples):
     # Unpack parameters
     mean_x = gaussian_parameters["mean_x"]
     covariance_x = gaussian_parameters["covariance_x"]
-    c50 = gaussian_parameters["c50"]
+    const = gaussian_parameters["const"]
 
     # Get taylor approximation moments
     gamma_taylor = pnc.moments.mean(
-      mean_x=mean_x, covariance_x=covariance_x, c50=c50
+      mean_x=mean_x, covariance_x=covariance_x, const=const
     )
     sm_taylor = pnc.moments.second_moment(
-        mean_x=mean_x, covariance_x=covariance_x, c50=c50
+        mean_x=mean_x, covariance_x=covariance_x, const=const
     )
 
     # Get empirical moments
     moments_empirical = pnc.sampling.empirical_moments(
-        mean_x, covariance_x, n_samples=n_samples, c50=c50
+        mean_x, covariance_x, n_samples=n_samples, const=const
     )
     gamma_empirical = moments_empirical["mean"]
     sm_empirical = moments_empirical["second_moment"]
 
     # Get Taylor approximation moments
     gamma_taylor = pnc.moments.mean(
-        mean_x=mean_x, covariance_x=covariance_x, c50=c50
+        mean_x=mean_x, covariance_x=covariance_x, const=const
     )
     sm_taylor = pnc.moments.second_moment(
-        mean_x=mean_x, covariance_x=covariance_x, c50=c50
+        mean_x=mean_x, covariance_x=covariance_x, const=const
     )
 
     # Relative error

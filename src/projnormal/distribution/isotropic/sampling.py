@@ -2,7 +2,7 @@
 
 import torch
 
-from ..c50 import sampling as c50_sampling
+from ..const import sampling as const_sampling
 
 __all__ = ["sample", "empirical_moments"]
 
@@ -35,8 +35,8 @@ def sample(mean_x, var_x, n_samples):
     covariance_x = var_x * torch.eye(
       len(mean_x), device=mean_x.device, dtype=mean_x.dtype
     )
-    samples_prnorm = c50_sampling.sample(
-      mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples, c50=0
+    samples_prnorm = const_sampling.sample(
+      mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples, const=0
     )
     return samples_prnorm
 
@@ -72,7 +72,7 @@ def empirical_moments(mean_x, var_x, n_samples):
     covariance_x = var_x * torch.eye(
       len(mean_x), device=mean_x.device, dtype=mean_x.dtype
     )
-    moment_dict = c50_sampling.empirical_moments(
-      mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples, c50=0
+    moment_dict = const_sampling.empirical_moments(
+      mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples, const=0
     )
     return moment_dict

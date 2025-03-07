@@ -101,8 +101,8 @@ class ProjNormal(nn.Module):
         geotorch.positive_definite(self, "covariance_x")
         self.covariance_x = covariance_x.clone()
 
-        # Add c50 as buffer set to 0 to make child models easier
-        self.register_buffer("c50", torch.tensor(0), persistent=False)
+        # Add const as buffer set to 0 to make child models easier
+        self.register_buffer("const", torch.tensor(0), persistent=False)
 
 
     def moments(self):
@@ -116,15 +116,15 @@ class ProjNormal(nn.Module):
             Dictionary containing the mean, covariance and second moment
             of the projected normal.
         """
-        gamma = prnorm.c50.moments.mean(
+        gamma = prnorm.const.moments.mean(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
-            c50=self.c50,
+            const=self.const,
         )
-        second_moment = prnorm.c50.moments.second_moment(
+        second_moment = prnorm.const.moments.second_moment(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
-            c50=self.c50,
+            const=self.const,
         )
         cov = second_moment - torch.einsum("i,j->ij", gamma, gamma)
         return {"mean": gamma, "covariance": cov, "second_moment": second_moment}
@@ -142,11 +142,11 @@ class ProjNormal(nn.Module):
             of the projected normal.
         """
         with torch.no_grad():
-            stats_dict = prnorm.c50.sampling.empirical_moments(
+            stats_dict = prnorm.const.sampling.empirical_moments(
                 mean_x=self.mean_x,
                 covariance_x=self.covariance_x,
                 n_samples=n_samples,
-                c50=self.c50,
+                const=self.const,
             )
         return stats_dict
 
@@ -205,11 +205,11 @@ class ProjNormal(nn.Module):
               Samples from the distribution.
         """
         with torch.no_grad():
-            samples = prnorm.c50.sampling.sample(
+            samples = prnorm.const.sampling.sample(
                 mean_x=self.mean_x,
                 covariance_x=self.covariance_x,
                 n_samples=n_samples,
-                c50=self.c50,
+                const=self.const,
             )
         return samples
 

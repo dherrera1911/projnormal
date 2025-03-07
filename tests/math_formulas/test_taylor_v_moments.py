@@ -2,7 +2,7 @@
 import time
 import pytest
 import torch
-import projnormal.distribution.c50 as pnc
+import projnormal.distribution.const as pnc
 import projnormal.param_sampling as par_samp
 import projnormal.quadratic_forms as qf
 
