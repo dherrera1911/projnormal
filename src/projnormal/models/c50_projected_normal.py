@@ -86,6 +86,7 @@ class ProjNormalConst(ProjNormal):
               The const denominator constant. Default is 1.
         """
         super().__init__(n_dim=n_dim, mean_x=mean_x, covariance_x=covariance_x)
+
         # Parse const
         if const is None:
             const = torch.tensor(1.0)
@@ -94,6 +95,7 @@ class ProjNormalConst(ProjNormal):
                 const = const.squeeze()
             else:
                 raise ValueError("const must be a positive scalar tensor.")
+
         self.const = nn.Parameter(const.clone())
         parametrize.register_parametrization(self, "const", Positive())
 
