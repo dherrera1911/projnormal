@@ -32,7 +32,10 @@ def sample(mean_x, covariance_x, n_samples):
           Samples from the projected normal.
     """
     samples_prnorm = _const_sampling.sample(
-      mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples, const=0
+      mean_x=mean_x,
+      covariance_x=covariance_x,
+      n_samples=n_samples,
+      const=0
     )
     return samples_prnorm
 
@@ -66,6 +69,9 @@ def empirical_moments(mean_x, covariance_x, n_samples):
                 Second moment of the projected normal.
     """
     moment_dict = _const_sampling.empirical_moments(
-      mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples, const=0
+      mean_x=mean_x,
+      covariance_x=covariance_x,
+      n_samples=n_samples,
+      const=0
     )
     return moment_dict
