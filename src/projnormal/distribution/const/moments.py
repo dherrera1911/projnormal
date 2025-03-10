@@ -10,7 +10,7 @@ def __dir__():
     return __all__
 
 
-def mean(mean_x, covariance_x, const=0):
+def mean(mean_x, covariance_x, const):
     """
     Compute the Taylor approximation to the variable Y = X/(X'X + const)^0.5,
     where X~N(mean_x, covariance_x). Y has a projected normal distribution with an extra
@@ -28,7 +28,7 @@ def mean(mean_x, covariance_x, const=0):
         Covariance matrix of X elements.
 
       const : torch.Tensor, shape ()
-        Constant added to the denominator.
+        Constant added to the denominator. Must be >= 0.
 
     Returns:
     ----------------
@@ -64,7 +64,7 @@ def mean(mean_x, covariance_x, const=0):
     return gamma
 
 
-def second_moment(mean_x, covariance_x, const=0):
+def second_moment(mean_x, covariance_x, const):
     """
     Compute the Taylor approximation to the second moment matrix of the
     variable Y = X/(X'X + const)^0.5, where X~N(mean_x, covariance_x). Y has a
@@ -82,7 +82,7 @@ def second_moment(mean_x, covariance_x, const=0):
         Covariance matrix of X elements.
 
       const : torch.Tensor, shape ()
-        Constant added to the denominator.
+        Constant added to the denominator. Must be >= 0.
 
     Returns
     ----------------

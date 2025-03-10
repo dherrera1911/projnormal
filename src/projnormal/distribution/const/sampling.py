@@ -10,7 +10,7 @@ def __dir__():
     return __all__
 
 
-def sample(mean_x, covariance_x, n_samples, const=0):
+def sample(mean_x, covariance_x, const, n_samples):
     """
     Sample from the variable Y = X/(X'X + const)^0.5, where X~N(mean_x, covariance_x).
     The variable Y has a general projected normal distribution with an extra
@@ -24,11 +24,11 @@ def sample(mean_x, covariance_x, n_samples, const=0):
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
           Covariance matrix of X elements.
 
+      const : torch.Tensor, shape ()
+          Constant added to the denominator. Must be >=0.
+
       n_samples : int
           Number of samples.
-
-      const : torch.Tensor, shape ()
-          Constant added to the denominator.
 
     Returns:
     -----------------
@@ -45,7 +45,7 @@ def sample(mean_x, covariance_x, n_samples, const=0):
     return samples_prnorm
 
 
-def empirical_moments(mean_x, covariance_x, n_samples, const=0):
+def empirical_moments(mean_x, covariance_x, const, n_samples):
     """
     Compute the mean, covariance and second moment of the variable
     Y = X/(X'X + const)^0.5, where X~N(mean_x, covariance_x), by sampling from the
@@ -60,11 +60,11 @@ def empirical_moments(mean_x, covariance_x, n_samples, const=0):
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
           Covariance matrix of X elements.
 
+      const : torch.Tensor, shape ()
+          Constant added to the denominator. Must be >=0.
+
       n_samples : int
           Number of samples.
-
-      const : torch.Tensor, shape ()
-          Constant added to the denominator.
 
     Returns:
     -----------------
