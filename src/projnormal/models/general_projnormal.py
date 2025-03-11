@@ -29,7 +29,7 @@ class ProjNormal(nn.Module):
       mean_x : torch.Tensor, shape (n_dim)
           Mean of X. It is constrained to the unit sphere.
 
-      covariance_x : torch.Tensor, shape (n_dim x n_dim)
+      covariance_x : torch.Tensor, shape (n_dim, n_dim)
           Covariance of X. It is constrained to be symmetric positive definite.
 
     Methods
@@ -74,7 +74,7 @@ class ProjNormal(nn.Module):
           mean_x : torch.Tensor, shape (n_dim), optional
               Mean of X. It is converted to unit norm. Default is random.
 
-          covariance_x : torch.Tensor, shape (n_dim x n_dim), optional
+          covariance_x : torch.Tensor, shape (n_dim, n_dim), optional
               Initial covariance. Default is the identity.
         """
         super().__init__()
@@ -157,7 +157,7 @@ class ProjNormal(nn.Module):
 
         Parameters
         ----------------
-          y : torch.Tensor, shape (n_points x n_dim)
+          y : torch.Tensor, shape (n_points, n_dim)
               Points to evaluate the log pdf.
 
         Returns
@@ -179,7 +179,7 @@ class ProjNormal(nn.Module):
 
         Parameters
         ----------------
-          y : torch.Tensor, shape (n_points x n_dim)
+          y : torch.Tensor, shape (n_points, n_dim)
               Points to evaluate the pdf.
 
         Returns
@@ -201,7 +201,7 @@ class ProjNormal(nn.Module):
 
         Returns
         ----------------
-          torch.Tensor, shape (n_samples x n_dim)
+          torch.Tensor, shape (n_samples, n_dim)
               Samples from the distribution.
         """
         with torch.no_grad():
@@ -235,8 +235,8 @@ class ProjNormal(nn.Module):
         data_moments : dict
           Dictionary containing the observed moments. Must contain the keys
             - 'mean': torch.Tensor, shape (n_dim)
-            - 'covariance': torch.Tensor, shape (n_dim x n_dim)
-            - 'second_moment': torch.Tensor, shape (n_dim x n_dim)
+            - 'covariance': torch.Tensor, shape (n_dim, n_dim)
+            - 'second_moment': torch.Tensor, shape (n_dim, n_dim)
 
         max_epochs : int, optional
             Number of max training epochs. By default 50.
@@ -343,7 +343,7 @@ class ProjNormal(nn.Module):
 
         Parameters
         ----------------
-        y : torch.Tensor, shape (n_samples x n_dim)
+        y : torch.Tensor, shape (n_samples, n_dim)
             Observed data.
 
         max_epochs : int, optional
@@ -432,8 +432,8 @@ class ProjNormal(nn.Module):
           data : dict
             Dictionary containing the observed moments. Must contain the keys
               - 'mean': torch.Tensor, shape (n_dim)
-              - 'covariance': torch.Tensor, shape (n_dim x n_dim)
-              - 'second_moment': torch.Tensor, shape (n_dim x n_dim)
+              - 'covariance': torch.Tensor, shape (n_dim, n_dim)
+              - 'second_moment': torch.Tensor, shape (n_dim, n_dim)
         """
         data_mean_normalized = data_moments["mean"] / torch.norm(data_moments["mean"])
         self.mean_x = data_mean_normalized

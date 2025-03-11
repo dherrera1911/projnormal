@@ -29,7 +29,7 @@ class ProjNormalConst(ProjNormal):
       mean_x : torch.Tensor, shape (n_dim)
           Mean of X. It is constrained to the unit sphere.
 
-      covariance_x : torch.Tensor, shape (n_dim x n_dim)
+      covariance_x : torch.Tensor, shape (n_dim, n_dim)
           Covariance of X. It is constrained to be symmetric positive definite.
 
       const : torch.Tensor, shape (1)
@@ -78,7 +78,7 @@ class ProjNormalConst(ProjNormal):
           mean_x : torch.Tensor, shape (n_dim), optional
               Mean of X. It is converted to unit norm. Default is random.
 
-          covariance_x : torch.Tensor, shape (n_dim x n_dim), optional
+          covariance_x : torch.Tensor, shape (n_dim, n_dim), optional
               Initial covariance. Default is the identity.
 
           const : torch.Tensor, shape (1), optional
@@ -105,7 +105,7 @@ class ProjNormalConst(ProjNormal):
 
         Parameters
         ----------------
-          y : torch.Tensor, shape (n_points x n_dim)
+          y : torch.Tensor, shape (n_points, n_dim)
               Points to evaluate the log pdf.
 
         Returns
