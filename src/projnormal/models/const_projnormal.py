@@ -3,9 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
 import projnormal.distribution as prnorm
-import geotorch
-from ._constraints import Sphere, Positive
-from ._optim import lbfgs_loop, nadam_loop
+
+from ._constraints import Positive
 from .general_projnormal import ProjNormal
 
 
