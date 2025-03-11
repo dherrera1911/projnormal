@@ -71,10 +71,10 @@ class ProjNormal(nn.Module):
               Dimension of the underlying Gaussian distribution. If mean
               and covariance are provided, this is not required.
 
-          mean : torch.Tensor, shape (n_dim), optional
+          mean_x : torch.Tensor, shape (n_dim), optional
               Mean of X. It is converted to unit norm. Default is random.
 
-          covariance : torch.Tensor, shape (n_dim x n_dim), optional
+          covariance_x : torch.Tensor, shape (n_dim x n_dim), optional
               Initial covariance. Default is the identity.
         """
         super().__init__()
