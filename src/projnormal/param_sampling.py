@@ -4,6 +4,7 @@ import torch
 __all__ = [
   "make_spdm",
   "make_mean",
+  "make_ortho_vectors"
 ]
 
 
@@ -103,3 +104,22 @@ def make_mean(n_dim, shape='gaussian', sparsity=0.1):
         raise ValueError("Invalid shape option.")
     mean = mean / mean.norm()
     return mean
+
+
+def make_ortho_vectors(n_dim, n_vec):
+    """ Generate a set of orthogonal vectors.
+
+    Parameters:
+    ----------------
+      - n_dim: Dimension of the vectors.
+      - n_vec: Number of vectors to generate.
+
+    Returns:
+    ----------------
+      Orthogonal vectors of size n_dim x n_vec.
+    """
+    if n_vec > n_dim:
+        raise ValueError("Number of vectors must be less than dimension.")
+    vectors = torch.randn(n_dim, n_vec)
+    vectors = torch.linalg.qr(vectors)[0].t()
+    return vectors
