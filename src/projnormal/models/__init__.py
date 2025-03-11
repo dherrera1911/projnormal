@@ -1,6 +1,6 @@
 """Module with the classes for the projected normal distribution."""
-from .general_projected_normal import ProjNormal as ProjNormal
-from .c50_projected_normal import ProjNormalConst as ProjNormalConst
+from .general_projnormal import ProjNormal as ProjNormal
+from .const_projnormal import ProjNormalConst as ProjNormalConst
 
 __all__ = [
   "ProjNormal",
