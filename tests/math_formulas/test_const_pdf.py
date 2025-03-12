@@ -31,11 +31,10 @@ def projection_result(n_points, n_dim, scale, const):
 @pytest.mark.parametrize('n_dim', [2, 3, 20])
 @pytest.mark.parametrize('scale', [1])
 @pytest.mark.parametrize('const', [0.1, 1])
-def test_inverted_projection(projection_result):
+def test_inverted_projection(const, projection_result):
 
     x = projection_result['x']
     y = projection_result['y']
-    const = projection_result['const']
 
     tolerance = projection_result['tolerance']
     x_reconstructed = pnc.pdf._invert_projection(y, const)
@@ -109,12 +108,11 @@ def gaussian_parameters(n_points, n_dim, mean_type, eigvals, eigvecs, sigma, con
       n_dim=n_dim, eigvals=eigvals, eigvecs=eigvecs
     ) * sigma**2
 
-    y = pnc.sampling.sample(mean_x, covariance_x, n_points, const=const)
+    y = pnc.sampling.sample(mean_x, covariance_x, const=const, n_samples=n_points)
 
     return {
         "mean_x": mean_x,
         "covariance_x": covariance_x,
-        "const": const,
         "y": y,
     }
 
@@ -125,13 +123,12 @@ def gaussian_parameters(n_points, n_dim, mean_type, eigvals, eigvecs, sigma, con
 @pytest.mark.parametrize("eigvecs", ["random", "identity"])
 @pytest.mark.parametrize('sigma', [0.1, 1])
 @pytest.mark.parametrize('const', [0.5, 1, 10])
-def test_pdf(gaussian_parameters):
+def test_pdf(const, gaussian_parameters):
     """Test that the pdf of the projected gaussian with additive constant
     does not return nan or inf and is consistent with the log pdf."""
     # Unpack parameters
     mean_x = gaussian_parameters['mean_x']
     covariance_x = gaussian_parameters['covariance_x']
-    const = gaussian_parameters['const']
     # Unpack samples
     y = gaussian_parameters['y']
 
