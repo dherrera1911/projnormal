@@ -1,129 +1,65 @@
-"""Test the Taylor approximation to ellipsoid projected normal moments."""
+"""Test the class implementing the ellipse parametrization."""
 import pytest
 import torch
-import projnormal.distribution.ellipse as pne
-import projnormal.distribution.general as png
 import projnormal.param_sampling as par_samp
 import projnormal.matrix_checks as checks
+from projnormal.models._ellipsoid import Ellipsoid
 
 
 @pytest.fixture(scope="function")
-def sample_parameters(n_dim, sigma):
-    """ Fixture to generate Gaussian parameters for tests."""
+def sample_B(n_dim, n_dirs):
+    """ Fixture to generate matrix B."""
+    eigvecs = par_samp.make_ortho_vectors(n_dim=n_dim, n_vec=n_dirs)
+    eigvals = torch.rand(n_dirs) + 1
+    rad_sq = torch.rand(1) + 0.5
 
-    # Initialize the mean of the gaussian
-    # Parameters of distribution
-    mean_x = par_samp.make_mean(n_dim=n_dim)
-    covariance_x = par_samp.make_spdm(n_dim=n_dim) * sigma**2
-    B = torch.diag(torch.rand(n_dim) + 0.5)
+    B = torch.eye(n_dim) * rad_sq + torch.einsum(
+      "ij,i,im->jm", eigvecs, (eigvals - rad_sq), eigvecs
+    )
 
     return {
-        "mean_x": mean_x,
-        "covariance_x": covariance_x,
-        "B": B,
+      "B": B,
+      "eigvecs": eigvecs,
+      "eigvals": eigvals,
+      "rad_sq": rad_sq
     }
 
-@pytest.mark.parametrize("n_dim", [5])
-@pytest.mark.parametrize("sigma", [0.2])
-def test_taylor_moments(sample_parameters):
-    n_samples = 500000
+@pytest.mark.parametrize("n_dim", [3, 5])
+@pytest.mark.parametrize("n_dirs", [1, 2])
+def test_ellipse(n_dim, n_dirs, sample_B):
 
-    # Unpack parameters
-    mean_x = sample_parameters["mean_x"]
-    covariance_x = sample_parameters["covariance_x"]
-    B = sample_parameters["B"]
+    B = sample_B["B"]
+    eigvecs = sample_B["eigvecs"]
+    eigvals = sample_B["eigvals"]
+    rad_sq = sample_B["rad_sq"]
 
-    # Get taylor approximation moments
-    gamma_taylor = pne.moments.mean(
-      mean_x=mean_x, covariance_x=covariance_x, B=B
-    )
-    sm_taylor = pne.moments.second_moment(
-        mean_x=mean_x, covariance_x=covariance_x, B=B
+    # Initialize ellipsoid
+    ellipse = Ellipsoid(
+      n_dim=n_dim, n_dirs=n_dirs, rad_sq=rad_sq
     )
 
-    # Check that the means are close
-    assert checks.is_symmetric(sm_taylor)
-    assert checks.is_positive_definite(sm_taylor)
+    ellipse.eigvecs = eigvecs
+    ellipse.eigvals = eigvals
 
-    moments = pne.sampling.empirical_moments(
-        mean_x=mean_x, covariance_x=covariance_x,
-        B=B, n_samples=n_samples
-    )
-    gamma_emp = moments["mean"]
-    sm_emp = moments["second_moment"]
+    # Check that matrix B is correct
+    with torch.no_grad():
+        B_gen = ellipse.get_B()
+        B_eigvals = torch.sort(
+          torch.linalg.eigvalsh(B_gen)
+        ).values
+        B_sqrt = ellipse.get_B_sqrt()
+        B_sqrt_inv = ellipse.get_B_sqrt_inv()
+        B_logdet = ellipse.get_B_logdet()
 
-    assert torch.allclose(gamma_taylor, gamma_emp, atol=1e-2)
-    assert torch.allclose(sm_taylor, sm_emp, atol=1e-2)
+    eigval_list = torch.sort(
+      torch.cat((torch.ones(n_dim-n_dirs) * rad_sq, eigvals))
+    ).values
 
+    assert torch.allclose(B_gen, B, atol=1e-5), "Matrix B has incorrect eigenvalues"
+    assert torch.allclose(B_gen, B), "Matrix B is incorrect"
 
-@pytest.mark.parametrize("n_dim", [5])
-@pytest.mark.parametrize("sigma", [0.2])
-def test_pdf(n_dim, sample_parameters):
-    """Test the pdf of the ellipse distribution."""
-    n_samples = 500
-
-    # Unpack parameters
-    mean_x = sample_parameters["mean_x"]
-    covariance_x = sample_parameters["covariance_x"]
-    B = sample_parameters["B"]
-
-    # Get samples from the ellipse distribution
-    samples_ellipse = pne.sampling.sample(
-        mean_x=mean_x, covariance_x=covariance_x, B=B, n_samples=n_samples
-    )
-
-    # Compute pdf
-    pdf_samples = pne.pdf.pdf(
-      mean_x=mean_x, covariance_x=covariance_x, y=samples_ellipse, B=B
-    )
-
-    assert torch.all(pdf_samples >= 0)
-
-    # Check that the values are the same when B=I
-    B = torch.eye(mean_x.shape[0])
-
-    samples = png.sampling.sample(
-        mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples
-    )
-
-    # Compute pdf
-    pdf_gen = png.pdf.pdf(
-      mean_x=mean_x, covariance_x=covariance_x, y=samples,
-    )
-
-    pdf_ellipse = pne.pdf.pdf(
-      mean_x=mean_x, covariance_x=covariance_x, y=samples, B=B
-    )
-
-    assert torch.allclose(pdf_gen, pdf_ellipse, atol=1e-2)
-
-    # Check that values are just scaled when B=a*I
-    # Original variable satisfies y'y = 1
-    # Scale variable by q=yA and make it satisfy
-    # q'(A^{-1}A^{-1})q = y'y = 1
-    # In transformed space, area of sphere is scaled
-    # a^(n-1), so pdf is scaled by 1/a^(1-n)
-
-    # Sample from sphere
-    samples = png.sampling.sample(
-        mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples
-    )
-    # Compute pdf in sphere
-    pdf_gen = png.pdf.pdf(
-      mean_x=mean_x, covariance_x=covariance_x, y=samples,
-    )
-
-    # Scale up the sphere we're projecting to
-    a = 2
-    scaling = torch.eye(mean_x.shape[0]) * a
-    B = scaling.inverse() @ scaling.inverse()
-
-    samples_trans = samples @ scaling
-    pdf_ellipse = pne.pdf.pdf(
-      mean_x=mean_x, covariance_x=covariance_x, y=samples_trans, B=B
-    )
-
-    assert torch.allclose(
-      pdf_ellipse * a**(n_dim-1), pdf_gen, atol=1e-2
-    )
+    # Check that generated matrices are correct
+    assert torch.allclose(B_gen, B_sqrt @ B_sqrt, atol=1e-5), "B_sqrt is incorrect"
+    assert torch.allclose(B_sqrt @ B_sqrt_inv, torch.eye(n_dim), atol=1e-5), "B_sqrt_inv is incorrect"
+    assert torch.allclose(B_logdet, torch.logdet(B)), "B_logdet is incorrect"
 
