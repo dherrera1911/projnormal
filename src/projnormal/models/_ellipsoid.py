@@ -5,7 +5,7 @@ import torch.nn.utils.parametrize as parametrize
 import projnormal.param_sampling as par_samp
 
 from projnormal.models._constraints import Positive
-from projnormal.ellipse_linalg import spd_sqrt
+from projnormal.ellipse_linalg import spd_sqrt, make_B_matrix
 from torch.nn.utils.parametrizations import orthogonal
 
 
@@ -95,11 +95,7 @@ class Ellipsoid(nn.Module):
         """
         Return the ellipsoid matrix B.
         """
-        term1 = torch.eye(self.n_dim) * self.rad_sq
-        term2 = torch.einsum(
-          'ki,k,kj->ij', self.eigvecs, self.eigvals - self.rad_sq, self.eigvecs
-        )
-        return term1 + term2
+        return make_B_matrix(eigvals=self.eigvals, eigvecs=self.eigvecs, rad_sq=self.rad_sq)
 
 
     def get_B_logdet(self):
@@ -117,10 +113,7 @@ class Ellipsoid(nn.Module):
         """
         rad = torch.sqrt(self.rad_sq)
         eigval_sqrt = torch.sqrt(self.eigvals)
-        B_sqrt = torch.eye(self.n_dim) * rad + torch.einsum(
-          'ki,k,kj->ij', self.eigvecs, eigval_sqrt - rad, self.eigvecs
-        )
-        return B_sqrt
+        return make_B_matrix(eigvals=eigval_sqrt, eigvecs=self.eigvecs, rad_sq=rad)
 
 
     def get_B_sqrt_inv(self):
@@ -129,10 +122,7 @@ class Ellipsoid(nn.Module):
         """
         rad = 1/torch.sqrt(self.rad_sq)
         eigval_sqrt_inv = 1/torch.sqrt(self.eigvals)
-        B_sqrt_inv = torch.eye(self.n_dim) * rad + torch.einsum(
-          'ki,k,kj->ij', self.eigvecs, eigval_sqrt_inv - rad, self.eigvecs
-        )
-        return B_sqrt_inv
+        return make_B_matrix(eigvals=eigval_sqrt_inv, eigvecs=self.eigvecs, rad_sq=rad)
 
 
 class EllipsoidFixed(nn.Module):

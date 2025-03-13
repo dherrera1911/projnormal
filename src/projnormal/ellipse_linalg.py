@@ -3,6 +3,7 @@ import torch
 
 __all__ = [
   "spd_sqrt",
+  "make_B_matrix",
 ]
 
 
@@ -46,3 +47,32 @@ def spd_sqrt(B, return_inverse=True):
     else:
         return B_sqrt
 
+
+def make_B_matrix(eigvals, eigvecs, rad_sq):
+    """
+    For a set of n_eig eigenvalues and eigenvectors, make
+    a symmetric positive definite matrix B that has those
+    eigenvalues and eigenvectors. The rest of the
+    eigenvalues are set to rad_sq.
+
+    Parameters
+    ----------
+    eigvals : torch.Tensor
+        Eigenvalues. Shape (n_eig,).
+
+    eigvecs : torch.Tensor
+        Eigenvectors. Shape (n_eig, n_dim).
+
+    rad_sq : float
+        The value of the remaining eigenvalues.
+
+    Returns
+    -------
+    B : torch.Tensor
+        Symmetric positive definite matrix. Shape (n_dim, n_dim).
+
+    """
+    n_dim = eigvecs.shape[1]
+    B = torch.eye(n_dim, dtype=eigvals.dtype, device=eigvals.device) * rad_sq \
+        + torch.einsum("ij,i,im->jm", eigvecs, (eigvals - rad_sq), eigvecs)
+    return B
