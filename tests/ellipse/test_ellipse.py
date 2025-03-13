@@ -3,7 +3,7 @@ import pytest
 import torch
 import projnormal.param_sampling as par_samp
 import projnormal.matrix_checks as checks
-from projnormal.models._ellipsoid import Ellipsoid
+from projnormal.models._ellipsoid import Ellipsoid, EllipsoidFixed
 
 
 @pytest.fixture(scope="function")
@@ -35,7 +35,11 @@ def test_ellipse(n_dim, n_dirs, sample_B):
 
     # Initialize ellipsoid
     ellipse = Ellipsoid(
-      n_dim=n_dim, n_dirs=n_dirs, rad_sq=rad_sq
+      n_dim=n_dim,
+      n_dirs=n_dirs,
+      B_eigvals=eigvals,
+      B_eigvecs=eigvecs,
+      B_rad_sq=rad_sq
     )
 
     ellipse.eigvecs = eigvecs
@@ -63,3 +67,40 @@ def test_ellipse(n_dim, n_dirs, sample_B):
     assert torch.allclose(B_sqrt @ B_sqrt_inv, torch.eye(n_dim), atol=1e-5), "B_sqrt_inv is incorrect"
     assert torch.allclose(B_logdet, torch.logdet(B)), "B_logdet is incorrect"
 
+
+@pytest.mark.parametrize("n_dim", [3, 5, 8])
+def test_ellipse_fixed(n_dim):
+    B = par_samp.make_spdm(n_dim=n_dim)
+
+    # Initialize ellipsoid
+    ellipse = EllipsoidFixed(B=B)
+
+    assert torch.allclose(B, ellipse.B, atol=1e-5), \
+        "B_sqrt is incorrect"
+
+    B_sqrt = ellipse.get_B_sqrt()
+    B_sqrt_inv = ellipse.get_B_sqrt_inv()
+    B_logdet = ellipse.get_B_logdet()
+
+    assert torch.allclose(B, B_sqrt @ B_sqrt, atol=1e-5), \
+        "B_sqrt is incorrect"
+    assert torch.allclose(B @ B_sqrt_inv @ B_sqrt_inv, torch.eye(n_dim), atol=1e-5), \
+        "B_sqrt_inv is incorrect"
+    assert torch.allclose(B_logdet, torch.logdet(B)), \
+        "B_logdet is incorrect"
+
+    # Assign new B
+    B_new = par_samp.make_spdm(n_dim=n_dim)
+
+    ellipse.B = B_new
+
+    assert torch.allclose(B_new, ellipse.B, atol=1e-5), \
+        "B_sqrt is incorrect"
+
+    B_sqrt = ellipse.get_B_sqrt()
+    B_sqrt_inv = ellipse.get_B_sqrt_inv()
+
+    assert torch.allclose(B_new, B_sqrt @ B_sqrt, atol=1e-5), \
+        "B_sqrt is incorrect"
+    assert torch.allclose(B_new @ B_sqrt_inv @ B_sqrt_inv, torch.eye(n_dim), atol=1e-5), \
+        "B_sqrt_inv is incorrect"
