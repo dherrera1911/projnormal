@@ -30,21 +30,21 @@ class Ellipsoid(nn.Module):
     B = I * rad_sq
       + eigvecs[0] * eigvecs[0].T * (eigvals[0] - rad_sq)
       ...
-      + eigvecs[k] * eigvecs[k].T * (eigvals[k] - rad_sq)
+      + eigvecs[n_dirs] * eigvecs[n_dirs].T * (eigvals[n_dirs] - rad_sq)
 
-    where I is the identity matrix and {eigvecs[0] ... eigvecs[k]}
+    where I is the identity matrix and {eigvecs[0] ... eigvecs[n_dirs]}
     are orthogonal.
 
     Attributes
     -----------
-      B_rad_sq : torch.Tensor, shape (n_dim)
-          The common eigenvalue of the n_dim - 2 eigenvalues.
+      rad_sq : torch.Tensor, shape (n_dim)
+          The common eigenvalue of the n_dim - n_dirs eigenvalues.
 
-      B_eigvecs : torch.Tensor, shape (n_dirs, n_dim)
-          The two eigenvectors of the matrix B.
+      eigvecs : torch.Tensor, shape (n_dirs, n_dim)
+          The eigenvectors of the matrix B.
 
-      B_eigvals : torch.Tensor, shape (n_dirs)
-          The two eigenvalues of the matrix B.
+      eigvals : torch.Tensor, shape (n_dirs)
+          The eigenvalues of the matrix B.
     """
 
     def __init__(self, n_dim, n_dirs=None, B_eigvals=None, B_eigvecs=None, B_rad_sq=1.0):
@@ -125,6 +125,10 @@ class Ellipsoid(nn.Module):
         return make_B_matrix(eigvals=eigval_sqrt_inv, eigvecs=self.eigvecs, rad_sq=rad)
 
 
+    def __dir__(self):
+        return ["eigvals", "eigvecs", "rad_sq"]
+
+
 class EllipsoidFixed(nn.Module):
     """
     This class implements a symmetric positive definite matrix B.
@@ -200,3 +204,6 @@ class EllipsoidFixed(nn.Module):
         """
         return self.B_sqrt_inv
 
+
+    def __dir__(self):
+        return ["B", "eigvals", "eigvecs", "B_sqrt", "B_sqrt_inv", "B_logdet"]
