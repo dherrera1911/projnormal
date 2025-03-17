@@ -227,12 +227,14 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
     def B(self):
         return self.ellipse.get_B()
 
+
     @B.setter
     def B(self):
         raise AttributeError(
             "The ellipse matrix B can't be set directly."
             "Set ellipse.eigvecs, ellipse.eigvals and ellipse.rad_sq instead."
         )
+
 
     def __dir__(self):
         return ["mean_x", "covariance_x", "moments", "log_pdf", "pdf",
