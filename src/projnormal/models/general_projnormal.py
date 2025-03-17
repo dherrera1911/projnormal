@@ -437,7 +437,11 @@ class ProjNormal(nn.Module):
         """
         data_mean_normalized = data_moments["mean"] / torch.norm(data_moments["mean"])
         self.mean_x = data_mean_normalized
-        self.covariance_x = data_moments["covariance"]
+        self.covariance_x = data_moments["covariance"] \
+            + 1e-5 * torch.eye(self.n_dim,
+                               device=self.mean_x.device,
+                               dtype=self.mean_x.dtype
+                              )
 
 
     def __dir__(self):
