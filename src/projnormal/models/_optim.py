@@ -27,6 +27,17 @@ def mse_loss(momentsA, momentsB):
     return distance_means_sq + distance_sm_sq
 
 
+def norm_loss(momentsA, momentsB):
+    """ Compute the Euclidean distance between the observed and model moments. """
+    distance_means_sq = torch.sqrt(
+      torch.sum((momentsA["mean"] - momentsB["mean"])**2) + 1e-8
+    )
+    distance_sm_sq = torch.sqrt(
+      torch.sum((momentsA["second_moment"] - momentsB["second_moment"])**2) + 1e-8
+    )
+    return distance_means_sq + distance_sm_sq
+
+
 def _mm_data_check(data):
     """ Check that data is of type expected for moment matching. """
     # Check data is a dictionary
