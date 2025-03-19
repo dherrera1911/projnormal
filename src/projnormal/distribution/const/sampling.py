@@ -79,6 +79,6 @@ def empirical_moments(mean_x, covariance_x, const, n_samples):
     """
     samples = sample(mean_x, covariance_x, n_samples=n_samples, const=const)
     gamma = torch.mean(samples, dim=0)
-    second_moment = torch.einsum("in,nj->ij", samples.t(), samples) / n_samples
-    psi = second_moment - torch.einsum("i,j->ij", gamma, gamma)
+    psi = torch.cov(samples.t())
+    second_moment = psi + torch.outer(gamma, gamma)
     return {"mean": gamma, "covariance": psi, "second_moment": second_moment}
