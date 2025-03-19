@@ -67,7 +67,7 @@ def mean(mean_x, covariance_x, const, B=None, B_sqrt=None, B_sqrt_inv=None):
     return gamma
 
 
-def second_moment(mean_x, covariance_x, const=None, B=None, B_sqrt=None, B_sqrt_inv=None):
+def second_moment(mean_x, covariance_x, const, B=None, B_sqrt=None, B_sqrt_inv=None):
     """
     Compute the Taylor approximation to the second moment matrix of the
     variable Y = X/(X'X)^0.5, where X~N(mean_x, covariance_x). Y has a

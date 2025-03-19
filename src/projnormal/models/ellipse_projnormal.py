@@ -1,4 +1,4 @@
-"""Cass for the general projected normal distribution."""
+"""Class for the general projected normal distribution."""
 from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
@@ -72,7 +72,7 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
         mean_x=None,
         covariance_x=None,
     ):
-        """Initialize an instance of the ProjNormalConst class.
+        """Initialize an instance of the ProjNormalEllipseParent class.
 
         Parameters
         ------------
@@ -105,16 +105,18 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
         B_sqrt = self.ellipse.get_B_sqrt()
         B_sqrt_inv = self.ellipse.get_B_sqrt_inv()
 
-        gamma = prnorm.ellipse.moments.mean(
+        gamma = prnorm.ellipse_const.moments.mean(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
+            const=self.const,
             B_sqrt=B_sqrt,
             B_sqrt_inv=B_sqrt_inv,
         )
 
-        second_moment = prnorm.ellipse.moments.second_moment(
+        second_moment = prnorm.ellipse_const.moments.second_moment(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
+            const=self.const,
             B_sqrt=B_sqrt,
             B_sqrt_inv=B_sqrt_inv,
         )
@@ -138,9 +140,10 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
         with torch.no_grad():
             B_sqrt = self.ellipse.get_B_sqrt()
             B_sqrt_inv = self.ellipse.get_B_sqrt_inv()
-            stats_dict = prnorm.ellipse.sampling.empirical_moments(
+            stats_dict = prnorm.ellipse_const.sampling.empirical_moments(
                 mean_x=self.mean_x,
                 covariance_x=self.covariance_x,
+                const=self.const,
                 n_samples=n_samples,
                 B_sqrt=B_sqrt,
                 B_sqrt_inv=B_sqrt_inv,
@@ -212,7 +215,7 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
         with torch.no_grad():
             B_sqrt = self.ellipse.get_B_sqrt()
             B_sqrt_inv = self.ellipse.get_B_sqrt_inv()
-            samples = prnorm.const.sampling.sample(
+            samples = prnorm.ellipse_const.sampling.sample(
                 mean_x=self.mean_x,
                 covariance_x=self.covariance_x,
                 n_samples=n_samples,
@@ -239,7 +242,7 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
     def __dir__(self):
         return ["mean_x", "covariance_x", "moments", "log_pdf", "pdf",
                 "moments_empirical", "sample", "moment_match", "moment_init",
-                "ellipse"]
+                "ellipse", "B"]
 
 
 class ProjNormalEllipse(ProjNormalEllipseParent):
@@ -403,7 +406,7 @@ class ProjNormalEllipseIso(ProjNormalEllipse):
         B_eigvals=None,
         B_rad_sq=1.0,
     ):
-        """Initialize an instance of the ProjNormalConst class.
+        """Initialize an instance of the ProjNormalEllipseIso class.
 
         Parameters
         ------------

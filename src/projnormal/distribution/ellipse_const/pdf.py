@@ -113,7 +113,8 @@ def log_pdf(mean_x, covariance_x, y, const, B_sqrt=None, B_sqrt_ldet=None):
     lpdf = _pnc_pdf.log_pdf(
       mean_x=mean_z,
       covariance_x=covariance_z,
-      y=y_z, const=const
+      y=y_z,
+      const=const
     ) + B_sqrt_ldet
 
     return lpdf
