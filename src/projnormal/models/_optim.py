@@ -107,7 +107,8 @@ def lbfgs_loop(
         Tolerance for stopping training, by default 1e-10.
 
     loss_fun : callable, optional
-        Loss function to use for moment matchin. By default None, which uses the MSE loss.
+        Loss function to use for moment matchin. By default None,
+        which uses the Euclidean distance between the observed and model moments.
 
     show_progress : bool
         If True, show a progress bar during training. Default is True.
@@ -124,7 +125,7 @@ def lbfgs_loop(
         Dictionary containing the loss and training time at each epoch.
     """
     if loss_fun is None:
-        loss_fun = mse_loss
+        loss_fun = norm_loss
 
     # Define the closure function depending on the type of fit
     optimizer = optim.LBFGS(
@@ -234,7 +235,8 @@ def nadam_loop(
         Initial learning rate (default = 0.1).
 
     loss_fun : callable, optional
-        Loss function to use for moment matchin. By default None, which uses the MSE loss.
+        Loss function to use for moment matchin. By default None, which
+        uses the Euclidean distance between the observed and model moments.
 
     step_size : int, optional
         Period of learning rate decay in epochs (default = 10).
@@ -255,7 +257,7 @@ def nadam_loop(
         Otherwise returns None.
     """
     if loss_fun is None:
-        loss_fun = mse_loss
+        loss_fun = norm_loss
 
     if fit_type == "mm":
         _mm_data_check(data)
