@@ -108,7 +108,7 @@ def second_moment(mean_x, covariance_x, const):
     numerator_denominator_cov = 2 * (term1 + term2 + term2.transpose(0, 1))
 
     # Compute second moment of projected normal
-    epsilon = 1e-6  # Small value to avoid division by zero
+    epsilon = 1e-8  # Small value to avoid division by zero
     sm = (
         numerator_mean
         / denominator_mean
