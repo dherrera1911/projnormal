@@ -452,8 +452,8 @@ class ProjNormalEllipseIso(ProjNormalEllipse):
 
         if sigma2 is None:
             sigma2 = torch.tensor(1.0)
-        self.sigma2 = nn.Parameter(torch.as_tensor(sigma2))
-        parametrize.register_parametrization(self, "sigma2", Positive())
+        self.sigma = nn.Parameter(torch.sqrt(torch.as_tensor(sigma2)))
+        parametrize.register_parametrization(self, "sigma", Positive())
 
 
     def moment_init(self, data_moments):
@@ -471,14 +471,14 @@ class ProjNormalEllipseIso(ProjNormalEllipse):
         """
         data_mean_normalized = data_moments["mean"] / torch.norm(data_moments["mean"])
         self.mean_x = data_mean_normalized
-        self.sigma2 = data_moments["covariance"].trace() / self.n_dim
+        self.sigma = torch.sqrt(data_moments["covariance"].trace() / self.n_dim)
 
 
     @property
     def covariance_x(self):
         covariance_x = torch.eye(
           self.n_dim, dtype=self.mean_x.dtype, device=self.mean_x.device
-        ) * self.sigma2
+        ) * self.sigma**2
         return covariance_x
 
 
