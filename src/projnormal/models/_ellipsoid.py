@@ -22,11 +22,13 @@ def __dir__():
 class Ellipsoid(nn.Module):
     """
     This class implements a symmetric positive definite matrix B
-    of size n_dim x n_dim, where (n_dim - k) eigenvalues are
-    equal to `rad_sq`. and the other eigenvalues along directions
-    `eigvecs[0]` and `eigvecs[1]` are equal to `eigvals[0]` and `eigvals[1]`.
+    that can be optimized.
 
-    The matrix B is given by:
+    Matrix B is of size n_dim x n_dim. It is parametrized by
+    n_dirs eigenvalues and eigenvectors, and a common eigenvalue `rad_sq`
+    for the rest of the eigenvalues.
+
+    Mathematically, the matrix B is given by:
     B = I * rad_sq
       + eigvecs[0] * eigvecs[0].T * (eigvals[0] - rad_sq)
       ...
@@ -48,6 +50,30 @@ class Ellipsoid(nn.Module):
     """
 
     def __init__(self, n_dim, n_dirs=None, B_eigvals=None, B_eigvecs=None, B_rad_sq=1.0):
+        """
+        Initialize the ellipsoid matrix B.
+
+        Attributes
+        ----------
+          n_dim : int
+              The dimension of the matrix B.
+
+          n_dirs : int, optional
+              The number of eigenvalues and eigenvectors to specify.
+              If None, defaults to 1.
+
+          B_eigvals : torch.Tensor, shape (n_dirs), optional
+              The eigenvalues of the matrix B.
+              If None, defaults to `B_rad_sq`.
+
+          B_eigvecs : torch.Tensor, shape (n_dirs, n_dim), optional
+              The eigenvectors of the matrix B.
+              If None, defaults to orthogonal vectors.
+
+          B_rad_sq : float, optional
+              The common eigenvalue of the n_dim - n_dirs eigenvalues.
+              If None, defaults to 1.0.
+        """
         super().__init__()
 
         # Parse inputs
@@ -132,20 +158,23 @@ class Ellipsoid(nn.Module):
 class EllipsoidFixed(nn.Module):
     """
     This class implements a symmetric positive definite matrix B.
+    It is not optimized, but rather fixed.
 
     Attributes
     -----------
       B : torch.Tensor, shape (n_dim)
           The common eigenvalue of the n_dim - 2 eigenvalues.
-
-      eigvecs : torch.Tensor, shape (n_dim, n_dim)
-          The eigenvectors of the matrix B.
-
-      eigvals : torch.Tensor, shape (n_dim)
-          The eigenvalues of the matrix B.
     """
 
     def __init__(self, B):
+        """
+        Initialize the ellipsoid matrix B.
+
+        Attributes
+        ----------
+          B : torch.Tensor, shape (n_dim, n_dim)
+              The ellipsoid matrix B.
+        """
         super().__init__()
 
         self.n_dim = B.shape[0]
