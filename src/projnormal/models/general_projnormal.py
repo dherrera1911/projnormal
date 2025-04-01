@@ -249,7 +249,8 @@ class ProjNormal(nn.Module):
             Default is 'NAdam'.
 
         loss_fun : callable
-            Loss function to use for moment matching. Default is MSE loss.
+            Loss function to use for moment matching. Default is Euclidean
+            distance between observed and model moments.
 
         show_progress : bool
             If True, show a progress bar during training. Default is True.
