@@ -24,6 +24,7 @@ def sample_B(n_dim, n_dirs):
       "rad_sq": rad_sq
     }
 
+
 @pytest.mark.parametrize("n_dim", [3, 5])
 @pytest.mark.parametrize("n_dirs", [1, 2])
 def test_ellipse(n_dim, n_dirs, sample_B):
@@ -54,18 +55,33 @@ def test_ellipse(n_dim, n_dirs, sample_B):
         B_sqrt = ellipse.get_B_sqrt()
         B_sqrt_inv = ellipse.get_B_sqrt_inv()
         B_logdet = ellipse.get_B_logdet()
+        B_eigvecs = torch.linalg.eigh(B_gen).eigenvectors
 
+
+    assert torch.allclose(B_gen, B, atol=1e-5), \
+        "Matrix B has incorrect eigenvalues"
+    # Check that generated matrices are correct
+    assert torch.allclose(B_gen, B_sqrt @ B_sqrt, atol=1e-5), \
+        "B_sqrt is incorrect"
+    assert torch.allclose(B_sqrt @ B_sqrt_inv, torch.eye(n_dim), atol=1e-5), \
+        "B_sqrt_inv is incorrect"
+    assert torch.allclose(B_logdet, torch.logdet(B)), \
+        "B_logdet is incorrect"
+
+    # Test that B eigenvalues are same as inputs
     eigval_list = torch.sort(
       torch.cat((torch.ones(n_dim-n_dirs) * rad_sq, eigvals))
-    ).values
+    ).values # Input eigenvalues
+    assert torch.allclose(B_eigvals, eigval_list, atol=1e-5), \
+        "Eigenvalues are incorrect"
 
-    assert torch.allclose(B_gen, B, atol=1e-5), "Matrix B has incorrect eigenvalues"
-    assert torch.allclose(B_gen, B), "Matrix B is incorrect"
-
-    # Check that generated matrices are correct
-    assert torch.allclose(B_gen, B_sqrt @ B_sqrt, atol=1e-5), "B_sqrt is incorrect"
-    assert torch.allclose(B_sqrt @ B_sqrt_inv, torch.eye(n_dim), atol=1e-5), "B_sqrt_inv is incorrect"
-    assert torch.allclose(B_logdet, torch.logdet(B)), "B_logdet is incorrect"
+    # Test that B eigenvectors are same as inputs
+    eigvec_dotprod = torch.abs(eigvecs @ B_eigvecs)
+    eigvec_match = torch.isclose(
+      eigvec_dotprod, torch.ones(n_dirs, n_dim), atol=1e-5
+    ).sum(dim=1) # There should be 1 match for each input eigvec
+    assert torch.allclose(eigvec_match, torch.tensor([1] * n_dirs)), \
+        "Eigenvectors are incorrect"
 
 
 @pytest.mark.parametrize("n_dim", [3, 5, 8])
@@ -76,7 +92,7 @@ def test_ellipse_fixed(n_dim):
     ellipse = EllipsoidFixed(B=B)
 
     assert torch.allclose(B, ellipse.B, atol=1e-5), \
-        "B_sqrt is incorrect"
+        "B is incorrect"
 
     B_sqrt = ellipse.get_B_sqrt()
     B_sqrt_inv = ellipse.get_B_sqrt_inv()
@@ -91,7 +107,6 @@ def test_ellipse_fixed(n_dim):
 
     # Assign new B
     B_new = par_samp.make_spdm(n_dim=n_dim)
-
     ellipse.B = B_new
 
     assert torch.allclose(B_new, ellipse.B, atol=1e-5), \
