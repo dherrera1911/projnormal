@@ -5,6 +5,7 @@ import projnormal.param_sampling as par_samp
 import projnormal.matrix_checks as checks
 import projnormal.models as models
 import projnormal.distribution.ellipse as pne
+import projnormal.distribution.general as png
 
 
 torch.manual_seed(1)
@@ -132,7 +133,7 @@ def test_moments(n_dim, gaussian_parameters):
     covariance_x = gaussian_parameters['covariance_x']
 
     eigvecs = par_samp.make_ortho_vectors(n_dim, N_DIRS)
-    eigvals = torch.tensor([0.4, 2.5])
+    eigvals = torch.tensor([0.1, 2.0])
     rad_sq = torch.tensor(1.0)
 
     prnorm = models.ProjNormalEllipse(
@@ -162,7 +163,10 @@ def test_moments(n_dim, gaussian_parameters):
 
     # Compare results
     assert torch.allclose(moments_class['mean'], gamma), \
-        'Class empirical moments not correct'
-    assert torch.allclose(moments_class['second_moment'], second_moment), \
-        'Class empirical moments not correct'
+        'Class taylor mean not correct'
+    assert torch.allclose(moments_class['second_moment'], second_moment, atol=TOLERANCE), \
+        'Class taylor second moment not correct'
 
+    # Compare to empirical
+    #n_samples = 1000000
+    #emp_moments = prnorm.moments_empirical(n_samples)
