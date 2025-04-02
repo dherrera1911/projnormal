@@ -7,7 +7,7 @@ import projnormal.distribution as prnorm
 
 from ._constraints import Positive
 from .general_projnormal import ProjNormal
-from ._ellipsoid import Ellipsoid, EllipsoidFixed
+from ._ellipsoid import Ellipsoid, EllipsoidFixed, EllipsoidFull
 
 
 __all__ = [
@@ -569,3 +569,206 @@ class ProjNormalEllipseFixed(ProjNormalEllipseParent):
         self.ellipse = EllipsoidFixed(
             B=B
         )
+
+
+
+class ProjNormalEllipseFull(ProjNormalEllipseParent):
+    """
+    This class implements the general projected normal distribution but with
+    projection on an ellipse instead of the sphere.
+    The variable Y following the distribution
+    is defined as Y = X / sqrt(X'BX), where X~N(mean_x, covariance_x)
+    and B is a symmetric positive definite matrix.
+    The class can be used to fit distribution parameters to data.
+
+    Attributes
+    -----------
+      mean_x : torch.Tensor, shape (n_dim)
+          Mean of X. It is constrained to the unit sphere.
+
+      covariance_x : torch.Tensor, shape (n_dim, n_dim)
+          Covariance of X. It is constrained to be symmetric positive definite.
+
+      B : torch.Tensor, shape (n_dim, n_dim)
+          The ellipse matrix. It is constrained to be symmetric positive definite.
+
+    Methods
+    ----------
+      moments():
+          Compute the moments using a Taylor approximation.
+
+      log_pdf() :
+          Compute the value of the log pdf at given points.
+
+      pdf() :
+          Compute the value of the pdf at given points.
+
+      moments_empirical() :
+          Compute the moments by sampling from the distribution
+
+      sample() :
+          Sample points from the distribution.
+
+      moment_match() :
+          Fit the distribution parameters to the observed moments.
+
+      max_likelihood() :
+          Fit the distribution parameters to the observed data
+          using maximum likelihood.
+    """
+
+    def __init__(
+        self,
+        n_dim=None,
+        mean_x=None,
+        covariance_x=None,
+        B=None,
+    ):
+        """Initialize an instance of the ProjNormalEllipse class.
+
+        Parameters
+        ------------
+          n_dim : int, optional
+              Dimension of the underlying Gaussian distribution. If mean
+              and covariance are provided, this is not required.
+
+          mean_x : torch.Tensor, shape (n_dim), optional
+              Mean of X. It is converted to unit norm. Default is random.
+
+          covariance_x : torch.Tensor, shape (n_dim, n_dim), optional
+              Initial covariance. Default is the identity.
+
+          B : torch.Tensor, shape (n_dim, n_dim), optional
+              The ellipse matrix. Default is the identity.
+        """
+        super().__init__(n_dim=n_dim, mean_x=mean_x, covariance_x=covariance_x)
+
+        # Initialize the ellipse class
+        if B is None:
+            B = torch.eye(self.n_dim)
+        self._init_ellipse(B)
+
+
+    def _init_ellipse(self, B):
+        """
+        Initialize the ellipse class with the provided parameters.
+        """
+        self.ellipse = EllipsoidFull(
+            n_dim=self.n_dim,
+            B=B,
+        )
+
+
+class ProjNormalEllipseIsoFull(ProjNormalEllipseFull):
+    """
+    This class implements the general projected normal distribution but with
+    projection on an ellipse instead of the sphere, and with an isotropic
+    covariance_x matrix.
+
+    The variable Y following the distribution
+    is defined as Y = X / sqrt(X'BX), where X~N(mean_x, I * sigma**2)
+    and B is a symmetric positive definite matrix.
+    The class can be used to fit distribution parameters to data.
+
+    Attributes
+    -----------
+      mean_x : torch.Tensor, shape (n_dim)
+          Mean of X. It is constrained to the unit sphere.
+
+      sigma : torch.Tensor, shape (n_dim, n_dim)
+          Covariance of X. It is constrained to be symmetric positive definite.
+
+      B : torch.Tensor, shape (n_dim, n_dim)
+          The ellipse matrix. It is constrained to be symmetric positive definite.
+
+    Methods
+    ----------
+      moments():
+          Compute the moments using a Taylor approximation.
+
+      log_pdf() :
+          Compute the value of the log pdf at given points.
+
+      pdf() :
+          Compute the value of the pdf at given points.
+
+      moments_empirical() :
+          Compute the moments by sampling from the distribution
+
+      sample() :
+          Sample points from the distribution.
+
+      moment_match() :
+          Fit the distribution parameters to the observed moments.
+
+      max_likelihood() :
+          Fit the distribution parameters to the observed data
+          using maximum likelihood.
+    """
+
+    def __init__(
+        self,
+        n_dim=None,
+        mean_x=None,
+        sigma2=None,
+        B=None,
+    ):
+        """Initialize an instance of the ProjNormalEllipseIso class.
+
+        Parameters
+        ------------
+          n_dim : int, optional
+              Dimension of the underlying Gaussian distribution. If mean
+              and covariance are provided, this is not required.
+
+          mean_x : torch.Tensor, shape (n_dim), optional
+              Mean of X. It is converted to unit norm. Default is random.
+
+          sigma2 : torch.Tensor, shape (n_dim, n_dim), optional
+              Initial covariance. Default is the identity.
+
+          B : torch.Tensor, shape (n_dim, n_dim), optional
+              The ellipse matrix. Default is the identity.
+        """
+        super().__init__(
+          n_dim=n_dim,
+          mean_x=mean_x,
+          covariance_x=None,
+          B=B,
+        )
+
+        # Remove the inherited nn.Parameter
+        parametrize.remove_parametrizations(self, "covariance_x")
+        delattr(self, "covariance_x")
+
+        if sigma2 is None:
+            sigma2 = torch.tensor(1.0)
+        self.sigma = nn.Parameter(torch.sqrt(torch.as_tensor(sigma2)))
+        parametrize.register_parametrization(self, "sigma", Positive())
+
+
+    def moment_init(self, data_moments):
+        """
+        Initialize the distribution parameters using the observed moments
+        as the initial guess (making sure the mean is normalized).
+
+        Parameters
+        ----------------
+          data : dict
+            Dictionary containing the observed moments. Must contain the keys
+              - 'mean': torch.Tensor, shape (n_dim)
+              - 'covariance': torch.Tensor, shape (n_dim, n_dim)
+              - 'second_moment': torch.Tensor, shape (n_dim, n_dim)
+        """
+        data_mean_normalized = data_moments["mean"] / torch.norm(data_moments["mean"])
+        self.mean_x = data_mean_normalized
+        self.sigma = torch.sqrt(data_moments["covariance"].trace() / self.n_dim)
+
+
+    @property
+    def covariance_x(self):
+        covariance_x = torch.eye(
+          self.n_dim, dtype=self.mean_x.dtype, device=self.mean_x.device
+        ) * self.sigma**2
+        return covariance_x
+

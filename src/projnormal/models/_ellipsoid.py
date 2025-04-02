@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
 import projnormal.param_sampling as par_samp
+import geotorch
 
 from projnormal.models._constraints import Positive
 from projnormal.ellipse_linalg import spd_sqrt, make_B_matrix
@@ -54,7 +55,7 @@ class Ellipsoid(nn.Module):
         """
         Initialize the ellipsoid matrix B.
 
-        Attributes
+        Parameters
         ----------
           n_dim : int
               The dimension of the matrix B.
@@ -183,7 +184,7 @@ class EllipsoidFixed(nn.Module):
         """
         Initialize the ellipsoid matrix B.
 
-        Attributes
+        Parameters
         ----------
           B : torch.Tensor, shape (n_dim, n_dim)
               The ellipsoid matrix B.
@@ -249,3 +250,86 @@ class EllipsoidFixed(nn.Module):
 
     def __dir__(self):
         return ["B", "eigvals", "eigvecs", "B_sqrt", "B_sqrt_inv", "B_logdet"]
+
+
+class EllipsoidFull(nn.Module):
+    """
+    This class implements a symmetric positive definite matrix B
+    that can be optimized.
+
+    Matrix B is of size n_dim x n_dim.
+
+    Attributes
+    -----------
+      B_sqrt : torch.Tensor, shape (n_dim, n_dim)
+          The square root of the ellipsoid matrix B.
+
+      B : torch.Tensor, shape (n_dirs, n_dim)
+          The eigenvectors of the matrix B.
+
+      eigvals : torch.Tensor, shape (n_dirs)
+          The eigenvalues of the matrix B.
+    """
+
+    def __init__(self, n_dim, B=None):
+        """
+        Initialize the ellipsoid matrix B.
+
+        Parameters
+        ----------
+          n_dim : int
+              The dimension of the matrix B.
+
+          B : torch.Tensor, shape (n_dim, n_dim), optional
+              The matrix B.
+        """
+        super().__init__()
+
+        # Parse inputs
+        if B is None:
+            B = torch.eye(n_dim)
+        elif B.shape != (n_dim, n_dim):
+            raise ValueError("B must have shape (n_dim, n_dim)")
+
+        self.n_dim = n_dim
+        B_sqrt = spd_sqrt(B)
+
+        self.B_sqrt = nn.Parameter(B_sqrt)
+        geotorch.positive_definite(self, "B_sqrt")
+        self.B_sqrt = B_sqrt.clone()
+
+
+    def get_B(self):
+        """
+        Return the ellipsoid matrix B.
+        """
+        B = self.B_sqrt @ self.B_sqrt
+        return B
+
+
+    def get_B_logdet(self):
+        """
+        Return the log determinant of the ellipsoid matrix B.
+        """
+        B_logdet = torch.logdet(self.B_sqrt) * 2
+        return B_logdet
+
+
+    def get_B_sqrt(self):
+        """
+        Return the square root of the ellipsoid matrix B.
+        """
+        return self.B_sqrt
+
+
+    def get_B_sqrt_inv(self):
+        """
+        Return the square root of the ellipsoid matrix B.
+        """
+        B_inv = torch.linalg.inv(self.B_sqrt)
+        return B_inv
+
+
+    def __dir__(self):
+        return ["B_sqrt"]
+
