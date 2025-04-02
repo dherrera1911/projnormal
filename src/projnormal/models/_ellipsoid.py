@@ -49,7 +49,8 @@ class Ellipsoid(nn.Module):
           The eigenvalues of the matrix B.
     """
 
-    def __init__(self, n_dim, n_dirs=None, B_eigvals=None, B_eigvecs=None, B_rad_sq=1.0):
+    def __init__(self, n_dim, n_dirs=None, B_eigvals=None,
+                 B_eigvecs=None, B_rad_sq=1.0):
         """
         Initialize the ellipsoid matrix B.
 
@@ -105,12 +106,12 @@ class Ellipsoid(nn.Module):
         self.n_dim = n_dim
         self.n_dirs = n_dirs
 
-        self.rad_sq = nn.Parameter(B_rad_sq.clone())
-        parametrize.register_parametrization(self, "rad_sq", Positive())
+        self.rad = nn.Parameter(torch.sqrt(B_rad_sq.clone()))
+        parametrize.register_parametrization(self, "rad", Positive())
 
-        self.eigvals = nn.Parameter(B_eigvals)
-        parametrize.register_parametrization(self, "eigvals", Positive())
-        self.eigvals = B_eigvals.clone()
+        self.singvals = nn.Parameter(torch.sqrt(B_eigvals))
+        parametrize.register_parametrization(self, "singvals", Positive())
+        self.singvals = torch.sqrt(B_eigvals.clone())
 
         self.eigvecs = nn.Parameter(B_eigvecs)
         orthogonal(self, "eigvecs")
@@ -121,15 +122,18 @@ class Ellipsoid(nn.Module):
         """
         Return the ellipsoid matrix B.
         """
-        return make_B_matrix(eigvals=self.eigvals, eigvecs=self.eigvecs, rad_sq=self.rad_sq)
+        B = make_B_matrix(
+          eigvals=self.singvals**2, eigvecs=self.eigvecs, rad_sq=self.rad**2
+        )
+        return B
 
 
     def get_B_logdet(self):
         """
         Return the log determinant of the ellipsoid matrix B.
         """
-        B_logdet = torch.log(self.rad_sq) * (self.n_dim - self.n_dirs) \
-            + torch.log(self.eigvals).sum()
+        B_logdet = torch.log(self.rad**2) * (self.n_dim - self.n_dirs) \
+            + torch.log(self.singvals**2).sum()
         return B_logdet
 
 
@@ -137,22 +141,31 @@ class Ellipsoid(nn.Module):
         """
         Return the square root of the ellipsoid matrix B.
         """
-        rad = torch.sqrt(self.rad_sq)
-        eigval_sqrt = torch.sqrt(self.eigvals)
-        return make_B_matrix(eigvals=eigval_sqrt, eigvecs=self.eigvecs, rad_sq=rad)
+        B_sqrt = make_B_matrix(
+          eigvals=self.singvals, eigvecs=self.eigvecs, rad_sq=self.rad
+        )
+        return B_sqrt
 
 
     def get_B_sqrt_inv(self):
         """
         Return the square root of the ellipsoid matrix B.
         """
-        rad = 1/torch.sqrt(self.rad_sq)
-        eigval_sqrt_inv = 1/torch.sqrt(self.eigvals)
-        return make_B_matrix(eigvals=eigval_sqrt_inv, eigvecs=self.eigvecs, rad_sq=rad)
+        rad = 1/self.rad
+        eigval_sqrt_inv = 1/self.singvals
+        B_inv = make_B_matrix(
+          eigvals=eigval_sqrt_inv, eigvecs=self.eigvecs, rad_sq=rad
+        )
+        return B_inv
+
+
+    @property
+    def eigvals(self):
+        return self.singvals**2
 
 
     def __dir__(self):
-        return ["eigvals", "eigvecs", "rad_sq"]
+        return ["singvals", "eigvals", "eigvecs", "rad"]
 
 
 class EllipsoidFixed(nn.Module):
