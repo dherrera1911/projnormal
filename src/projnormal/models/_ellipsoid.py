@@ -292,7 +292,7 @@ class EllipsoidFull(nn.Module):
             raise ValueError("B must have shape (n_dim, n_dim)")
 
         self.n_dim = n_dim
-        B_sqrt = spd_sqrt(B)
+        B_sqrt = spd_sqrt(B, return_inverse=False)
 
         self.B_sqrt = nn.Parameter(B_sqrt)
         geotorch.positive_definite(self, "B_sqrt")
