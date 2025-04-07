@@ -7,14 +7,13 @@ import projnormal.distribution as prnorm
 
 from ._constraints import Positive
 from .general_projnormal import ProjNormal
-from ._ellipsoid import Ellipsoid, EllipsoidFixed, EllipsoidFull
+from ._ellipsoid import Ellipsoid, EllipsoidFixed
 
 
 __all__ = [
   "ProjNormalEllipse",
   "ProjNormalEllipseIso",
   "ProjNormalEllipseFixed",
-  "ProjNormalEllipseIsoFull",
 ]
 
 
@@ -127,10 +126,10 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
         return {"mean": gamma, "covariance": cov, "second_moment": second_moment}
 
 
-    def moments_empirical(self, n_samples=200000):
+    def moments_empirical(self, n_samples=500000):
         """
-        Compute the moments of the variable Y = X/||X||, where X~N(mean_x, covariance_x),
-        by sampling from the distribution.
+        Compute the moments of the variable Y = X/sqrt(X'BX),
+        where X~N(mean_x, covariance_x), by sampling from the distribution.
 
         Returns
         ----------------
@@ -235,8 +234,8 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
     @B.setter
     def B(self):
         raise AttributeError(
-            "The ellipse matrix B can't be set directly."
-            "Set ellipse.eigvecs, ellipse.eigvals and ellipse.rad_sq instead."
+            "The ellipse matrix B can't be set directly. " + \
+            "Set it using self.ellipse instead."
         )
 
 
@@ -297,9 +296,9 @@ class ProjNormalEllipse(ProjNormalEllipseParent):
         mean_x=None,
         covariance_x=None,
         n_dirs=None,
-        B_eigvals=None,
-        B_eigvecs=None,
-        B_rad_sq=1.0,
+        B_sqrt_coefs=None,
+        B_sqrt_vecs=None,
+        B_sqrt_diag=1.0,
     ):
         """Initialize an instance of the ProjNormalEllipse class.
 
@@ -319,34 +318,31 @@ class ProjNormalEllipse(ProjNormalEllipseParent):
               Number of directions to use in the optimization. Default is 1.
               If `B_eigvals` is provided, it is ignored.
 
-          B_eigvals : torch.Tensor, shape (n_dirs), optional
-              Initial eigenvalues of the associated eigenvectors vectors in
-              B_eigvecs.
+          B_sqrt_coefs : torch.Tensor, shape (n_dirs), optional
+              Values of the coefficients for the vectors parametrizing B_sqrt.
 
-          B_eigvecs : torch.Tensor, shape (n_dirs, n_dim), optional
-              Initial eigenvectors of the ellipse matrix. Default is random
-              orthogonal vectors.
+          B_sqrt_vecs : torch.Tensor, shape (n_dirs, n_dim), optional
+              Vectors parametrizing B_sqrt. Default is random orthogonal vectors.
 
-          B_rad_sq : torch.Tensor, shape (), optional
-              Initial eigenvalue of all directions not in B_eigvecs. Default
-              is 1.
+          B_sqrt_diag : torch.Tensor, shape (), optional
+              Value of the diagonal matrix parametrizing B_sqrt. Default is 1.
         """
         super().__init__(n_dim=n_dim, mean_x=mean_x, covariance_x=covariance_x)
 
         # Initialize the ellipse class
-        self._init_ellipse(n_dirs, B_eigvals, B_eigvecs, B_rad_sq)
+        self._init_ellipse(n_dirs, B_sqrt_coefs, B_sqrt_vecs, B_sqrt_diag)
 
 
-    def _init_ellipse(self, n_dirs, B_eigvals, B_eigvecs, B_rad_sq):
+    def _init_ellipse(self, n_dirs, B_sqrt_coefs, B_sqrt_vecs, B_sqrt_diag):
         """
         Initialize the ellipse class with the provided parameters.
         """
         self.ellipse = Ellipsoid(
             n_dim=self.n_dim,
             n_dirs=n_dirs,
-            B_eigvals=B_eigvals,
-            B_eigvecs=B_eigvecs,
-            B_rad_sq=torch.as_tensor(B_rad_sq),
+            sqrt_coefs=B_sqrt_coefs,
+            sqrt_vecs=B_sqrt_vecs,
+            sqrt_diag=torch.as_tensor(B_sqrt_diag),
         )
 
 
@@ -402,10 +398,10 @@ class ProjNormalEllipseIso(ProjNormalEllipse):
         n_dim=None,
         mean_x=None,
         sigma2=None,
-        n_dirs=2,
-        B_eigvecs=None,
-        B_eigvals=None,
-        B_rad_sq=1.0,
+        n_dirs=None,
+        B_sqrt_coefs=None,
+        B_sqrt_vecs=None,
+        B_sqrt_diag=1.0,
     ):
         """Initialize an instance of the ProjNormalEllipseIso class.
 
@@ -425,32 +421,30 @@ class ProjNormalEllipseIso(ProjNormalEllipse):
               Number of directions to use in the optimization. Default is 2.
               If `B_eigvals` is provided, it is ignored.
 
-          B_eigvecs : torch.Tensor, shape (n_dirs, n_dim), optional
-              Initial eigenvectors of the ellipse matrix. Default is random
-              orthogonal vectors.
+          B_sqrt_coefs : torch.Tensor, shape (n_dirs), optional
+              Values of the coefficients for the vectors parametrizing B_sqrt.
 
-          B_eigvals : torch.Tensor, shape (n_dirs), optional
-              Initial eigenvalues of the associated eigenvectors vectors in
-              B_eigvecs.
+          B_sqrt_vecs : torch.Tensor, shape (n_dirs, n_dim), optional
+              Vectors parametrizing B_sqrt. Default is random orthogonal vectors.
 
-          B_rad_sq : torch.Tensor, shape (), optional
-              Initial eigenvalue of all directions not in B_eigvecs. Default
-              is 1.
+          B_sqrt_diag : torch.Tensor, shape (), optional
+              Value of the diagonal matrix parametrizing B_sqrt. Default is 1.
         """
         super().__init__(
           n_dim=n_dim,
           mean_x=mean_x,
           covariance_x=None,
           n_dirs=n_dirs,
-          B_eigvecs=B_eigvecs,
-          B_eigvals=B_eigvals,
-          B_rad_sq=B_rad_sq,
+          B_sqrt_coefs=B_sqrt_coefs,
+          B_sqrt_vecs=B_sqrt_vecs,
+          B_sqrt_diag=B_sqrt_diag,
         )
 
         # Remove the inherited nn.Parameter
         parametrize.remove_parametrizations(self, "covariance_x")
         delattr(self, "covariance_x")
 
+        # Add isotropic covariance
         if sigma2 is None:
             sigma2 = torch.tensor(1.0)
         self.sigma = nn.Parameter(torch.sqrt(torch.as_tensor(sigma2)))
@@ -570,206 +564,3 @@ class ProjNormalEllipseFixed(ProjNormalEllipseParent):
         self.ellipse = EllipsoidFixed(
             B=B
         )
-
-
-
-class ProjNormalEllipseFull(ProjNormalEllipseParent):
-    """
-    This class implements the general projected normal distribution but with
-    projection on an ellipse instead of the sphere.
-    The variable Y following the distribution
-    is defined as Y = X / sqrt(X'BX), where X~N(mean_x, covariance_x)
-    and B is a symmetric positive definite matrix.
-    The class can be used to fit distribution parameters to data.
-
-    Attributes
-    -----------
-      mean_x : torch.Tensor, shape (n_dim)
-          Mean of X. It is constrained to the unit sphere.
-
-      covariance_x : torch.Tensor, shape (n_dim, n_dim)
-          Covariance of X. It is constrained to be symmetric positive definite.
-
-      B : torch.Tensor, shape (n_dim, n_dim)
-          The ellipse matrix. It is constrained to be symmetric positive definite.
-
-    Methods
-    ----------
-      moments():
-          Compute the moments using a Taylor approximation.
-
-      log_pdf() :
-          Compute the value of the log pdf at given points.
-
-      pdf() :
-          Compute the value of the pdf at given points.
-
-      moments_empirical() :
-          Compute the moments by sampling from the distribution
-
-      sample() :
-          Sample points from the distribution.
-
-      moment_match() :
-          Fit the distribution parameters to the observed moments.
-
-      max_likelihood() :
-          Fit the distribution parameters to the observed data
-          using maximum likelihood.
-    """
-
-    def __init__(
-        self,
-        n_dim=None,
-        mean_x=None,
-        covariance_x=None,
-        B=None,
-    ):
-        """Initialize an instance of the ProjNormalEllipse class.
-
-        Parameters
-        ------------
-          n_dim : int, optional
-              Dimension of the underlying Gaussian distribution. If mean
-              and covariance are provided, this is not required.
-
-          mean_x : torch.Tensor, shape (n_dim), optional
-              Mean of X. It is converted to unit norm. Default is random.
-
-          covariance_x : torch.Tensor, shape (n_dim, n_dim), optional
-              Initial covariance. Default is the identity.
-
-          B : torch.Tensor, shape (n_dim, n_dim), optional
-              The ellipse matrix. Default is the identity.
-        """
-        super().__init__(n_dim=n_dim, mean_x=mean_x, covariance_x=covariance_x)
-
-        # Initialize the ellipse class
-        if B is None:
-            B = torch.eye(self.n_dim)
-        self._init_ellipse(B)
-
-
-    def _init_ellipse(self, B):
-        """
-        Initialize the ellipse class with the provided parameters.
-        """
-        self.ellipse = EllipsoidFull(
-            n_dim=self.n_dim,
-            B=B,
-        )
-
-
-class ProjNormalEllipseIsoFull(ProjNormalEllipseFull):
-    """
-    This class implements the general projected normal distribution but with
-    projection on an ellipse instead of the sphere, and with an isotropic
-    covariance_x matrix.
-
-    The variable Y following the distribution
-    is defined as Y = X / sqrt(X'BX), where X~N(mean_x, I * sigma**2)
-    and B is a symmetric positive definite matrix.
-    The class can be used to fit distribution parameters to data.
-
-    Attributes
-    -----------
-      mean_x : torch.Tensor, shape (n_dim)
-          Mean of X. It is constrained to the unit sphere.
-
-      sigma : torch.Tensor, shape (n_dim, n_dim)
-          Covariance of X. It is constrained to be symmetric positive definite.
-
-      B : torch.Tensor, shape (n_dim, n_dim)
-          The ellipse matrix. It is constrained to be symmetric positive definite.
-
-    Methods
-    ----------
-      moments():
-          Compute the moments using a Taylor approximation.
-
-      log_pdf() :
-          Compute the value of the log pdf at given points.
-
-      pdf() :
-          Compute the value of the pdf at given points.
-
-      moments_empirical() :
-          Compute the moments by sampling from the distribution
-
-      sample() :
-          Sample points from the distribution.
-
-      moment_match() :
-          Fit the distribution parameters to the observed moments.
-
-      max_likelihood() :
-          Fit the distribution parameters to the observed data
-          using maximum likelihood.
-    """
-
-    def __init__(
-        self,
-        n_dim=None,
-        mean_x=None,
-        sigma2=None,
-        B=None,
-    ):
-        """Initialize an instance of the ProjNormalEllipseIso class.
-
-        Parameters
-        ------------
-          n_dim : int, optional
-              Dimension of the underlying Gaussian distribution. If mean
-              and covariance are provided, this is not required.
-
-          mean_x : torch.Tensor, shape (n_dim), optional
-              Mean of X. It is converted to unit norm. Default is random.
-
-          sigma2 : torch.Tensor, shape (n_dim, n_dim), optional
-              Initial covariance. Default is the identity.
-
-          B : torch.Tensor, shape (n_dim, n_dim), optional
-              The ellipse matrix. Default is the identity.
-        """
-        super().__init__(
-          n_dim=n_dim,
-          mean_x=mean_x,
-          covariance_x=None,
-          B=B,
-        )
-
-        # Remove the inherited nn.Parameter
-        parametrize.remove_parametrizations(self, "covariance_x")
-        delattr(self, "covariance_x")
-
-        if sigma2 is None:
-            sigma2 = torch.tensor(1.0)
-        self.sigma = nn.Parameter(torch.sqrt(torch.as_tensor(sigma2)))
-        parametrize.register_parametrization(self, "sigma", Positive())
-
-
-    def moment_init(self, data_moments):
-        """
-        Initialize the distribution parameters using the observed moments
-        as the initial guess (making sure the mean is normalized).
-
-        Parameters
-        ----------------
-          data : dict
-            Dictionary containing the observed moments. Must contain the keys
-              - 'mean': torch.Tensor, shape (n_dim)
-              - 'covariance': torch.Tensor, shape (n_dim, n_dim)
-              - 'second_moment': torch.Tensor, shape (n_dim, n_dim)
-        """
-        data_mean_normalized = data_moments["mean"] / torch.norm(data_moments["mean"])
-        self.mean_x = data_mean_normalized
-        self.sigma = torch.sqrt(data_moments["covariance"].trace() / self.n_dim)
-
-
-    @property
-    def covariance_x(self):
-        covariance_x = torch.eye(
-          self.n_dim, dtype=self.mean_x.dtype, device=self.mean_x.device
-        ) * self.sigma**2
-        return covariance_x
-

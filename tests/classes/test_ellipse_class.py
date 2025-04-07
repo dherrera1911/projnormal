@@ -42,14 +42,14 @@ def test_init(n_dim):
     covariance_x = torch.eye(n_dim)
     eigvecs = par_samp.make_ortho_vectors(n_dim, N_DIRS)
     eigvals = torch.tensor([0.4, 2.5])
-    rad_sq = torch.tensor(1.0)
+    diag_val = torch.tensor(1.0)
 
     prnorm = models.ProjNormalEllipse(
       mean_x=mean_x,
       covariance_x=covariance_x,
-      B_eigvecs=eigvecs,
-      B_eigvals=eigvals,
-      B_rad_sq=rad_sq,
+      B_sqrt_vecs=eigvecs,
+      B_sqrt_coefs=eigvals,
+      B_sqrt_diag=diag_val,
     )
 
     assert prnorm.mean_x.shape[0] == n_dim, \
@@ -62,7 +62,7 @@ def test_init(n_dim):
     B_eigval, B_eigvec = torch.linalg.eigh(B)
 
     B_eigval_expected = torch.sort(
-      torch.cat((eigvals, torch.ones(n_dim - 2) * rad_sq))
+      torch.cat(((eigvals + diag_val)**2, torch.ones(n_dim - 2) * diag_val**2))
     )[0]
 
     assert torch.allclose(B_eigval, B_eigval_expected), \
@@ -76,7 +76,7 @@ def test_init(n_dim):
     with pytest.raises(ValueError):
         prnorm = models.ProjNormalEllipse(
           n_dim=n_dim,
-          B_eigvecs=par_samp.make_ortho_vectors(n_dim+1, N_DIRS),
+          B_sqrt_vecs=par_samp.make_ortho_vectors(n_dim+1, N_DIRS),
         )
 
 
@@ -94,15 +94,15 @@ def test_empirical_moments(n_dim, gaussian_parameters):
 
     eigvecs = par_samp.make_ortho_vectors(n_dim, N_DIRS)
     eigvals = torch.tensor([0.4, 2.5])
-    rad_sq = torch.tensor(1.0)
+    diag_val = torch.tensor(1.0)
 
     # Initialize the projected normal class
     prnorm = models.ProjNormalEllipse(
       mean_x=mean_x,
       covariance_x=covariance_x,
-      B_eigvecs=eigvecs,
-      B_eigvals=eigvals,
-      B_rad_sq=rad_sq,
+      B_sqrt_vecs=eigvecs,
+      B_sqrt_coefs=eigvals,
+      B_sqrt_diag=diag_val,
     )
 
     # Sample using the class
@@ -134,14 +134,14 @@ def test_moments(n_dim, gaussian_parameters):
 
     eigvecs = par_samp.make_ortho_vectors(n_dim, N_DIRS)
     eigvals = torch.tensor([0.1, 2.0])
-    rad_sq = torch.tensor(1.0)
+    diag_val = torch.tensor(1.0)
 
     prnorm = models.ProjNormalEllipse(
       mean_x=mean_x,
       covariance_x=covariance_x,
-      B_eigvecs=eigvecs,
-      B_eigvals=eigvals,
-      B_rad_sq=rad_sq,
+      B_sqrt_vecs=eigvecs,
+      B_sqrt_coefs=eigvals,
+      B_sqrt_diag=diag_val,
     )
 
     # Sample using the class

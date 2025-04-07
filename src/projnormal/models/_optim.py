@@ -22,7 +22,7 @@ def mse_loss(momentsA, momentsB):
         (momentsA["mean"] - momentsB["mean"])**2
     )
     distance_sm_sq = torch.sum(
-        (momentsA["second_moment"] - momentsB["second_moment"])**2
+        (momentsA["covariance"] - momentsB["covariance"])**2
     )
     return distance_means_sq + distance_sm_sq
 
@@ -33,7 +33,7 @@ def norm_loss(momentsA, momentsB):
       torch.sum((momentsA["mean"] - momentsB["mean"])**2) + 1e-8
     )
     distance_sm_sq = torch.sqrt(
-      torch.sum((momentsA["second_moment"] - momentsB["second_moment"])**2) + 1e-8
+      torch.sum((momentsA["covariance"] - momentsB["covariance"])**2) + 1e-8
     )
     return distance_means_sq + distance_sm_sq
 
@@ -108,7 +108,7 @@ def lbfgs_loop(
 
     loss_fun : callable, optional
         Loss function to use for moment matchin. By default None,
-        which uses the Euclidean distance between the observed and model moments.
+        which uses the squared Euclidean distance between the observed and model moments.
 
     show_progress : bool
         If True, show a progress bar during training. Default is True.
@@ -125,7 +125,7 @@ def lbfgs_loop(
         Dictionary containing the loss and training time at each epoch.
     """
     if loss_fun is None:
-        loss_fun = norm_loss
+        loss_fun = mse_loss
 
     # Define the closure function depending on the type of fit
     optimizer = optim.LBFGS(
@@ -182,11 +182,12 @@ def lbfgs_loop(
                 + f"Stopping training at epoch {e + 1}/{max_epochs}."
             )
             break
-        else:  # Executes if no break occurs
-            print(
-                f"Reached max_epochs ({max_epochs}) without meeting stopping criteria."
-                + "Consider increasing max_epochs, changing initialization or using dtype=torch.float64."
-            )
+    if consecutive_stopping_criteria_met == 0:
+        print(
+            f"Reached max_epochs ({max_epochs}) without meeting stopping criteria."
+            + "Consider increasing max_epochs, changing initialization or "
+            + "using dtype=torch.float64."
+        )
 
     if return_loss:
         return torch.tensor(loss_list), torch.tensor(training_time)
@@ -257,7 +258,7 @@ def nadam_loop(
         Otherwise returns None.
     """
     if loss_fun is None:
-        loss_fun = norm_loss
+        loss_fun = mse_loss
 
     if fit_type == "mm":
         _mm_data_check(data)
