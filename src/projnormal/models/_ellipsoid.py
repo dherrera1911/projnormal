@@ -5,7 +5,7 @@ import torch.nn.utils.parametrize as parametrize
 import projnormal.param_sampling as par_samp
 import geotorch
 
-from projnormal.models._constraints import Positive
+from projnormal.models._constraints import Positive, PositiveOffset
 from projnormal.ellipse_linalg import spd_sqrt
 
 from ._constraints import Sphere
@@ -75,7 +75,7 @@ class Ellipsoid(nn.Module):
         if sqrt_coefs is None and sqrt_vecs is None:
             if n_dirs is None:
                 n_dirs = 1
-            sqrt_coefs = torch.tensor([sqrt_diag * 2.0] * n_dirs)
+            sqrt_coefs = torch.tensor([sqrt_diag * 4.0] * n_dirs)
             sqrt_vecs = par_samp.make_ortho_vectors(n_dim=n_dim, n_vec=n_dirs)
 
         elif sqrt_coefs is None:
@@ -84,7 +84,7 @@ class Ellipsoid(nn.Module):
                   "sqrt_vecs must have the same number of columns as n_dim"
                 )
             n_dirs = sqrt_vecs.shape[0]
-            sqrt_coefs = torch.tensor([sqrt_diag * 2.0] * n_dirs)
+            sqrt_coefs = torch.tensor([sqrt_diag * 4.0] * n_dirs)
 
         elif sqrt_vecs is None:
             n_dirs = sqrt_coefs.shape[0]
@@ -101,11 +101,12 @@ class Ellipsoid(nn.Module):
         self.n_dim = n_dim
         self.n_dirs = n_dirs
 
-        self.sqrt_diag = nn.Parameter(sqrt_diag.clone())
-        parametrize.register_parametrization(self, "sqrt_diag", Positive())
+        #self.sqrt_diag = nn.Parameter(sqrt_diag.clone())
+        #parametrize.register_parametrization(self, "sqrt_diag", Positive())
+        self.register_buffer("sqrt_diag", sqrt_diag.clone())
 
         self.sqrt_coefs = nn.Parameter(sqrt_coefs)
-        parametrize.register_parametrization(self, "sqrt_coefs", Positive())
+        parametrize.register_parametrization(self, "sqrt_coefs", PositiveOffset())
         self.sqrt_coefs = sqrt_coefs.clone()
 
         self.sqrt_vecs = nn.Parameter(sqrt_vecs)
