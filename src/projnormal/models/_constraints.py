@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch.nn.utils.parametrizations import orthogonal
 
-__all__ = ["Sphere", "SoftMax"]
+__all__ = ["Sphere", "Positive", "PositiveOffset"]
 
 
 def __dir__():
@@ -113,3 +113,50 @@ class Positive(nn.Module):
             Scalar.
         """
         return _inv_softmax(P)
+
+
+class PositiveOffset(nn.Module):
+    """Constrains the input number to be positive larger than an offset."""
+
+    def __init__(self, offset=1.0):
+        """
+        Parameters
+        ----------
+        offset : float
+            Offset to be added to the positive number.
+        """
+        super().__init__() 
+        self.register_buffer("offset", torch.as_tensor(offset))
+
+    def forward(self, X):
+        """
+        Transform the input tensor to a positive number.
+
+        Parameters
+        ----------
+        X : torch.Tensor. Scalar
+            Input number in the real line
+
+        Returns
+        -------
+        torch.Tensor
+            Positive number.
+        """
+        return _softmax(X) + self.offset
+
+
+    def right_inverse(self, P):
+        """
+        Inverse of the function to convert positive number to scalar.
+
+        Parameters
+        ----------
+        P : torch.Tensor. Positive number
+            Input positive number.
+
+        Returns
+        -------
+        torch.Tensor
+            Scalar.
+        """
+        return _inv_softmax(P - self.offset)
