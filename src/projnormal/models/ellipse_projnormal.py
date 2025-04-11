@@ -464,9 +464,11 @@ class ProjNormalEllipseIso(ProjNormalEllipse):
               - 'covariance': torch.Tensor, shape (n_dim, n_dim)
               - 'second_moment': torch.Tensor, shape (n_dim, n_dim)
         """
-        data_mean_normalized = data_moments["mean"] / torch.norm(data_moments["mean"])
+        transf_mean = self.ellipse.get_B_sqrt() @ data_moments["mean"]
+        data_mean_normalized = transf_mean / torch.norm(transf_mean)
         self.mean_x = data_mean_normalized
-        self.sigma = torch.sqrt(data_moments["covariance"].trace() / self.n_dim)
+        transf_cov = self.ellipse.get_B_sqrt() @ data_moments["covariance"] @ self.ellipse.get_B_sqrt().T
+        self.sigma = torch.sqrt(transf_cov.trace() / self.n_dim)
 
 
     @property
