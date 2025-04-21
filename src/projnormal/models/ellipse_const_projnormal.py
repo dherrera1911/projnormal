@@ -157,6 +157,7 @@ class ProjNormalEllipseConst(ProjNormalEllipse):
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
             y=y,
+            const=self.const,
             B=B,
             B_sqrt=B_sqrt,
             B_sqrt_ldet=B_sqrt_ldet
