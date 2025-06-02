@@ -7,13 +7,12 @@ import projnormal.distribution as prnorm
 
 from ._constraints import Positive
 from .general_projnormal import ProjNormal
-from ._ellipsoid import Ellipsoid, EllipsoidFixed
+from ._ellipsoid import Ellipsoid
 
 
 __all__ = [
   "ProjNormalEllipse",
   "ProjNormalEllipseIso",
-  "ProjNormalEllipseFixed",
 ]
 
 
@@ -165,20 +164,9 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
           torch.Tensor, shape (n_points)
               Log PDF of the point. (n_points)
         """
-        # Extract B matrices needed
-        B = self.ellipse.get_B()
-        B_sqrt = self.ellipse.get_B_sqrt()
-        B_sqrt_ldet = self.ellipse.get_B_sqrt_inv()
-
-        lpdf = prnorm.ellipse.pdf.log_pdf(
-            mean_x=self.mean_x,
-            covariance_x=self.covariance_x,
-            y=y,
-            B=B,
-            B_sqrt=B_sqrt,
-            B_sqrt_ldet=B_sqrt_ldet
+        raise NotImplementedError(
+            "A formula for the pdf of the projected normal on an ellipse is not available."
         )
-        return lpdf
 
 
     def pdf(self, y):
@@ -195,8 +183,9 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
           torch.Tensor, shape (n_points)
               PDF of the point.
         """
-        pdf = torch.exp(self.log_pdf(y))
-        return pdf
+        raise NotImplementedError(
+            "A formula for the pdf of the projected normal on an ellipse is not available."
+        )
 
 
     def sample(self, n_samples):
@@ -478,91 +467,3 @@ class ProjNormalEllipseIso(ProjNormalEllipse):
         ) * self.sigma**2
         return covariance_x
 
-
-class ProjNormalEllipseFixed(ProjNormalEllipseParent):
-    """
-    This class implements the general projected normal distribution but with
-    projection on an ellipse instead of the sphere.
-    The variable Y following the distribution
-    is defined as Y = X / sqrt(X'BX), where X~N(mean_x, covariance_x)
-    and B is a symmetric positive definite matrix.
-    The class can be used to fit distribution parameters to data.
-
-    In this class, B is not optimized and is fixed to a given value.
-
-    Attributes
-    -----------
-      mean_x : torch.Tensor, shape (n_dim)
-          Mean of X. It is constrained to the unit sphere.
-
-      covariance_x : torch.Tensor, shape (n_dim, n_dim)
-          Covariance of X. It is constrained to be symmetric positive definite.
-
-      B : torch.Tensor, shape (n_dim, n_dim)
-          The ellipse matrix. It is constrained to be symmetric positive definite.
-
-    Methods
-    ----------
-      moments():
-          Compute the moments using a Taylor approximation.
-
-      log_pdf() :
-          Compute the value of the log pdf at given points.
-
-      pdf() :
-          Compute the value of the pdf at given points.
-
-      moments_empirical() :
-          Compute the moments by sampling from the distribution
-
-      sample() :
-          Sample points from the distribution.
-
-      moment_match() :
-          Fit the distribution parameters to the observed moments.
-
-      max_likelihood() :
-          Fit the distribution parameters to the observed data
-          using maximum likelihood.
-    """
-
-    def __init__(
-        self,
-        n_dim=None,
-        mean_x=None,
-        covariance_x=None,
-        B=None,
-    ):
-        """Initialize an instance of the ProjNormalEllipse class.
-
-        Parameters
-        ------------
-          n_dim : int, optional
-              Dimension of the underlying Gaussian distribution. If mean
-              and covariance are provided, this is not required.
-
-          mean_x : torch.Tensor, shape (n_dim), optional
-              Mean of X. It is converted to unit norm. Default is random.
-
-          covariance_x : torch.Tensor, shape (n_dim, n_dim), optional
-              Initial covariance. Default is the identity.
-
-          B : torch.Tensor, shape (n_dim, n_dim), optional
-              The ellipse matrix. Default is the identity.
-        """
-        super().__init__(n_dim=n_dim, mean_x=mean_x, covariance_x=covariance_x)
-
-        # Initialize the ellipse class
-        self._init_ellipse(B)
-
-
-    def _init_ellipse(self, B):
-        """
-        Initialize the ellipse class with the provided parameters.
-        """
-        if B is None:
-            B = torch.eye(self.n_dim)
-
-        self.ellipse = EllipsoidFixed(
-            B=B
-        )
