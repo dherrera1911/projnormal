@@ -125,7 +125,7 @@ class PositiveOffset(nn.Module):
         offset : float
             Offset to be added to the positive number.
         """
-        super().__init__() 
+        super().__init__()
         self.register_buffer("offset", torch.as_tensor(offset))
 
     def forward(self, X):
