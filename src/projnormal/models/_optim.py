@@ -19,10 +19,10 @@ STOP_EPOCHS = 3 # Consecutive epochs to stop training if loss change is below at
 def mse_loss(momentsA, momentsB):
     """ Compute the Euclidean distance between the observed and model moments. """
     distance_means_sq = torch.sum(
-        (momentsA["mean"] - momentsB["mean"])**2
+        (momentsA["mean"]*20 - momentsB["mean"]*20)**2
     )
     distance_sm_sq = torch.sum(
-        (momentsA["covariance"] - momentsB["covariance"])**2
+        (momentsA["covariance"]*200 - momentsB["covariance"]*200)**2
     )
     return distance_means_sq + distance_sm_sq
 
