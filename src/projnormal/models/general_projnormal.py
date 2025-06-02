@@ -311,16 +311,26 @@ class ProjNormal(nn.Module):
             training_time = torch.cat(training_time)
 
         elif optimizer == "LBFGS":
-            loss, training_time = lbfgs_loop(
-                model=self,
-                data=data_moments,
-                fit_type="mm",
-                max_epochs=max_epochs,
-                lr=lr,
-                show_progress=show_progress,
-                return_loss=True,
-                **kwargs,
-            )
+            for c in range(n_cycles):
+                if c > 0:
+                    noise = torch.randn(self.n_dim, device=self.mean_x.device)
+                    noise = noise * torch.norm(self.mean_x.detach()) / 10
+                    self.mean_x = self.mean_x + noise
+                    try:
+                        self.covariance_x = self.covariance_x.detach() * 1.5
+                    except Exception:
+                        pass
+
+                loss, training_time = lbfgs_loop(
+                    model=self,
+                    data=data_moments,
+                    fit_type="mm",
+                    max_epochs=max_epochs,
+                    lr=lr,
+                    show_progress=show_progress,
+                    return_loss=True,
+                    **kwargs,
+                )
         else:
             raise ValueError("Optimizer must be 'LBFGS' or 'NAdam'.")
         if return_loss:
