@@ -104,7 +104,7 @@ def _invert_projection(y, const):
 
 def _invert_projection_jacobian_matrix(y, const):
     """
-    Compute the jacobian matrix of the inverse projection.
+    Compute the Jacobian matrix of the inverse projection.
 
     Parameters
     ----------------
@@ -140,7 +140,7 @@ def _invert_projection_jacobian_matrix(y, const):
 
 def _invert_projection_det(y, const):
     """
-    Compute the determinant of the jacobian matrix for the transformation
+    Compute the determinant of the Jacobian matrix for the transformation
     Y = X/(X'X + const)^0.5 at each point y.
 
     Parameters
@@ -185,9 +185,9 @@ def _invert_projection_log_det(y, const):
     """
     n_dim = y.shape[-1]
     y_sq_norm = torch.sum(y**2, dim=-1)
-    scalar = torch.sqrt(const / (1 - y_sq_norm))  # Scalar from Jacobian matrix formula
+    scalar = const / (1 - y_sq_norm)  # Scalar from Jacobian matrix formula
     det_1 = 1 + y_sq_norm / (1 - y_sq_norm)  # Matrix determinant lemma
-    det = n_dim * torch.log(scalar) + torch.log(
+    det = (n_dim / 2) * torch.log(scalar) + torch.log(
         det_1
     )  # Scalar multiplication determinant property
     return det
