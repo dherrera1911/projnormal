@@ -68,8 +68,10 @@ def empirical_moments(mean_x, covariance_x, M, n_samples):
     Returns
     -----------------
       dict
-        Dictionary with the mean, variance and second moment
-        of the quadratic form.
+        Dictionary with fields
+          - "mean": torch.Tensor, shape ()
+          - "var": torch.Tensor, shape ()
+          - "second_moment": torch.Tensor, shape ()
     """
     samples_qf = sample(mean_x, covariance_x, M, n_samples)
     mean = torch.mean(samples_qf)

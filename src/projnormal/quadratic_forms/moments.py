@@ -22,14 +22,14 @@ def mean(mean_x, covariance_x, M=None):
     Parameters
     ----------------
       mean_x : torch.Tensor, shape (n_dim,)
-        Mean of normal distribution X. 
+        Mean of normal distribution X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
-        Covariance of the normal distribution. 
+        Covariance of the normal distribution.
 
       M: torch.Tensor, shape (n_dim, n_dim) or (n_dim,), optional
-        Matrix to multiply by. Can either be a matrix or a vector,
-        in which case it is assumed to be diagonal. If None, M=I.
+        Matrix in quadratic form. If a vector is provided,
+        it is used as the diagonal of M. Default is the identity matrix.
 
     Returns:
     ----------------
@@ -123,10 +123,10 @@ def _variance_diagonal(mean_x, covariance_x, M_diagonal):
     Parameters
     ----------------
       mean_x : torch.Tensor, shape (n_dim,)
-        Mean of normal distribution X. 
+        Mean of normal distribution X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
-        Covariance of the normal distribution. 
+        Covariance of the normal distribution.
 
       M_diagonal: torch.Tensor, shape (n_dim,).
         Diagonal elements of the diagonal matrix to multiply by.
