@@ -22,19 +22,19 @@ def mean(mean_x, covariance_x, M=None):
     Parameters
     ----------------
       mean_x : torch.Tensor, shape (n_dim,)
-        Mean of normal distribution X.
+          Mean of normally distributed X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
-        Covariance of the normal distribution.
+          Covariance of the normal distribution.
 
       M: torch.Tensor, shape (n_dim, n_dim) or (n_dim,), optional
-        Matrix in quadratic form. If a vector is provided,
-        it is used as the diagonal of M. Default is the identity matrix.
+          Matrix in quadratic form. If a vector is provided,
+          it is used as the diagonal of M. Default is the identity matrix.
 
     Returns:
     ----------------
       torch.Tensor, shape ()
-        Expected value of the quadratic form
+          Expected value of the quadratic form
     """
     if M is None:
         M = torch.ones(
@@ -56,18 +56,18 @@ def _mean_diagonal(mean_x, covariance_x, M_diagonal):
     Parameters
     ----------------
       mean_x : torch.Tensor, shape (n_dim,)
-        Mean of normal distribution X.
+          Mean of normally distributed X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
-        Covariance of the normal distribution.
+          Covariance of the normal distribution.
 
       M: torch.Tensor, shape (n_dim,), optional
-        Diagonal elements of the diagonal matrix to multiply by.
+          Diagonal elements of the diagonal matrix to multiply by.
 
     Returns:
     ----------------
       torch.Tensor, shape ()
-        Expected value of the quadratic form.
+          Expected value of the quadratic form.
     """
     term1 = torch.einsum("ii,i->", covariance_x, M_diagonal)
     term2 = torch.einsum("i,i,i->", mean_x, M_diagonal, mean_x)
@@ -82,19 +82,19 @@ def variance(mean_x, covariance_x, M=None):
     Parameters
     ----------------
       mean_x : torch.Tensor, shape (n_dim,)
-        Mean of normal distribution X.
+          Mean of normally distributed X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
-        Covariance of the normal distribution.
+          Covariance of the normal distribution.
 
       M: torch.Tensor, shape (n_dim, n_dim) or (n_dim,), optional
-        Matrix to multiply by. Can either be a matrix or a vector,
-        in which case it is assumed to be diagonal. If None, M=I.
+          Matrix to multiply by. Can either be a matrix or a vector,
+          in which case it is assumed to be diagonal. If None, M=I.
 
     Returns
     ----------------
       torch.Tensor, shape ()
-        Variance of quadratic form.
+          Variance of quadratic form.
     """
     if M is None:
         M = torch.ones(
@@ -123,13 +123,13 @@ def _variance_diagonal(mean_x, covariance_x, M_diagonal):
     Parameters
     ----------------
       mean_x : torch.Tensor, shape (n_dim,)
-        Mean of normal distribution X.
+          Mean of normally distributed X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
-        Covariance of the normal distribution.
+          Covariance of the normal distribution.
 
       M_diagonal: torch.Tensor, shape (n_dim,).
-        Diagonal elements of the diagonal matrix to multiply by.
+          Diagonal elements of the diagonal matrix to multiply by.
 
     Returns
     ----------------
@@ -151,21 +151,21 @@ def qf_covariance(mean_x, covariance_x, M, M2):
     Parameters
     ----------------
       mean_x : torch.Tensor, shape (n_dim,)
-        Mean of normal distribution X.
+          Mean of normally distributed X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
-        Covariance of the normal distribution.
+          Covariance of the normal distribution.
 
       M: torch.Tensor, shape (n_dim, n_dim)
-        Matrix of first quadratic form.
+          Matrix of first quadratic form.
 
       M2: torch.Tensor, shape (n_dim, n_dim)
-        Matrix of second quadratic form.
+          Matrix of second quadratic form.
 
     Returns
     ----------------
       torch.Tensor, shape ()
-        Covariance of X'MX and X'M2X. Scalar
+          Covariance of X'MX and X'M2X. Scalar
     """
     # Compute the trace of M*covariance*M2*covariance
     if covariance_x.dim() == 2:
@@ -186,21 +186,21 @@ def qf_linear_covariance(mean_x, covariance_x, M, b):
     Parameters
     ----------------
       mean_x : torch.Tensor, shape (n_dim,)
-        Mean of normal distribution X.
+          Mean of normally distributed X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
-        Covariance of the normal distribution.
+          Covariance of the normal distribution.
 
       M: torch.Tensor, shape (n_dim, n_dim)
-        Matrix of first quadratic form.
+          Matrix of first quadratic form.
 
       b: torch.Tensor, shape (n_dim,)
-        Vector for linear form.
+          Vector for linear form.
 
     Returns
     ----------------
       torch.Tensor, shape ()
-        Covariance of X'MX and X'b.
+          Covariance of X'MX and X'b.
     """
     cov_quadratic = 2 * torch.einsum("i,ij,jk,k->", mean_x, M, covariance_x, b)
     return cov_quadratic

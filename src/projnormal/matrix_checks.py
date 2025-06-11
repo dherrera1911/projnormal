@@ -16,15 +16,15 @@ def is_symmetric(matrix, atol=5e-6):
     Parameters:
     ----------------
       matrix : torch.Tensor, shape (n_dim, n_dim)
-        Matrix to check for symmetry.
+          Matrix to check for symmetry.
 
       atol : float, optional
-        Absolute tolerance for the check. Default is 5e-6.
+          Absolute tolerance for the check. Default is 5e-6.
 
     Returns:
     ----------------
       bool
-        True if B is symmetric, False otherwise
+          True if B is symmetric, False otherwise
     """
     return torch.allclose(matrix, matrix.t(), atol=atol)
 
@@ -35,12 +35,12 @@ def is_positive_definite(matrix):
     Parameters:
     ----------------
       matrix : torch.Tensor, shape (n_dim, n_dim)
-        Matrix to check for positive definiteness.
+          Matrix to check for positive definiteness.
 
     Returns:
     ----------------
       bool
-        True if B is positive definite, False otherwise
+          True if B is positive definite, False otherwise
     """
     return torch.all(torch.linalg.eigh(matrix)[0] > 0)
 
@@ -51,11 +51,11 @@ def is_positive_semidefinite(matrix):
     Parameters:
     ----------------
       matrix : torch.Tensor, shape (n_dim, n_dim)
-        Matrix to check for positive semidefiniteness.
+          Matrix to check for positive semidefiniteness.
 
     Returns:
     ----------------
       bool
-        True if B is positive definite, False otherwise
+          True if B is positive definite, False otherwise
     """
     return torch.all(torch.linalg.eigh(matrix)[0] >= 0)

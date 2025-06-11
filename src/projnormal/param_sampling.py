@@ -27,23 +27,23 @@ def make_spdm(n_dim, eigvals='uniform', eigvecs='random'):
     Parameters:
     ----------------
       n_dim : int
-        Dimension of matrix
+          Dimension of matrix
 
       eigvals : str or Tensor
-        Eigenvalues of the matrix. Options are:
-        - Tensor or list of eigvals to use, of length n_dim.
-        - 'uniform': Uniformly distributed eigvals between 0.1 and 1.
-        - 'exponential': Exponentially distributed eigvals with parameter 1
+          Eigenvalues of the matrix. Options are:
+          - Tensor or list of eigvals to use, of length n_dim.
+          - 'uniform': Uniformly distributed eigvals between 0.1 and 1.
+          - 'exponential': Exponentially distributed eigvals with parameter 1
 
       eigvecs : str
-        Eigenvectors of the matrix. Options are:
-        - 'random': Random orthogonal matrix.
-        - 'identity': Identity matrix.
+          Eigenvectors of the matrix. Options are:
+          - 'random': Random orthogonal matrix.
+          - 'identity': Identity matrix.
 
     Returns:
     ----------------
       torch.Tensor, shape (n_dim, n_dim)
-        Symmetric positive definite matrix with specified eigvals.
+          Symmetric positive definite matrix with specified eigvals.
     """
     # Generate eigvals
     if isinstance(eigvals, str):
@@ -77,22 +77,22 @@ def make_mean(n_dim, shape='gaussian', sparsity=0.1):
     Parameters:
     ----------------
       n_dim : int
-        Dimension of the mean vector.
+          Dimension of the mean vector.
 
       shape : str
-        Mean vector generating procedure. Options are:
-        - 'gaussian': Random vector with each element sampled from N(0,1)
-        - 'exponential': Random vector with each element sampled from Exp(1)
-        - 'sin': sin-wave shaped vector, with random phase, frequency and amplitude
-            sampled uniformly from [0, 2pi], [0, 2] and [0.1, 1] respectively.
-        - 'sparse': Sparse vector with 0s and 1s. The number of 1s is
-          determined by the sparsity parameter.
-      - sparsity: For 'sparse' shape, the fraction of non-zero elements
+          Mean vector generating procedure. Options are:
+          - 'gaussian': Random vector with each element sampled from N(0,1)
+          - 'exponential': Random vector with each element sampled from Exp(1)
+          - 'sin': sin-wave shaped vector, with random phase, frequency and amplitude
+              sampled uniformly from [0, 2pi], [0, 2] and [0.1, 1] respectively.
+          - 'sparse': Sparse vector with 0s and 1s. The number of 1s is
+            determined by the sparsity parameter.
+        - sparsity: For 'sparse' shape, the fraction of non-zero elements
 
     Returns:
     ----------------
       torch.Tensor, shape (n_dim,)
-        Mean vector of the specified shape.
+          Mean vector of the specified shape.
     """
     if shape == 'gaussian':
         mean = torch.randn(n_dim)
@@ -122,15 +122,15 @@ def make_ortho_vectors(n_dim, n_vec):
     Parameters:
     ----------------
       n_dim : int
-        Dimension of the vectors.
+          Dimension of the vectors.
 
       n_vec : int
-        Number of orthogonal vectors to generate. Must be less than n_dim.
+          Number of orthogonal vectors to generate. Must be less than n_dim.
 
     Returns:
     ----------------
       torch.Tensor, shape (n_dim, n_vec)
-        Orthogonal vectors of size n_dim x n_vec.
+          Orthogonal vectors of size n_dim x n_vec.
     """
     if n_vec > n_dim:
         raise ValueError("Number of vectors must be less than dimension.")

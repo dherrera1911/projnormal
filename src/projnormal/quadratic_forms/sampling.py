@@ -20,16 +20,16 @@ def sample(mean_x, covariance_x, M, n_samples):
     Parameters
     -----------------
       mean_x : torch.Tensor, shape (n_dim,)
-        Mean of normal distribution X.
+          Mean of normally distributed X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
-        Covariance of the normal distribution.
+          Covariance of the normal distribution.
 
       M: torch.Tensor, shape (n_dim, n_dim).
-        Matrix of the quadratic form.
+          Matrix of the quadratic form.
 
       n_samples: int
-        Number of samples to generate.
+          Number of samples to generate.
 
     Returns
     -----------------
@@ -54,24 +54,24 @@ def empirical_moments(mean_x, covariance_x, M, n_samples):
     Parameters
     -----------------
       mean_x : torch.Tensor, shape (n_dim,)
-        Mean of normal distribution X.
+          Mean of normal distribution X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
-        Covariance of the normal distribution.
+          Covariance of the normal distribution.
 
       M: torch.Tensor, shape (n_dim, n_dim).
-        Matrix of the quadratic form.
+          Matrix of the quadratic form.
 
       n_samples: int
-        Number of samples to use.
+          Number of samples to use.
 
     Returns
     -----------------
       dict
-        Dictionary with fields
-          - "mean": torch.Tensor, shape ()
-          - "var": torch.Tensor, shape ()
-          - "second_moment": torch.Tensor, shape ()
+          Dictionary with fields
+            - "mean": torch.Tensor, shape ()
+            - "var": torch.Tensor, shape ()
+            - "second_moment": torch.Tensor, shape ()
     """
     samples_qf = sample(mean_x, covariance_x, M, n_samples)
     mean = torch.mean(samples_qf)
@@ -88,19 +88,19 @@ def empirical_covariance(mean_x, covariance_x, M1, M2, n_samples):
     Parameters
     -----------------
       mean_x : torch.Tensor, shape (n_dim,)
-        Mean of normal distribution X.
+          Mean of normally distributed X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
-        Covariance of the normal distribution.
+          Covariance of the normal distribution.
 
       M1: torch.Tensor, shape (n_dim, n_dim).
-        Matrix of the first quadratic form.
+          Matrix of the first quadratic form.
 
       M2: torch.Tensor, shape (n_dim, n_dim).
-        Matrix of the second quadratic form.
+          Matrix of the second quadratic form.
 
       n_samples: int
-        Number of samples to generate use.
+          Number of samples to generate use.
 
     Returns
     -----------------
