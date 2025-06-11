@@ -33,13 +33,13 @@ def mean(mean_x, covariance_x, const, B=None, B_sqrt=None, B_sqrt_inv=None):
         Constant added to the denominator.
 
       B : torch.Tensor, shape (n_dim, n_dim), optional
-        Symmetric positive definite matrix defining the ellipse.
+          Symmetric positive definite matrix defining the ellipse.
 
       B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-        Square root of B.
+          Square root of B.
 
       B_sqrt_inv : torch.Tensor, shape (n_dim, n_dim), optional
-        Inverse of the square root of B.
+          Inverse of the square root of B.
 
     Returns:
     ----------------
@@ -88,13 +88,13 @@ def second_moment(mean_x, covariance_x, const, B=None, B_sqrt=None, B_sqrt_inv=N
         Constant added to the denominator.
 
       B : torch.Tensor, shape (n_dim, n_dim), optional
-        Symmetric positive definite matrix defining the ellipse.
+          Symmetric positive definite matrix defining the ellipse.
 
       B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-        Square root of B.
+          Square root of B.
 
       B_sqrt_inv : torch.Tensor, shape (n_dim, n_dim), optional
-        Inverse of the square root of B.
+          Inverse of the square root of B.
 
     Returns
     ----------------

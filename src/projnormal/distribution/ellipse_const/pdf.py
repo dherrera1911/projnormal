@@ -2,7 +2,7 @@
 import torch
 from projnormal.ellipse_linalg import spd_sqrt
 
-from ..general import pdf as _png_pdf
+from ..const import pdf as _pnc_pdf
 
 
 __all__ = ["pdf", "log_pdf"]
@@ -27,20 +27,20 @@ def pdf(mean_x, covariance_x, y, const, B=None, B_sqrt=None, B_sqrt_ldet=None):
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
         Covariance matrix of X elements.
 
-      const : torch.Tensor, shape ()
-        Constant added to the denominator. Must be positive.
-
       y : torch.Tensor, shape (n_points, n_dim)
           Points where to evaluate the PDF.
 
+      const : torch.Tensor, shape ()
+        Constant added to the denominator. Must be positive.
+
       B : torch.Tensor, shape (n_dim, n_dim), optional
-        Symmetric positive definite matrix defining the ellipse.
+          Symmetric positive definite matrix defining the ellipse.
 
       B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-        Square root of B.
+          Square root of B.
 
       B_sqrt_ldet : torch.Tensor, shape (), optional
-        Log-Determinant of B_sqrt.
+          Log-Determinant of B_sqrt.
 
     Returns
     ----------------
@@ -78,16 +78,16 @@ def log_pdf(mean_x, covariance_x, y, const, B_sqrt=None, B_sqrt_ldet=None):
           Points where to evaluate the PDF.
 
       const : torch.Tensor, shape ()
-        Constant added to the denominator. Must be positive.
+          Constant added to the denominator. Must be positive.
 
       B : torch.Tensor, shape (n_dim, n_dim), optional
-        Symmetric positive definite matrix defining the ellipse.
+          Symmetric positive definite matrix defining the ellipse.
 
       B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-        Square root of B.
+          Square root of B.
 
       B_sqrt_ldet : torch.Tensor, shape (), optional
-        Determinant of B_sqrt.
+          Determinant of B_sqrt.
 
     Returns
     ----------------
