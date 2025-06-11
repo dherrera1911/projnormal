@@ -11,32 +11,32 @@ def relative_error(x, y):
 
 
 # Function of taylor approximation
-def f(u, v, const=0):
+def f(u, v):
     ' f = u/sqrt(b*u^2+v) '
-    return u / (torch.sqrt( u**2 + v + const))
+    return u / (torch.sqrt( u**2 + v))
 
 
-def d2f_du2_autograd(u, v, const=0):
-    df_du = torch.autograd.grad(f(u, v, const), u, create_graph=True)[0]
+def d2f_du2_autograd(u, v):
+    df_du = torch.autograd.grad(f(u, v), u, create_graph=True)[0]
     d2f_du2 = torch.autograd.grad(df_du, u)[0]
     return d2f_du2
 
 
-def d2f_dv2_autograd(u, v, const=0):
-    df_dv = torch.autograd.grad(f(u, v, const), v, create_graph=True)[0]
+def d2f_dv2_autograd(u, v):
+    df_dv = torch.autograd.grad(f(u, v), v, create_graph=True)[0]
     d2f_dv2 = torch.autograd.grad(df_dv, v)[0]
     return d2f_dv2
 
 
-def d2f_dudv_autograd(u, v, const=0):
-    df_du = torch.autograd.grad(f(u, v, const), u, create_graph=True)[0]
+def d2f_dudv_autograd(u, v):
+    df_du = torch.autograd.grad(f(u, v), u, create_graph=True)[0]
     d2f_dudv = torch.autograd.grad(df_du, v)[0]
     return d2f_dudv
 
 
 # Fixture to set up the parameters and compute gradients
 @pytest.fixture(scope='function')
-def taylor_derivatives_data(n_dim, sigma, const, cov_type):
+def taylor_derivatives_data(n_dim, sigma, cov_type):
     """Sample parameters and compute the taylor derivatives using autograd."""
     # Instantiate parameters
     mean_x = par_samp.make_mean(
@@ -55,15 +55,14 @@ def taylor_derivatives_data(n_dim, sigma, const, cov_type):
     for i in range(n_dim):
         x = mean_x[i].clone().detach().requires_grad_(True)
         y = v_mean[i].clone().detach().requires_grad_(True)
-        du2_autograd[i] = d2f_du2_autograd(x, y, const)
-        dv2_autograd[i] = d2f_dv2_autograd(x, y, const)
-        dudv_autograd[i] = d2f_dudv_autograd(x, y, const)
+        du2_autograd[i] = d2f_du2_autograd(x, y)
+        dv2_autograd[i] = d2f_dv2_autograd(x, y)
+        dudv_autograd[i] = d2f_dudv_autograd(x, y)
 
     return {
         'n_dim': n_dim,
         'mean_x': mean_x,
         'v_mean': v_mean,
-        'const': const,
         'du2_autograd': du2_autograd,
         'dv2_autograd': dv2_autograd,
         'dudv_autograd': dudv_autograd
@@ -72,15 +71,13 @@ def taylor_derivatives_data(n_dim, sigma, const, cov_type):
 
 @pytest.mark.parametrize('n_dim', [2, 3, 5, 10, 50])
 @pytest.mark.parametrize('sigma', [0.01, 0.5, 1])
-@pytest.mark.parametrize('const', [0, 0.1, 1])
 @pytest.mark.parametrize('cov_type', ['random', 'diagonal'])
-def test_taylor_approximation_derivatives(taylor_derivatives_data, n_dim, sigma, const, cov_type):
+def test_taylor_approximation_derivatives(taylor_derivatives_data, n_dim, sigma, cov_type):
     # Unpack data
 
     # Distribution parameters
     mean_x = taylor_derivatives_data['mean_x']
     v_mean = taylor_derivatives_data['v_mean']
-    const = taylor_derivatives_data['const']
 
     # Autograd results
     du2_autograd = taylor_derivatives_data['du2_autograd']
@@ -88,9 +85,9 @@ def test_taylor_approximation_derivatives(taylor_derivatives_data, n_dim, sigma,
     dudv_autograd = taylor_derivatives_data['dudv_autograd']
 
     # Compute derivatives using the function being tested
-    du2 = pnc.moments._get_dfdu2(u=mean_x, v=v_mean, const=const)
-    dv2 = pnc.moments._get_dfdv2(u=mean_x, v=v_mean, const=const)
-    dudv = pnc.moments._get_dfdudv(u=mean_x, v=v_mean, const=const)
+    du2 = pnc.moments._get_dfdu2(u=mean_x, v=v_mean)
+    dv2 = pnc.moments._get_dfdv2(u=mean_x, v=v_mean)
+    dudv = pnc.moments._get_dfdudv(u=mean_x, v=v_mean)
 
     # Compute the relative error
     du2_error = relative_error(du2, du2_autograd)
