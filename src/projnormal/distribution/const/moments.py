@@ -40,18 +40,18 @@ def mean(mean_x, covariance_x, const):
 
     ### Get moments of variable v (||X||^2 - X_i^2) required for the formula
     # Note, these don't depend on const
-    v_mean = _get_v_mean(mean_x=mean_x, covariance_x=covariance_x)
+    v_mean = _get_v_mean(mean_x=mean_x, covariance_x=covariance_x, const=const)
     v_var = _get_v_var(mean_x=mean_x, covariance_x=covariance_x)
     v_cov = _get_v_cov(mean_x=mean_x, covariance_x=covariance_x)
 
     ### Get the derivatives for the taylor approximation evaluated
     ### at the mean of u and v
-    dfdu2_val = _get_dfdu2(u=mean_x, v=v_mean, const=const)
-    dfdv2_val = _get_dfdv2(u=mean_x, v=v_mean, const=const)
-    dfdudv_val = _get_dfdudv(u=mean_x, v=v_mean, const=const)
+    dfdu2_val = _get_dfdu2(u=mean_x, v=v_mean)
+    dfdv2_val = _get_dfdv2(u=mean_x, v=v_mean)
+    dfdudv_val = _get_dfdudv(u=mean_x, v=v_mean)
 
     ### 0th order term
-    term0 = _get_f0(u=mean_x, v=v_mean, const=const)
+    term0 = _get_f0(u=mean_x, v=v_mean)
 
     ### Compute Taylor approximation
     gamma = (
@@ -79,10 +79,10 @@ def second_moment(mean_x, covariance_x, const):
           Mean of X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
-        Covariance matrix of X elements.
+          Covariance matrix of X elements.
 
       const : torch.Tensor, shape ()
-        Constant added to the denominator. Must be >= 0.
+          Constant added to the denominator. Must be >= 0.
 
     Returns
     ----------------
@@ -122,7 +122,7 @@ def second_moment(mean_x, covariance_x, const):
     return sm
 
 
-def _get_v_mean(mean_x, covariance_x):
+def _get_v_mean(mean_x, covariance_x, const):
     """
     Compute the expected value of the auxiliary variables
     v_i = (X'X - X_i^2) used in the Taylor approximation
@@ -136,24 +136,24 @@ def _get_v_mean(mean_x, covariance_x):
           Mean of X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
-        Covariance matrix of X elements.
+          Covariance matrix of X elements.
+
+      const : torch.Tensor, shape ()
+          Constant added to the denominator. Must be >= 0.
 
     Returns:
     ----------------
       torch.Tensor, shape (n_dim,)
-          Expected value of auxiliary variable V.
+          Expected value of auxiliary variable v.
     """
-    # Get variances
-    variances = covariance_x.diagonal()
     # Compute the expected value of X'X
-    mean_X2 = torch.sum(variances) + torch.einsum("i,i->", mean_x, mean_x)
+    mean_X2 = torch.trace(covariance_x) + torch.einsum("i,i->", mean_x, mean_x)
     # Compute expected value of each elements individual quadratic form
     # i.e. E(X_i^2) vector
-    mean_Xi2 = mean_x**2 + variances
+    mean_Xi2 = mean_x**2 + torch.diag(covariance_x)
     # Subtract to get E(X'X - X_i^2)
     v_mean = mean_X2 - mean_Xi2
-
-    return v_mean
+    return v_mean + const
 
 
 def _get_v_var(mean_x, covariance_x):
@@ -229,37 +229,37 @@ def _get_v_cov(mean_x, covariance_x):
 
 # Derivatives of the function f(u,v) = u/sqrt(u^2 + v + const)
 # that is used in the taylor approximation to the mean
-def _get_f0(u, v, const):
+def _get_f0(u, v):
     """
     First term of the Taylor approximation of f(u,v) = u/sqrt(u^2 + v),
     evaluated at point u,v.
     """
-    f0 = u / torch.sqrt(u**2 + v + const)
+    f0 = u / torch.sqrt(u**2 + v)
     return f0
 
 
-def _get_dfdu2(u, v, const):
+def _get_dfdu2(u, v):
     """
     Second derivative of f(u,v) = u/sqrt(c*u^2 + v) wrt u,
     evaluated at point u,v.
     """
-    dfdu2 = -3 * u * (v + const) / (u**2 + v + const) ** (5 / 2)
+    dfdu2 = -3 * u * v / (u**2 + v) ** (5 / 2)
     return dfdu2
 
 
-def _get_dfdv2(u, v, const):
+def _get_dfdv2(u, v):
     """
     Second derivative of f(u,v) = u/sqrt(u^2 + v) wrt v,
     evaluated at point u,v.
     """
-    dfdv2 = 0.75 * u / (u**2 + v + const) ** (5 / 2)
+    dfdv2 = 0.75 * u / (u**2 + v) ** (5 / 2)
     return dfdv2
 
 
-def _get_dfdudv(u, v, const):
+def _get_dfdudv(u, v):
     """
     Mixed second derivative of f(u,v) = u/sqrt(u^2 + v),
     evaluated at point u,v.
     """
-    dfdudv = (u**2 - 0.5 * (v + const)) / (u**2 + v + const) ** (5 / 2)
+    dfdudv = (u**2 - 0.5 * v) / (u**2 + v) ** (5 / 2)
     return dfdudv
