@@ -2,7 +2,7 @@
 
 import torch
 
-from ..general import pdf as gen_pdf
+from ..projected_normal import pdf as gen_pdf
 
 
 __all__ = ["pdf", "log_pdf"]
