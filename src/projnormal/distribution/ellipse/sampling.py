@@ -2,7 +2,7 @@
 import torch
 from projnormal.ellipse_linalg import spd_sqrt
 
-from ..general import sampling as _png_sampling
+from ..projected_normal import sampling as _png_sampling
 
 __all__ = ["sample", "empirical_moments"]
 
@@ -30,13 +30,13 @@ def sample(mean_x, covariance_x, n_samples, B=None, B_sqrt=None, B_sqrt_inv=None
           Number of samples.
 
       B : torch.Tensor, shape (n_dim, n_dim), optional
-        Symmetric positive definite matrix defining the ellipse.
+          Symmetric positive definite matrix defining the ellipse.
 
       B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-        Square root of B.
+          Square root of B.
 
       B_sqrt_inv : torch.Tensor, shape (n_dim, n_dim), optional
-        Inverse of the square root of B.
+          Inverse of the square root of B.
 
     Returns:
     -----------------
@@ -80,13 +80,13 @@ def empirical_moments(mean_x, covariance_x, n_samples, B=None, B_sqrt=None, B_sq
           Number of samples.
 
       B : torch.Tensor, shape (n_dim, n_dim), optional
-        Symmetric positive definite matrix defining the ellipse.
+          Symmetric positive definite matrix defining the ellipse.
 
       B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-        Square root of B.
+          Square root of B.
 
       B_sqrt_inv : torch.Tensor, shape (n_dim, n_dim), optional
-        Inverse of the square root of B.
+          Inverse of the square root of B.
 
     Returns:
     -----------------

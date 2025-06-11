@@ -2,7 +2,7 @@
 import torch
 from projnormal.ellipse_linalg import spd_sqrt
 
-from ..general import moments as _png_moments
+from ..projected_normal import moments as _png_moments
 
 __all__ = ["mean", "second_moment"]
 

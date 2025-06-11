@@ -2,7 +2,7 @@
 import torch
 from projnormal.ellipse_linalg import spd_sqrt
 
-from ..general import pdf as _png_pdf
+from ..projected_normal import pdf as _png_pdf
 
 
 __all__ = ["pdf", "log_pdf"]
