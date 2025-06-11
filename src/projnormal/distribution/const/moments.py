@@ -10,7 +10,7 @@ def __dir__():
     return __all__
 
 
-def mean(mean_x, covariance_x, const):
+def mean(mean_x, covariance_x, const=0):
     """
     Compute the Taylor approximation to the variable Y = X/(X'X + const)^0.5,
     where X~N(mean_x, covariance_x). Y has a projected normal distribution with an extra
@@ -29,6 +29,7 @@ def mean(mean_x, covariance_x, const):
 
       const : torch.Tensor, shape ()
         Constant added to the denominator. Must be >= 0.
+        Default is 0.
 
     Returns:
     ----------------
@@ -122,7 +123,7 @@ def second_moment(mean_x, covariance_x, const):
     return sm
 
 
-def _get_v_mean(mean_x, covariance_x, const):
+def _get_v_mean(mean_x, covariance_x, const=0):
     """
     Compute the expected value of the auxiliary variables
     v_i = (X'X - X_i^2) used in the Taylor approximation
@@ -140,6 +141,7 @@ def _get_v_mean(mean_x, covariance_x, const):
 
       const : torch.Tensor, shape ()
           Constant added to the denominator. Must be >= 0.
+          Default is 0.
 
     Returns:
     ----------------
@@ -227,7 +229,7 @@ def _get_v_cov(mean_x, covariance_x):
     return v_cov
 
 
-# Derivatives of the function f(u,v) = u/sqrt(u^2 + v + const)
+# Derivatives of the function f(u,v) = u/sqrt(u^2 + v)
 # that is used in the taylor approximation to the mean
 def _get_f0(u, v):
     """
