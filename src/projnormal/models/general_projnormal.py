@@ -165,7 +165,7 @@ class ProjNormal(nn.Module):
           torch.Tensor, shape (n_points)
               Log PDF of the point. (n_points)
         """
-        lpdf = prnorm.general.pdf.log_pdf(
+        lpdf = prnorm.projected_normal.pdf.log_pdf(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
             y=y,
