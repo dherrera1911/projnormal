@@ -37,10 +37,10 @@ def pdf(mean_x, covariance_x, y, const, B=None, B_sqrt=None, B_sqrt_ldet=None):
           Symmetric positive definite matrix defining the ellipse.
 
       B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-          Square root of B.
+          Square root of B. Can be provided to avoid recomputing it.
 
       B_sqrt_ldet : torch.Tensor, shape (), optional
-          Log-Determinant of B_sqrt.
+          Log-Determinant of B_sqrt. Can be provided to avoid recomputing it.
 
     Returns
     ----------------
@@ -84,10 +84,10 @@ def log_pdf(mean_x, covariance_x, y, const, B_sqrt=None, B_sqrt_ldet=None):
           Symmetric positive definite matrix defining the ellipse.
 
       B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-          Square root of B.
+          Square root of B. Can be provided to avoid recomputing it.
 
       B_sqrt_ldet : torch.Tensor, shape (), optional
-          Determinant of B_sqrt.
+          Determinant of B_sqrt. Can be provided to avoid recomputing it.
 
     Returns
     ----------------

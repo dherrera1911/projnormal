@@ -36,10 +36,10 @@ def sample(mean_x, covariance_x, n_samples, const, B=None, B_sqrt=None, B_sqrt_i
         Symmetric positive definite matrix defining the ellipse.
 
       B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-        Square root of B.
+        Square root of B. Can be provided to avoid recomputing it.
 
       B_sqrt_inv : torch.Tensor, shape (n_dim, n_dim), optional
-        Inverse of the square root of B.
+        Inverse of the square root of B. Can be provided to avoid recomputing it.
 
     Returns:
     -----------------
@@ -92,10 +92,10 @@ def empirical_moments(mean_x, covariance_x, const, n_samples, B=None, B_sqrt=Non
         Symmetric positive definite matrix defining the ellipse.
 
       B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-        Square root of B.
+        Square root of B. Can be provided to avoid recomputing it.
 
       B_sqrt_inv : torch.Tensor, shape (n_dim, n_dim), optional
-        Inverse of the square root of B.
+        Inverse of the square root of B. Can be provided to avoid recomputing it.
 
     Returns:
     -----------------
