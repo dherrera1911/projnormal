@@ -3,10 +3,10 @@ from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
-import projnormal.distribution as prnorm
+import projnormal.distribution as dist
 
 from ._constraints import Positive
-from .general_projnormal import ProjNormal
+from .projected_normal import ProjNormal
 from ._ellipsoid import Ellipsoid
 
 
@@ -46,10 +46,10 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
           Compute the moments using a Taylor approximation.
 
       log_pdf() :
-          Compute the value of the log pdf at given points.
+          Compute the value of the log pdf at given points. (Not implemented)
 
       pdf() :
-          Compute the value of the pdf at given points.
+          Compute the value of the pdf at given points. (Not implemented)
 
       moments_empirical() :
           Compute the moments by sampling from the distribution
@@ -62,7 +62,7 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
 
       max_likelihood() :
           Fit the distribution parameters to the observed data
-          using maximum likelihood.
+          using maximum likelihood. (Not implemented)
     """
 
     def __init__(
@@ -104,7 +104,7 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
         B_sqrt = self.ellipse.get_B_sqrt()
         B_sqrt_inv = self.ellipse.get_B_sqrt_inv()
 
-        gamma = prnorm.ellipse_const.moments.mean(
+        gamma = dist.ellipse_const.moments.mean(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
             const=self.const,
@@ -112,7 +112,7 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
             B_sqrt_inv=B_sqrt_inv,
         )
 
-        second_moment = prnorm.ellipse_const.moments.second_moment(
+        second_moment = dist.ellipse_const.moments.second_moment(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
             const=self.const,
@@ -139,7 +139,7 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
         with torch.no_grad():
             B_sqrt = self.ellipse.get_B_sqrt()
             B_sqrt_inv = self.ellipse.get_B_sqrt_inv()
-            stats_dict = prnorm.ellipse_const.sampling.empirical_moments(
+            stats_dict = dist.ellipse_const.sampling.empirical_moments(
                 mean_x=self.mean_x,
                 covariance_x=self.covariance_x,
                 const=self.const,
@@ -204,7 +204,7 @@ class ProjNormalEllipseParent(ABC, ProjNormal):
         with torch.no_grad():
             B_sqrt = self.ellipse.get_B_sqrt()
             B_sqrt_inv = self.ellipse.get_B_sqrt_inv()
-            samples = prnorm.ellipse_const.sampling.sample(
+            samples = dist.ellipse_const.sampling.sample(
                 mean_x=self.mean_x,
                 covariance_x=self.covariance_x,
                 n_samples=n_samples,

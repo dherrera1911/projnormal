@@ -3,10 +3,10 @@ from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
-import projnormal.distribution as prnorm
+import projnormal.distribution as dist
 
 from ._constraints import Positive
-from .ellipse_projnormal import ProjNormalEllipse, ProjNormalEllipseIso
+from .ellipse import ProjNormalEllipse, ProjNormalEllipseIso
 
 
 __all__ = [
@@ -153,7 +153,7 @@ class ProjNormalEllipseConst(ProjNormalEllipse):
         B_sqrt = self.ellipse.get_B_sqrt()
         B_sqrt_ldet = self.ellipse.get_B_sqrt_inv()
 
-        lpdf = prnorm.ellipse_const.pdf.log_pdf(
+        lpdf = dist.ellipse_const.pdf.log_pdf(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
             y=y,
@@ -299,7 +299,7 @@ class ProjNormalEllipseConstIso(ProjNormalEllipseIso):
         B_sqrt = self.ellipse.get_B_sqrt()
         B_sqrt_ldet = self.ellipse.get_B_sqrt_inv()
 
-        lpdf = prnorm.ellipse_const.pdf.log_pdf(
+        lpdf = dist.ellipse_const.pdf.log_pdf(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
             y=y,
