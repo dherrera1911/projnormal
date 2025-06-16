@@ -1,6 +1,6 @@
 """Approximation to the moments of the general projected normal distribution projected onto ellipse given by matrix B."""
 import torch
-from projnormal.ellipse_linalg import spd_sqrt
+from projnormal.linalg import spd_sqrt
 
 from ..const import moments as _pnc_moments
 

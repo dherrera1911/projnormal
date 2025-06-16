@@ -1,6 +1,6 @@
 """Sampling functions for the general projected normal distribution."""
 import torch
-from projnormal.ellipse_linalg import spd_sqrt
+from projnormal.linalg import spd_sqrt
 
 from ..const import sampling as _pnc_sampling
 

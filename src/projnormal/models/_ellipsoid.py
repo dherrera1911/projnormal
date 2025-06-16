@@ -5,7 +5,7 @@ import torch.nn.utils.parametrize as parametrize
 import projnormal.param_sampling as par_samp
 import geotorch
 
-from projnormal.ellipse_linalg import spd_sqrt
+from projnormal.linalg import spd_sqrt
 
 from .constraints import Sphere, Positive, PositiveOffset
 

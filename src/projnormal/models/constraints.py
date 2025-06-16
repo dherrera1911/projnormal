@@ -5,7 +5,13 @@ import torch
 import torch.nn as nn
 from torch.nn.utils.parametrizations import orthogonal
 
-__all__ = ["Sphere", "Positive", "PositiveOffset"]
+__all__ = [
+  "Sphere",
+  "Positive",
+  "PositiveOffset",
+  "Isotropic",
+  "Diagonal",
+]
 
 
 def __dir__():
