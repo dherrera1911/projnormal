@@ -19,7 +19,6 @@ def __dir__():
 class Sphere(nn.Module):
     """Constrains the input tensor to lie on the sphere."""
 
-
     def forward(self, X):
         """
         Normalize the input tensor so that it lies on the sphere.
@@ -28,18 +27,16 @@ class Sphere(nn.Module):
 
         Parameters
         ----------
-        X : torch.Tensor
-            Input tensor in Euclidean space with shape (n_filters, n_dim).
+        X : torch.Tensor, shape (..., n_dim)
+            Input tensor in Euclidean space.
 
         Returns
         -------
-        torch.Tensor
-            Normalized tensor lying on the sphere with shape
-            (n_filters, n_dim).
+        torch.Tensor, shape (..., n_dim)
+            Normalized tensor lying on the sphere with shape.
         """
         X_normalized = X / X.norm(dim=-1, keepdim=True)
         return X_normalized
-
 
     def right_inverse(self, S):
         """
@@ -47,12 +44,12 @@ class Sphere(nn.Module):
 
         Parameters
         ----------
-        S : torch.Tensor
+        S : torch.Tensor, shape (..., n_dim)
             Input tensor. Should be different from zero.
 
         Returns
         -------
-        torch.Tensor
+        torch.Tensor, shape (..., n_dim)
             Returns the input tensor `S`.
         """
         return S
@@ -63,7 +60,19 @@ class Sphere(nn.Module):
 ################
 
 def _softmax(X):
-    """ Function to convert elements of X to positive numbers."""
+    """ Function to convert elements of X to positive numbers.
+    The function applied is P = log(1 + exp(X)) + epsilon.
+
+    Parameters
+    ----------
+    X: torch.Tensor, shape (...)
+        Input tensor in the real line.
+
+    Returns
+    -------
+    torch.Tensor, shape (...)
+        Tensor with positive numbers.
+    """
     epsilon = torch.tensor(1e-7, dtype=X.dtype)
     one = torch.tensor(1.0, dtype=X.dtype)
     P = torch.log(one + torch.exp(X)) + epsilon
@@ -71,7 +80,18 @@ def _softmax(X):
 
 
 def _inv_softmax(P):
-    """ Inverse of function to convert numbers to positive."""
+    """ Inverse of softmax, converts positive numbers to reals.
+
+    Parameters
+    ----------
+    P: torch.Tensor, shape (...)
+        Input tensor with positive numbers.
+
+    Returns
+    -------
+    torch.Tesor, shape (...)
+        Tensor with real numbers.
+    """
     epsilon = torch.tensor(1e-7, dtype=P.dtype)
     one = torch.tensor(1.0, dtype=P.dtype)
     X = torch.log(torch.exp(P - epsilon) - one) # Positive number
@@ -79,7 +99,7 @@ def _inv_softmax(P):
 
 
 class Positive(nn.Module):
-    """Constrains the input number to be positive."""
+    """Constrains the input vector to be positive."""
 
     def forward(self, X):
         """
@@ -87,16 +107,15 @@ class Positive(nn.Module):
 
         Parameters
         ----------
-        X : torch.Tensor. Scalar
-            Input number in the real line
+        X : torch.Tensor, shape (...)
+            Input vector in the real line
 
         Returns
         -------
-        torch.Tensor
-            Positive number.
+        torch.Tensor, shape (...)
+            Positive vector.
         """
         return _softmax(X)
-
 
     def right_inverse(self, P):
         """
@@ -104,13 +123,13 @@ class Positive(nn.Module):
 
         Parameters
         ----------
-        P : torch.Tensor. Positive number
-            Input positive number.
+        P : torch.Tensor, shape (...)
+            Input positive vector
 
         Returns
         -------
-        torch.Tensor
-            Scalar.
+        torch.Tensor, shape (...)
+            Scalar
         """
         return _inv_softmax(P)
 
@@ -134,13 +153,13 @@ class PositiveOffset(nn.Module):
 
         Parameters
         ----------
-        X : torch.Tensor. Scalar
+        X : torch.Tensor, shape (...)
             Input number in the real line
 
         Returns
         -------
-        torch.Tensor
-            Positive number.
+        torch.Tensor, shape (...)
+            Positive number
         """
         return _softmax(X) + self.offset
 
@@ -151,12 +170,107 @@ class PositiveOffset(nn.Module):
 
         Parameters
         ----------
-        P : torch.Tensor. Positive number
-            Input positive number.
+        P : torch.Tensor, shape (...)
+            Input positive number
 
         Returns
         -------
-        torch.Tensor
-            Scalar.
+        torch.Tensor, shape (...)
+            Real number
         """
         return _inv_softmax(P - self.offset)
+
+
+################
+# SPD types parametrization
+################
+
+class Isotropic(nn.Module):
+    """Constrains the matrix M to be of the form val*torch.eye(n_dim)."""
+
+    def __init__(self, n_dim=None):
+        """
+        Parameters
+        ----------
+        n_dim : int
+            Dimension of the matrix. If None, the parameter must
+            be initialized using some matrix M.
+        """
+        super().__init__()
+        self.n_dim = n_dim
+
+
+    def forward(self, val):
+        """
+        Transform the input number into an isotropic matrix
+
+        Parameters
+        ----------
+        val : torch.Tensor, shape (1,).
+            Input number in the real line.
+
+        Returns
+        -------
+        torch.Tensor, shape (n_dim, n_dim)
+            Isotropic matrix with positive diagonal
+        """
+        val_pos = _softmax(val)
+        return torch.diag(val_pos.expand(self.n_dim))
+
+
+    def right_inverse(self, M):
+        """
+        Assign as val tr(M)/n_dim
+
+        Parameters
+        ----------
+        M : torch.Tensor, shape (n_dim, n_dim).
+            Input isotropic matrix.
+
+        Returns
+        -------
+        torch.Tensor, shape (1,).
+            Scalar value.
+        """
+        self.n_dim = M.shape[0]
+        val_pos = torch.trace(M) / self.n_dim
+        return _inv_softmax(val_pos)
+
+
+class Diagonal(nn.Module):
+    """Constrains the matrix M to be diagonal."""
+
+    def forward(self, diagonal):
+        """
+        Transform the input vector into matrix.
+
+        Parameters
+        ----------
+        diagonal : torch.Tensor (n_dim,).
+            Input vector in the real line.
+
+        Returns
+        -------
+        torch.Tensor (n_dim, n_dim).
+            Diagonal matrix with positive diagonal of shape
+        """
+        diagonal_pos = _softmax(diagonal)
+        return torch.diag(diagonal_pos)
+
+    def right_inverse(self, M):
+        """
+        Assign as diagonal vector the diagonal entries of M.
+
+        Parameters
+        ----------
+        M : torch.Tensor
+            Input matrix. Must have positive diagonal entries.
+
+        Returns
+        -------
+        torch.Tensor (n_dim,).
+            Vector with diagonal entries of M.
+        """
+        diagonal_pos = torch.diagonal(M)
+        return _inv_softmax(diagonal_pos)
+

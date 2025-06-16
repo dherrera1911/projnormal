@@ -111,7 +111,7 @@ class ProjNormalConst(ProjNormal):
         Returns
         ----------------
           torch.Tensor, shape (n_points)
-              Log PDF of the point. (n_points)
+              Log PDF of the point.
         """
         lpdf = dist.const.pdf.log_pdf(
             mean_x=self.mean_x,
