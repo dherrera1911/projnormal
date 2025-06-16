@@ -97,6 +97,8 @@ class ProjNormal(nn.Module):
 
         self.mean_x = nn.Parameter(mean_x)
         self.covariance_x = nn.Parameter(covariance_x.clone())
+
+        # Add parameter constraints
         parametrize.register_parametrization(self, "mean_x", Sphere())
         geotorch.positive_definite(self, "covariance_x")
         self.covariance_x = covariance_x.clone()
@@ -112,9 +114,9 @@ class ProjNormal(nn.Module):
 
         Returns
         ---------
-        dict
-            Dictionary containing the mean, covariance and second moment
-            of the projected normal.
+          dict
+              Dictionary containing the mean, covariance and second moment
+              of the projected normal.
         """
         gamma = dist.const.moments.mean(
             mean_x=self.mean_x,
@@ -137,9 +139,9 @@ class ProjNormal(nn.Module):
 
         Returns
         ----------------
-        dict
-            Dictionary containing the mean, covariance and second moment
-            of the projected normal.
+          dict
+              Dictionary containing the mean, covariance and second moment
+              of the projected normal.
         """
         with torch.no_grad():
             stats_dict = dist.const.sampling.empirical_moments(
@@ -232,48 +234,48 @@ class ProjNormal(nn.Module):
 
         Parameters
         ----------------
-        data_moments : dict
-          Dictionary containing the observed moments. Must contain the keys
-            - 'mean': torch.Tensor, shape (n_dim)
-            - 'covariance': torch.Tensor, shape (n_dim, n_dim)
-            - 'second_moment': torch.Tensor, shape (n_dim, n_dim)
+          data_moments : dict
+            Dictionary containing the observed moments. Must contain the keys
+              - 'mean': torch.Tensor, shape (n_dim)
+              - 'covariance': torch.Tensor, shape (n_dim, n_dim)
+              - 'second_moment': torch.Tensor, shape (n_dim, n_dim)
 
-        max_epochs : int, optional
-            Number of max training epochs. By default 50.
+          max_epochs : int, optional
+              Number of max training epochs. By default 50.
 
-        lr : float
-            Learning rate for the optimizer. Default is 0.1.
+          lr : float
+              Learning rate for the optimizer. Default is 0.1.
 
-        optimizer : str
-            Optimizer to use for training. Options are 'LBFGS' and 'NAdam'.
-            Default is 'NAdam'.
+          optimizer : str
+              Optimizer to use for training. Options are 'LBFGS' and 'NAdam'.
+              Default is 'NAdam'.
 
-        loss_fun : callable
-            Loss function to use for moment matching. Default is Euclidean
-            distance between observed and model moments.
+          loss_fun : callable
+              Loss function to use for moment matching. Default is Euclidean
+              distance between observed and model moments.
 
-        show_progress : bool
-            If True, show a progress bar during training. Default is True.
+          show_progress : bool
+              If True, show a progress bar during training. Default is True.
 
-        return_loss : bool
-            If True, return the loss after training. Default is False.
+          return_loss : bool
+              If True, return the loss after training. Default is False.
 
-        n_cycles : int
-            For the NAdam optimier, the number of times to run the optimization loop.
+          n_cycles : int
+              For the NAdam optimier, the number of times to run the optimization loop.
 
-        cycle_gamma : float
-            For the NAdam optimizer, the factor by which lr is reduced after each run
-            of the optimization loop.
+          cycle_gamma : float
+              For the NAdam optimizer, the factor by which lr is reduced after each run
+              of the optimization loop.
 
-        **kwargs
-            Additional keyword arguments passed to the lbfgs_lopp or nadam_loop function.
-            For the NAdam optimizer, the parameters `gamma` and `step_size` can be passed
-            to control the learning rate schedule.
+          **kwargs
+              Additional keyword arguments passed to the lbfgs_lopp or nadam_loop function.
+              For the NAdam optimizer, the parameters `gamma` and `step_size` can be passed
+              to control the learning rate schedule.
 
         Returns
         ----------------
-        dict
-            Dictionary containing the loss and training time.
+          dict
+              Dictionary containing the loss and training time.
         """
         # Check data_moments is a dictionary
         if not isinstance(data_moments, dict):
@@ -354,39 +356,39 @@ class ProjNormal(nn.Module):
 
         Parameters
         ----------------
-        y : torch.Tensor, shape (n_samples, n_dim)
-            Observed data.
+          y : torch.Tensor, shape (n_samples, n_dim)
+              Observed data.
 
-        max_epochs : int, optional
-            Number of max training epochs. By default 50.
+          max_epochs : int, optional
+              Number of max training epochs. By default 50.
 
-        lr : float
-            Learning rate for the optimizer. Default is 0.1.
+          lr : float
+              Learning rate for the optimizer. Default is 0.1.
 
-        optimizer : str
-            Optimizer to use for training. Options are 'LBFGS' and 'NAdam'.
-            Default is 'NAdam'.
+          optimizer : str
+              Optimizer to use for training. Options are 'LBFGS' and 'NAdam'.
+              Default is 'NAdam'.
 
-        show_progress : bool
-            If True, show a progress bar during training. Default is True.
+          show_progress : bool
+              If True, show a progress bar during training. Default is True.
 
-        return_loss : bool
-            If True, return the loss after training. Default is False.
+          return_loss : bool
+              If True, return the loss after training. Default is False.
 
-        n_cycles : int
-            For the NAdam optimier, the number of times to run the optimization loop.
+          n_cycles : int
+              For the NAdam optimier, the number of times to run the optimization loop.
 
-        cycle_gamma : float
-            For the NAdam optimizer, the factor by which lr is reduced after each run
-            of the optimization loop.
+          cycle_gamma : float
+              For the NAdam optimizer, the factor by which lr is reduced after each run
+              of the optimization loop.
 
-        **kwargs
-            Additional keyword arguments passed to the NAdam optimizer.
+          **kwargs
+              Additional keyword arguments passed to the NAdam optimizer.
 
         Returns
         ----------------
-        dict
-            Dictionary containing the loss and training time.
+          dict
+              Dictionary containing the loss and training time.
         """
         if not isinstance(y, torch.Tensor):
             raise ValueError("y must be a torch.Tensor for log-likelihood fitting.")
@@ -455,6 +457,29 @@ class ProjNormal(nn.Module):
                               )
 
 
+    def add_covariance_parametrization(self, Parametrization):
+        """
+        Substitute the current covariance_x constraint with a new parametrization.
+
+        Parameters
+        -----------
+          Parametrization : torch.nn.Module
+            Pytorch Parametrization implementing constraints.
+            It is an object that inherits from torch.nn.Module and implements
+            a forward method that takes an unconstrained parameter
+            and returns an SPD matrix with desired constraint.
+            See available parametrizations in module
+            `projnormal.models._constraints`
+
+        References
+        ------------
+        .. [1] https://docs.pytorch.org/tutorials/intermediate/parametrizations.html
+        """
+        parametrize.remove_parametrizations(self, "covariance_x")
+        parametrize.register_parametrization(self, "covariance_x", Parametrization())
+
+
     def __dir__(self):
         return ["mean_x", "covariance_x", "moments", "log_pdf", "pdf",
-                "moments_empirical", "sample", "moment_match", "moment_init"]
+                "moments_empirical", "sample", "moment_match", "moment_init",
+                "add_covariance_parametrization"]

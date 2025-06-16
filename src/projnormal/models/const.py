@@ -120,3 +120,7 @@ class ProjNormalConst(ProjNormal):
             y=y,
         )
         return lpdf
+
+
+    def __dir__(self):
+        return super().__dir__() + ["const"]
