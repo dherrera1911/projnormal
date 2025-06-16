@@ -11,7 +11,7 @@ def __dir__():
     return __all__
 
 
-def spd_sqrt(B, return_inverse=True):
+def spd_sqrt(B, return_inverse=False):
     """
     Compute the square root of a symmetric positive definite matrix.
     Optionally return the inverse square root also.
