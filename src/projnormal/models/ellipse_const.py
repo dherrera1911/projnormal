@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
 import projnormal.distribution as dist
 
-from ._constraints import Positive
+from .constraints import Positive
 from .ellipse import ProjNormalEllipse
 
 

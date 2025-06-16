@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
 import projnormal.distribution as dist
 import geotorch
-from ._constraints import Sphere
+from .constraints import Sphere
 from ._optim import lbfgs_loop, nadam_loop
 
 
@@ -469,7 +469,7 @@ class ProjNormal(nn.Module):
             a forward method that takes an unconstrained parameter
             and returns an SPD matrix with desired constraint.
             See available parametrizations in module
-            `projnormal.models._constraints`
+            `projnormal.models.constraints`
 
         References
         ------------
