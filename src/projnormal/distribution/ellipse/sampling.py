@@ -96,9 +96,10 @@ def empirical_moments(mean_x, covariance_x, n_samples, B=None, B_chol=None):
             'second_moment' : torch.Tensor, shape (n_dim, n_dim)
                 Second moment of the projected normal.
     """
-    if B_chol is not None:
+    if B_chol is None:
         if B is None:
-            raise ValueError("Either B or B_sqrt and B_sqrt_inv must be provided.")
+            raise ValueError("Either B or B_chol must be provided.")
+        B_chol = torch.linalg.cholesky(B)
 
     # Change basis to make B the identity
     mean_z = B_chol.T @ mean_x
