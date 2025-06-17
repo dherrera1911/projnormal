@@ -12,7 +12,7 @@ def __dir__():
     return __all__
 
 
-def pdf(mean_x, covariance_x, y, const, B=None, B_sqrt=None, B_sqrt_ldet=None):
+def pdf(mean_x, covariance_x, y, const, B=None, B_chol=None):
     """
     Compute the probability density function at points y for the variable
     Y = X/(X'BX)^0.5 where X ~ N(mean_x, covariance_x) and B is a symmetric
@@ -36,11 +36,9 @@ def pdf(mean_x, covariance_x, y, const, B=None, B_sqrt=None, B_sqrt_ldet=None):
       B : torch.Tensor, shape (n_dim, n_dim), optional
           Symmetric positive definite matrix defining the ellipse.
 
-      B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-          Square root of B. Can be provided to avoid recomputing it.
-
-      B_sqrt_ldet : torch.Tensor, shape (), optional
-          Log-Determinant of B_sqrt. Can be provided to avoid recomputing it.
+      B_chol : torch.Tensor, shape (n_dim, n_dim), optional
+          Cholesky decomposition matrix L, such that B = LL'.
+          Can be provided to avoid recomputing it.
 
     Returns
     ----------------
@@ -60,7 +58,7 @@ def pdf(mean_x, covariance_x, y, const, B=None, B_sqrt=None, B_sqrt_ldet=None):
     return pdf
 
 
-def log_pdf(mean_x, covariance_x, y, const, B_sqrt=None, B_sqrt_ldet=None):
+def log_pdf(mean_x, covariance_x, y, const, B=None, B_chol=None):
     """
     Compute the log probability density function at points y for the variable
     Y = X/(X'X)^0.5 where X ~ N(mean_x, covariance_x). Y has a general projected
@@ -83,38 +81,30 @@ def log_pdf(mean_x, covariance_x, y, const, B_sqrt=None, B_sqrt_ldet=None):
       B : torch.Tensor, shape (n_dim, n_dim), optional
           Symmetric positive definite matrix defining the ellipse.
 
-      B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-          Square root of B. Can be provided to avoid recomputing it.
-
-      B_sqrt_ldet : torch.Tensor, shape (), optional
-          Determinant of B_sqrt. Can be provided to avoid recomputing it.
-
     Returns
     ----------------
       torch.Tensor, shape (n_points)
           Log-PDF evaluated at each y.
     """
-    if B_sqrt is None or B_sqrt_ldet is None:
+    if B_chol is None:
         if B is None:
-            raise ValueError(
-              "Either B or B_sqrt and B_sqrt_ldet must be provided."
-            )
-        B_sqrt = spd_sqrt(B, return_inverse=False)
-        B_sqrt_ldet = torch.logdet(B_sqrt)
-    elif B is None:
-        B = B_sqrt @ B_sqrt
+            raise ValueError("Either B or B_chol must be provided.")
+        B_chol = torch.linalg.cholesky(B)
+
+    B_chol = torch.linalg.cholesky(B)
 
     # Change basis to make B the identity
-    mean_z = B_sqrt @ mean_x
-    covariance_z = B_sqrt @ covariance_x @ B_sqrt
-    y_z = y @ B_sqrt
+    mean_z = B_chol.T @ mean_x
+    covariance_z = B_chol.T @ covariance_x @ B_chol
+    y_z = y @ B_chol
 
     # Compute the PDF of the transformed variable
+    B_chol_ldet = torch.sum(torch.log(torch.diag(B_chol)))
     lpdf = _pnc_pdf.log_pdf(
       mean_x=mean_z,
       covariance_x=covariance_z,
       y=y_z,
       const=const
-    ) + B_sqrt_ldet
+    ) + B_chol_ldet
 
     return lpdf
