@@ -11,7 +11,7 @@ def __dir__():
     return __all__
 
 
-def sample(mean_x, covariance_x, n_samples, B=None, B_sqrt=None, B_sqrt_inv=None):
+def sample(mean_x, covariance_x, n_samples, B=None, B_chol=None):
     """
     Sample from the variable Y = X/(X'BX)^0.5, where X~N(mean_x, covariance_x)
     and B is a symmetric positive definite matrix.
@@ -32,25 +32,23 @@ def sample(mean_x, covariance_x, n_samples, B=None, B_sqrt=None, B_sqrt_inv=None
       B : torch.Tensor, shape (n_dim, n_dim), optional
           Symmetric positive definite matrix defining the ellipse.
 
-      B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-          Square root of B. Can be provided to avoid recomputing it.
-
-      B_sqrt_inv : torch.Tensor, shape (n_dim, n_dim), optional
-          Inverse of the square root of B. Can be provided to avoid recomputing it.
+      B_chol : torch.Tensor, shape (n_dim, n_dim), optional
+          Cholesky decomposition matrix L, such that B = LL'.
+          Can be provided to avoid recomputing it.
 
     Returns:
     -----------------
       torch.Tensor, shape (n_samples, n_dim)
           Samples from the projected normal.
     """
-    if B_sqrt is None or B_sqrt_inv is None:
+    if B_chol is None:
         if B is None:
-            raise ValueError("Either B or B_sqrt and B_sqrt_inv must be provided.")
-        B_sqrt, B_sqrt_inv = spd_sqrt(B)
+            raise ValueError("Either B or B_chol must be provided.")
+        B_chol = torch.linalg.cholesky(B)
 
     # Change basis to make B the identity
-    mean_z = B_sqrt @ mean_x
-    covariance_z = B_sqrt @ covariance_x @ B_sqrt
+    mean_z = B_chol.T @ mean_x
+    covariance_z = B_chol.T @ covariance_x @ B_chol
 
     # Sample from the standard projected normal
     samples_prnorm_z = _png_sampling.sample(
@@ -58,11 +56,12 @@ def sample(mean_x, covariance_x, n_samples, B=None, B_sqrt=None, B_sqrt_inv=None
     )
 
     # Change basis back to the original space
-    samples_prnorm = samples_prnorm_z @ B_sqrt_inv
+    samples_prnorm = torch.linalg.solve_triangular(B_chol.T, samples_prnorm_z.T, upper=True).T
     return samples_prnorm
 
 
-def empirical_moments(mean_x, covariance_x, n_samples, B=None, B_sqrt=None, B_sqrt_inv=None):
+
+def empirical_moments(mean_x, covariance_x, n_samples, B=None, B_chol=None):
     """
     Compute the mean, covariance and second moment of the variable
     Y = X/(X'X)^0.5, where X~N(mean_x, covariance_x), by sampling from the
@@ -82,11 +81,9 @@ def empirical_moments(mean_x, covariance_x, n_samples, B=None, B_sqrt=None, B_sq
       B : torch.Tensor, shape (n_dim, n_dim), optional
           Symmetric positive definite matrix defining the ellipse.
 
-      B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-          Square root of B. Can be provided to avoid recomputing it.
-
-      B_sqrt_inv : torch.Tensor, shape (n_dim, n_dim), optional
-          Inverse of the square root of B. Can be provided to avoid recomputing it.
+      B_chol : torch.Tensor, shape (n_dim, n_dim), optional
+          Cholesky decomposition matrix L, such that B = LL'.
+          Can be provided to avoid recomputing it.
 
     Returns:
     -----------------
@@ -99,24 +96,24 @@ def empirical_moments(mean_x, covariance_x, n_samples, B=None, B_sqrt=None, B_sq
             'second_moment' : torch.Tensor, shape (n_dim, n_dim)
                 Second moment of the projected normal.
     """
-    if B_sqrt is None or B_sqrt_inv is None:
+    if B_chol is not None:
         if B is None:
             raise ValueError("Either B or B_sqrt and B_sqrt_inv must be provided.")
-        B_sqrt, B_sqrt_inv = spd_sqrt(B)
 
     # Change basis to make B the identity
-    mean_z = B_sqrt @ mean_x
-    covariance_z = B_sqrt @ covariance_x @ B_sqrt
+    mean_z = B_chol.T @ mean_x
+    covariance_z = B_chol.T @ covariance_x @ B_chol
 
     moment_dict_z = _png_sampling.empirical_moments(
       mean_x=mean_z, covariance_x=covariance_z, n_samples=n_samples
     )
 
     # Change basis back to the original space
+    B_chol_inv = torch.linalg.solve_triangular(B_chol, torch.eye(B_chol.shape[0]), upper=False)
     moment_dict = {}
-    moment_dict["mean"] = B_sqrt_inv @ moment_dict_z["mean"]
-    moment_dict["covariance"] = B_sqrt_inv @ moment_dict_z["covariance"] @ B_sqrt_inv
+    moment_dict["mean"] = B_chol_inv.T @ moment_dict_z["mean"]
+    moment_dict["covariance"] = B_chol_inv.T @ moment_dict_z["covariance"] @ B_chol_inv
     moment_dict["second_moment"] = (
-      B_sqrt_inv @ moment_dict_z["second_moment"] @ B_sqrt_inv
+      B_chol_inv.T @ moment_dict_z["second_moment"] @ B_chol_inv
     )
     return moment_dict
