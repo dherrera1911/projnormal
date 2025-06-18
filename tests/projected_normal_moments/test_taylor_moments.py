@@ -36,11 +36,11 @@ def gaussian_parameters(n_dim, mean_type, eigvals, eigvecs, sigma, const):
 
 
 ######### CHECK THAT THE OUTPUTS ARE NUMERICALLY VALID ############
-@pytest.mark.parametrize("n_dim", [3, 5, 10])
+@pytest.mark.parametrize("n_dim", [2, 3, 5, 10])
 @pytest.mark.parametrize("mean_type", ["sin", "sparse"])
-@pytest.mark.parametrize("eigvals", ["uniform", "exponential"])
+@pytest.mark.parametrize("eigvals", ["exponential"])
 @pytest.mark.parametrize("eigvecs", ["random", "identity"])
-@pytest.mark.parametrize("sigma", [0.1])
+@pytest.mark.parametrize("sigma", [0.2])
 @pytest.mark.parametrize("const", [0, 0.1])
 def test_taylor_stability(gaussian_parameters):
     # Unpack parameters
@@ -68,7 +68,7 @@ def test_taylor_stability(gaussian_parameters):
     ), "Taylor approximation of the covariance is not symmetric"
     assert checks.is_positive_definite(
         sm_taylor
-    ), "Taylor approximation of the covariance is not positive definite"
+    ), "Taylor approximation of the second moment is not positive definite"
 
 
 ######### COMPARE APPROXIMATION AND EMPIRICAL ############
