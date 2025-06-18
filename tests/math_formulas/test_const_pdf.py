@@ -1,4 +1,4 @@
-"""Test the const PDF implementation in the projected normal distribution."""
+"""Test the PDF implementation for projected normal with denominator constant."""
 import pytest
 import torch
 import projnormal.distribution.const as pnc
