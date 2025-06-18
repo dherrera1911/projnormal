@@ -2,7 +2,7 @@
 import torch
 from projnormal.linalg import spd_sqrt
 
-from ..projected_normal import sampling as _png_sampling
+from ..ellipse_const import sampling as _pnec_sampling
 
 __all__ = ["sample", "empirical_moments"]
 
@@ -41,24 +41,8 @@ def sample(mean_x, covariance_x, n_samples, B=None, B_chol=None):
       torch.Tensor, shape (n_samples, n_dim)
           Samples from the projected normal.
     """
-    if B_chol is None:
-        if B is None:
-            raise ValueError("Either B or B_chol must be provided.")
-        B_chol = torch.linalg.cholesky(B)
-
-    # Change basis to make B the identity
-    mean_z = B_chol.T @ mean_x
-    covariance_z = B_chol.T @ covariance_x @ B_chol
-
-    # Sample from the standard projected normal
-    samples_prnorm_z = _png_sampling.sample(
-      mean_x=mean_z, covariance_x=covariance_z, n_samples=n_samples
-    )
-
-    # Change basis back to the original space
-    samples_prnorm = torch.linalg.solve_triangular(B_chol.T, samples_prnorm_z.T, upper=True).T
-    return samples_prnorm
-
+    return _pnec_sampling.sample(mean_x=mean_x, covariance_x=covariance_x,
+                                 n_samples=n_samples, const=0, B=B, B_chol=B_chol)
 
 
 def empirical_moments(mean_x, covariance_x, n_samples, B=None, B_chol=None):
@@ -96,25 +80,5 @@ def empirical_moments(mean_x, covariance_x, n_samples, B=None, B_chol=None):
             'second_moment' : torch.Tensor, shape (n_dim, n_dim)
                 Second moment of the projected normal.
     """
-    if B_chol is None:
-        if B is None:
-            raise ValueError("Either B or B_chol must be provided.")
-        B_chol = torch.linalg.cholesky(B)
-
-    # Change basis to make B the identity
-    mean_z = B_chol.T @ mean_x
-    covariance_z = B_chol.T @ covariance_x @ B_chol
-
-    moment_dict_z = _png_sampling.empirical_moments(
-      mean_x=mean_z, covariance_x=covariance_z, n_samples=n_samples
-    )
-
-    # Change basis back to the original space
-    B_chol_inv = torch.linalg.solve_triangular(B_chol, torch.eye(B_chol.shape[0]), upper=False)
-    moment_dict = {}
-    moment_dict["mean"] = B_chol_inv.T @ moment_dict_z["mean"]
-    moment_dict["covariance"] = B_chol_inv.T @ moment_dict_z["covariance"] @ B_chol_inv
-    moment_dict["second_moment"] = (
-      B_chol_inv.T @ moment_dict_z["second_moment"] @ B_chol_inv
-    )
-    return moment_dict
+    return _pnec_sampling.empirical_moments(mean_x=mean_x, covariance_x=covariance_x,
+                                           n_samples=n_samples, const=0, B=B, B_chol=B_chol)

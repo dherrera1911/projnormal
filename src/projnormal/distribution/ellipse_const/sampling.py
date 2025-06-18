@@ -118,7 +118,6 @@ def empirical_moments(mean_x, covariance_x, const, n_samples, B=None, B_chol=Non
       const=const
     )
 
-
     # Change basis back to the original space
     B_chol_inv = torch.linalg.solve_triangular(B_chol, torch.eye(B_chol.shape[0]), upper=False)
     moment_dict = {}
