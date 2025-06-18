@@ -125,6 +125,7 @@ class ProjNormal(nn.Module):
               Dictionary containing the mean, covariance and second moment
               of the projected normal.
         """
+        # Use dist.const to not redefine method for the Const class
         gamma = dist.const.moments.mean(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
