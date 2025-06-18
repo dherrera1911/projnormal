@@ -64,62 +64,7 @@ def mean(mean_x, covariance_x, const, B=None, B_chol=None):
     return gamma
 
 
-def second_moment(mean_x, covariance_x, const, B=None, B_sqrt=None, B_sqrt_inv=None):
-    """
-    Compute the Taylor approximation to the second moment matrix of the
-    variable Y = X/(X'X)^0.5, where X~N(mean_x, covariance_x). Y has a
-    general projected normal distribution.
-
-    The approximation is based on the Taylor expansion of the
-    function f(n,d) = n/d, where n = X_i*X_j and d = X'X.
-
-    Parameters
-    ----------------
-      mean_x : torch.Tensor, shape (n_dim,)
-          Mean of X.
-
-      covariance_x : torch.Tensor, shape (n_dim, n_dim)
-        Covariance matrix of X elements.
-
-      const : torch.Tensor, shape ()
-        Constant added to the denominator.
-
-      B : torch.Tensor, shape (n_dim, n_dim), optional
-          Symmetric positive definite matrix defining the ellipse.
-
-      B_sqrt : torch.Tensor, shape (n_dim, n_dim), optional
-          Square root of B. Can be provided to avoid recomputing it.
-
-      B_sqrt_inv : torch.Tensor, shape (n_dim, n_dim), optional
-          Inverse of the square root of B. Can be provided to avoid recomputing it.
-
-    Returns
-    ----------------
-      torch.Tensor, shape (n_dim, n_dim)
-          Second moment matrix of Y
-    """
-    if B_sqrt is None or B_sqrt_inv is None:
-        if B is None:
-            raise ValueError("Either B or B_sqrt and B_sqrt_inv must be provided.")
-        B_sqrt, B_sqrt_inv = spd_sqrt(B, return_inverse=True)
-
-    mean_z = B_sqrt @ mean_x
-    covariance_z = B_sqrt @ covariance_x @ B_sqrt
-
-    # Compute the second moment in the new basis
-    sm_z = _pnc_moments.second_moment(
-      mean_x=mean_z,
-      covariance_x=covariance_z,
-      const=const
-    )
-
-    # Change back to the original basis
-    sm = B_sqrt_inv @ sm_z @ B_sqrt_inv
-
-    return sm
-
-
-def second_moment2(mean_x, covariance_x, const, B=None, B_chol=None):
+def second_moment(mean_x, covariance_x, const, B=None, B_chol=None):
     """
     Compute the Taylor approximation to the second moment matrix of the
     variable Y = X/(X'X)^0.5, where X~N(mean_x, covariance_x). Y has a
