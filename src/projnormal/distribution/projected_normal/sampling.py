@@ -31,13 +31,12 @@ def sample(mean_x, covariance_x, n_samples):
       torch.Tensor, shape (n_samples, n_dim)
           Samples from the projected normal.
     """
-    samples_prnorm = _const_sampling.sample(
+    return _const_sampling.sample(
       mean_x=mean_x,
       covariance_x=covariance_x,
       n_samples=n_samples,
       const=0
     )
-    return samples_prnorm
 
 
 def empirical_moments(mean_x, covariance_x, n_samples):
@@ -68,10 +67,9 @@ def empirical_moments(mean_x, covariance_x, n_samples):
             'second_moment' : torch.Tensor, shape (n_dim, n_dim)
                 Second moment of the projected normal.
     """
-    moment_dict = _const_sampling.empirical_moments(
+    return _const_sampling.empirical_moments(
       mean_x=mean_x,
       covariance_x=covariance_x,
       n_samples=n_samples,
       const=0
     )
-    return moment_dict
