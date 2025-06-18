@@ -1,12 +1,10 @@
 """Class for the general projected normal distribution."""
-from abc import ABC, abstractmethod
 import geotorch
 import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
 import projnormal.distribution as dist
 
-from ..linalg import spd_sqrt
 from .constraints import Positive
 from .projected_normal import ProjNormal
 

@@ -1,5 +1,4 @@
 """Cass for the general projected normal distribution."""
-from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
