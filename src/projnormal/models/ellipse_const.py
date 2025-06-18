@@ -79,10 +79,7 @@ class ProjNormalEllipseConst(ProjNormalEllipse):
         mean_x=None,
         covariance_x=None,
         const=None,
-        n_dirs=None,
-        B_sqrt_coefs=None,
-        B_sqrt_vecs=None,
-        B_sqrt_diag=1.0,
+        B=None,
     ):
         """Initialize an instance of the ProjNormal class.
 
@@ -105,26 +102,16 @@ class ProjNormalEllipseConst(ProjNormalEllipse):
               Number of directions to use in the optimization. Default is 1.
               If `B_eigvals` is provided, it is ignored.
 
-          B_eigvals : torch.Tensor, shape (n_dirs), optional
-              Initial eigenvalues of the associated eigenvectors vectors in
-              B_eigvecs.
-
-          B_eigvecs : torch.Tensor, shape (n_dirs, n_dim), optional
-              Initial eigenvectors of the ellipse matrix. Default is random
-              orthogonal vectors.
-
-          B_rad_sq : torch.Tensor, shape (), optional
-              Initial eigenvalue of all directions not in B_eigvecs. Default
-              is 1.
+          B : torch.Tensor, shape (n_dim, n_dim), optional
+              SPD matrix defining the ellipse. If not provided, it is initialized
+              as an identity matrix.
         """
         super().__init__(
           n_dim=n_dim,
           mean_x=mean_x,
           covariance_x=covariance_x,
           n_dirs=n_dirs,
-          B_sqrt_coefs=B_sqrt_coefs,
-          B_sqrt_vecs=B_sqrt_vecs,
-          B_sqrt_diag=B_sqrt_diag,
+          B=B,
         )
 
         # Parse const
@@ -154,19 +141,12 @@ class ProjNormalEllipseConst(ProjNormalEllipse):
           torch.Tensor, shape (n_points)
               Log PDF of the point. (n_points)
         """
-        # Extract B matrices needed
-        B = self.ellipse.get_B()
-        B_sqrt = self.ellipse.get_B_sqrt()
-        B_sqrt_ldet = self.ellipse.get_B_sqrt_inv()
-
         lpdf = dist.ellipse_const.pdf.log_pdf(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
             y=y,
             const=self.const,
-            B=B,
-            B_sqrt=B_sqrt,
-            B_sqrt_ldet=B_sqrt_ldet
+            B=self.B,
         )
         return lpdf
 
