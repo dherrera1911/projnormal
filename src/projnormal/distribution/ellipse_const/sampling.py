@@ -26,11 +26,11 @@ def sample(mean_x, covariance_x, n_samples, const, B=None, B_chol=None):
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
           Covariance matrix of X elements.
 
-      const : torch.Tensor, shape ()
-        Constant added to the denominator.
-
       n_samples : int
           Number of samples.
+
+      const : torch.Tensor, shape ()
+        Constant added to the denominator.
 
       B : torch.Tensor, shape (n_dim, n_dim), optional
         Symmetric positive definite matrix defining the ellipse.

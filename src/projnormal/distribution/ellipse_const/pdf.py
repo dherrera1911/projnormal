@@ -91,8 +91,6 @@ def log_pdf(mean_x, covariance_x, y, const, B=None, B_chol=None):
             raise ValueError("Either B or B_chol must be provided.")
         B_chol = torch.linalg.cholesky(B)
 
-    B_chol = torch.linalg.cholesky(B)
-
     # Change basis to make B the identity
     mean_z = B_chol.T @ mean_x
     covariance_z = B_chol.T @ covariance_x @ B_chol
