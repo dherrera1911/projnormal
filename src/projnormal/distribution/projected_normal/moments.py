@@ -32,8 +32,7 @@ def mean(mean_x, covariance_x):
       torch.Tensor, shape (n_dim,)
           Expected value for the projected normal.
     """
-    gamma = const_moments.mean(mean_x, covariance_x, const=0)
-    return gamma
+    return const_moments.mean(mean_x, covariance_x, const=0)
 
 
 def second_moment(mean_x, covariance_x):
@@ -58,5 +57,4 @@ def second_moment(mean_x, covariance_x):
       torch.Tensor, shape (n_dim, n_dim)
           Second moment matrix of Y
     """
-    sm = const_moments.second_moment(mean_x, covariance_x, const=0)
-    return sm
+    return const_moments.second_moment(mean_x, covariance_x, const=0)
