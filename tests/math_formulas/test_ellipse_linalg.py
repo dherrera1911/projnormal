@@ -8,7 +8,7 @@ def test_spd_sqrt():
     """Test the square root of a SPD matrix."""
     n_dim = 8
     B = pn.param_sampling.make_spdm(n_dim=n_dim)
-    sqrt_B, sqrt_B_inv = pn.ellipse_linalg.spd_sqrt(B)
+    sqrt_B, sqrt_B_inv = pn.linalg.spd_sqrt(B, return_inverse=True)
 
     assert torch.allclose(sqrt_B @ sqrt_B, B, atol=1e-5), \
         "SPD square root is not correct."
