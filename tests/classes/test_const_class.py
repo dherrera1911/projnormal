@@ -176,7 +176,7 @@ def test_moment_matching(n_dim, optimizer, gaussian_parameters):
     const = gaussian_parameters['const']
 
     # Make observed moments
-    moments_target = pnc.sampling.empirical_moments(
+    moments_target = pnc.empirical_moments(
       mean_x=mean_x,
       covariance_x=covariance_x,
       const=const,

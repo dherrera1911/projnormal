@@ -1,7 +1,6 @@
 """Moments of quadratic forms of multidimensional Gaussian distributions."""
 
 import torch
-import torch.special as spt
 
 __all__ = [
   "mean",

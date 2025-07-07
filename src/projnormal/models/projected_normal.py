@@ -2,7 +2,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
-import projnormal.distribution as dist
+import projnormal.distribution.const as const_dist
+import projnormal.distribution.projected_normal as prnorm_dist
 import geotorch
 from .constraints import Sphere
 from ._optim import lbfgs_loop, nadam_loop
@@ -126,12 +127,12 @@ class ProjNormal(nn.Module):
               of the projected normal.
         """
         # Use dist.const to not redefine method for the Const class
-        gamma = dist.const.moments.mean(
+        gamma = const_dist.mean(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
             const=self.const,
         )
-        second_moment = dist.const.moments.second_moment(
+        second_moment = const_dist.second_moment(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
             const=self.const,
@@ -152,7 +153,7 @@ class ProjNormal(nn.Module):
               of the projected normal.
         """
         with torch.no_grad():
-            stats_dict = dist.const.sampling.empirical_moments(
+            stats_dict = const_dist.empirical_moments(
                 mean_x=self.mean_x,
                 covariance_x=self.covariance_x,
                 n_samples=n_samples,
@@ -175,7 +176,7 @@ class ProjNormal(nn.Module):
           torch.Tensor, shape (n_points)
               Log PDF of the point. (n_points)
         """
-        lpdf = dist.projected_normal.pdf.log_pdf(
+        lpdf = prnorm_dist.log_pdf(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
             y=y,
@@ -215,7 +216,7 @@ class ProjNormal(nn.Module):
               Samples from the distribution.
         """
         with torch.no_grad():
-            samples = dist.const.sampling.sample(
+            samples = const_dist.sampling.sample(
                 mean_x=self.mean_x,
                 covariance_x=self.covariance_x,
                 n_samples=n_samples,

@@ -46,11 +46,11 @@ def test_ellipse_sampling(sample_parameters):
     covariance_x = sample_parameters["covariance_x"]
     B = sample_parameters["B"]
 
-    samples_pkg = pne.sampling.sample(
+    samples_pkg = pne.sample(
       mean_x, covariance_x, B=B, n_samples=n_samples
     )
 
-    moments_pkg = pne.sampling.empirical_moments(
+    moments_pkg = pne.empirical_moments(
       mean_x, covariance_x, B=B, n_samples=n_samples
     )
 

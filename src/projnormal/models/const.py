@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
-import projnormal.distribution as dist
+import projnormal.distribution.const as const_dist
 
 from .constraints import Positive
 from .projected_normal import ProjNormal
@@ -120,7 +120,7 @@ class ProjNormalConst(ProjNormal):
           torch.Tensor, shape (n_points)
               Log PDF of the point.
         """
-        lpdf = dist.const.pdf.log_pdf(
+        lpdf = const_dist.log_pdf(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
             const=self.const,

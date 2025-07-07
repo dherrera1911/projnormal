@@ -4,7 +4,7 @@ import torch
 import projnormal.param_sampling as par_samp
 import projnormal.matrix_checks as checks
 import projnormal.models as models
-import projnormal.distribution.general as png
+import projnormal.distribution.projected_normal as png
 
 
 torch.manual_seed(1)
@@ -177,7 +177,7 @@ def test_moment_matching(n_dim, optimizer, gaussian_parameters):
     covariance_x = gaussian_parameters['covariance_x']
 
     # Make observed moments
-    moments_target = png.sampling.empirical_moments(
+    moments_target = png.empirical_moments(
       mean_x=mean_x,
       covariance_x=covariance_x,
       n_samples=100000
@@ -231,14 +231,14 @@ def test_maximum_likelihood(n_dim, optimizer, gaussian_parameters):
     covariance_x = gaussian_parameters['covariance_x']
 
     # Make observed moments
-    moments_target = png.sampling.empirical_moments(
+    moments_target = png.empirical_moments(
       mean_x=mean_x,
       covariance_x=covariance_x,
       n_samples=100000
     )
 
     # Make observed samples
-    y_samples = png.sampling.sample(
+    y_samples = png.sample(
       mean_x=mean_x,
       covariance_x=covariance_x,
       n_samples=100

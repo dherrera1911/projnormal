@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
-import projnormal.distribution as dist
+import projnormal.distribution.ellipse_const as ellipse_const_dist
 
 from .constraints import Positive
 from .ellipse import ProjNormalEllipse
@@ -140,7 +140,7 @@ class ProjNormalEllipseConst(ProjNormalEllipse):
           torch.Tensor, shape (n_points)
               Log PDF of the point. (n_points)
         """
-        lpdf = dist.ellipse_const.pdf.log_pdf(
+        lpdf = ellipse_const_dist.log_pdf(
             mean_x=self.mean_x,
             covariance_x=self.covariance_x,
             y=y,

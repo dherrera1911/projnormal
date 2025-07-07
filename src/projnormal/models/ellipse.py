@@ -3,7 +3,7 @@ import geotorch
 import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
-import projnormal.distribution as dist
+import projnormal.distribution.ellipse_const as ellipse_const_dist
 
 from .constraints import Positive
 from .projected_normal import ProjNormal
@@ -100,6 +100,7 @@ class ProjNormalEllipse(ProjNormal):
             B = torch.eye(self.n_dim)
         self.B = nn.Parameter(B.clone())
         geotorch.positive_definite(self, "B")
+        self.B = B.clone()
 
 
     def moments(self):
@@ -118,15 +119,15 @@ class ProjNormalEllipse(ProjNormal):
         B_chol = torch.linalg.cholesky(self.B)
 
         # Use dist.ellipse_const to not redefine method for the EllipseConst class
-        gamma = dist.ellipse_const.moments.mean(
-            mean_x=mean_z,
-            covariance_x=covariance_z,
+        gamma = ellipse_const_dist.mean(
+            mean_x=self.mean_x,
+            covariance_x=self.covariance_x,
             const=self.const,
             B_chol=B_chol,
         )
-        second_moment = dist.ellipse_const.moments.second_moment(
-            mean_x=mean_z,
-            covariance_x=covariance_z,
+        second_moment = ellipse_const_dist.second_moment(
+            mean_x=self.mean_x,
+            covariance_x=self.covariance_x,
             const=self.const,
             B_chol=B_chol,
         )
@@ -147,7 +148,7 @@ class ProjNormalEllipse(ProjNormal):
             of the projected normal.
         """
         with torch.no_grad():
-            stats_dict = dist.ellipse_const.sampling.empirical_moments(
+            stats_dict = ellipse_const_dist.empirical_moments(
                 mean_x=self.mean_x,
                 covariance_x=self.covariance_x,
                 n_samples=n_samples,
@@ -209,7 +210,7 @@ class ProjNormalEllipse(ProjNormal):
               Samples from the distribution.
         """
         with torch.no_grad():
-            samples = dist.ellipse_const.sampling.sample(
+            samples = ellipse_const_dist.sample(
                 mean_x=self.mean_x,
                 covariance_x=self.covariance_x,
                 n_samples=n_samples,

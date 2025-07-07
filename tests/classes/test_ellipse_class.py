@@ -5,7 +5,6 @@ import projnormal.param_sampling as par_samp
 import projnormal.matrix_checks as checks
 import projnormal.models as models
 import projnormal.distribution.ellipse as pne
-import projnormal.distribution.general as png
 
 
 torch.manual_seed(1)
@@ -34,22 +33,15 @@ def gaussian_parameters(n_dim, sigma):
 @pytest.mark.parametrize('n_dim', [3, 7])
 def test_init(n_dim):
     """Test the initialization of the ProjNormal class."""
-    # Initialize without input parameters
-    prnorm = models.ProjNormalEllipse(n_dim=n_dim)
-
     # Initialize parameters
     mean_x = torch.ones(n_dim) / torch.sqrt(torch.as_tensor(n_dim))
     covariance_x = torch.eye(n_dim)
-    eigvecs = par_samp.make_ortho_vectors(n_dim, N_DIRS)
-    eigvals = torch.tensor([0.4, 2.5])
-    diag_val = torch.tensor(1.0)
+    B = par_samp.make_spdm(n_dim)
 
     prnorm = models.ProjNormalEllipse(
       mean_x=mean_x,
       covariance_x=covariance_x,
-      B_sqrt_vecs=eigvecs,
-      B_sqrt_coefs=eigvals,
-      B_sqrt_diag=diag_val,
+      B=B,
     )
 
     assert prnorm.mean_x.shape[0] == n_dim, \
@@ -58,26 +50,10 @@ def test_init(n_dim):
         'Mean is not initialized correctly'
 
     # Check B is correctly initialized
-    B = prnorm.B.detach().clone()
-    B_eigval, B_eigvec = torch.linalg.eigh(B)
+    B_init = prnorm.B.detach().clone()
 
-    B_eigval_expected = torch.sort(
-      torch.cat(((eigvals + diag_val)**2, torch.ones(n_dim - 2) * diag_val**2))
-    )[0]
-
-    assert torch.allclose(B_eigval, B_eigval_expected), \
-        'Eigenvalues are not initialized correctly'
-
-    inner_prod = torch.abs(eigvecs @ B_eigvec)
-    assert torch.allclose(inner_prod[inner_prod > 1e-3], torch.tensor([1.0, 1.0])), \
-        'Eigenvectors are not initialized correctly'
-
-    # Check that value error is raised if n_dim doesn't match the statistics
-    with pytest.raises(ValueError):
-        prnorm = models.ProjNormalEllipse(
-          n_dim=n_dim,
-          B_sqrt_vecs=par_samp.make_ortho_vectors(n_dim+1, N_DIRS),
-        )
+    assert torch.allclose(B_init, B, atol=1e-6), \
+        'B is not initialized correctly'
 
 
 ######### TEST BASIC METHODS
@@ -91,29 +67,24 @@ def test_empirical_moments(n_dim, gaussian_parameters):
     # Unpack parameters
     mean_x = gaussian_parameters['mean_x']
     covariance_x = gaussian_parameters['covariance_x']
-
-    eigvecs = par_samp.make_ortho_vectors(n_dim, N_DIRS)
-    eigvals = torch.tensor([0.4, 2.5])
-    diag_val = torch.tensor(1.0)
+    B = par_samp.make_spdm(n_dim)
 
     # Initialize the projected normal class
     prnorm = models.ProjNormalEllipse(
       mean_x=mean_x,
       covariance_x=covariance_x,
-      B_sqrt_vecs=eigvecs,
-      B_sqrt_coefs=eigvals,
-      B_sqrt_diag=diag_val,
+      B=B,
     )
 
     # Sample using the class
     emp_moments_class = prnorm.moments_empirical(n_samples)
 
     # Sample using the function
-    B = prnorm.B.detach().clone()
-    emp_moments_other = pne.sampling.empirical_moments(
+    B2 = prnorm.B.detach().clone()
+    emp_moments_other = pne.empirical_moments(
       mean_x=mean_x,
       covariance_x=covariance_x,
-      B=B,
+      B=B2,
       n_samples=n_samples
     )
 
@@ -131,17 +102,12 @@ def test_moments(n_dim, gaussian_parameters):
     # Unpack parameters
     mean_x = gaussian_parameters['mean_x']
     covariance_x = gaussian_parameters['covariance_x']
-
-    eigvecs = par_samp.make_ortho_vectors(n_dim, N_DIRS)
-    eigvals = torch.tensor([0.1, 2.0])
-    diag_val = torch.tensor(1.0)
+    B = par_samp.make_spdm(n_dim)
 
     prnorm = models.ProjNormalEllipse(
       mean_x=mean_x,
       covariance_x=covariance_x,
-      B_sqrt_vecs=eigvecs,
-      B_sqrt_coefs=eigvals,
-      B_sqrt_diag=diag_val,
+      B=B,
     )
 
     # Sample using the class
@@ -149,16 +115,16 @@ def test_moments(n_dim, gaussian_parameters):
         moments_class = prnorm.moments()
 
     # Sample using the function
-    B = prnorm.B.detach().clone()
-    gamma = pne.moments.mean(
+    B2 = prnorm.B.detach().clone()
+    gamma = pne.mean(
       mean_x=mean_x,
       covariance_x=covariance_x,
-      B=B,
+      B=B2,
     )
-    second_moment = pne.moments.second_moment(
+    second_moment = pne.second_moment(
       mean_x=mean_x,
       covariance_x=covariance_x,
-      B=B,
+      B=B2,
     )
 
     # Compare results

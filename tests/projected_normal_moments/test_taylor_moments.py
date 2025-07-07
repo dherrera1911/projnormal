@@ -49,10 +49,10 @@ def test_taylor_stability(gaussian_parameters):
     const = gaussian_parameters["const"]
 
     # Get taylor approximation moments
-    gamma_taylor = pnc.moments.mean(
+    gamma_taylor = pnc.mean(
       mean_x=mean_x, covariance_x=covariance_x, const=const
     )
-    sm_taylor = pnc.moments.second_moment(
+    sm_taylor = pnc.second_moment(
         mean_x=mean_x, covariance_x=covariance_x, const=const
     )
 
@@ -86,25 +86,25 @@ def test_taylor_vs_empirical(gaussian_parameters, n_samples):
     const = gaussian_parameters["const"]
 
     # Get taylor approximation moments
-    gamma_taylor = pnc.moments.mean(
+    gamma_taylor = pnc.mean(
       mean_x=mean_x, covariance_x=covariance_x, const=const
     )
-    sm_taylor = pnc.moments.second_moment(
+    sm_taylor = pnc.second_moment(
         mean_x=mean_x, covariance_x=covariance_x, const=const
     )
 
     # Get empirical moments
-    moments_empirical = pnc.sampling.empirical_moments(
+    moments_empirical = pnc.empirical_moments(
         mean_x, covariance_x, n_samples=n_samples, const=const
     )
     gamma_empirical = moments_empirical["mean"]
     sm_empirical = moments_empirical["second_moment"]
 
     # Get Taylor approximation moments
-    gamma_taylor = pnc.moments.mean(
+    gamma_taylor = pnc.mean(
         mean_x=mean_x, covariance_x=covariance_x, const=const
     )
-    sm_taylor = pnc.moments.second_moment(
+    sm_taylor = pnc.second_moment(
         mean_x=mean_x, covariance_x=covariance_x, const=const
     )
 

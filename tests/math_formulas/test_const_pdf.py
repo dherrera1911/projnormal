@@ -37,7 +37,7 @@ def test_inverted_projection(const, projection_result):
     y = projection_result['y']
 
     tolerance = projection_result['tolerance']
-    x_reconstructed = pnc.pdf._invert_projection(y, const)
+    x_reconstructed = pnc.probability._invert_projection(y, const)
     assert torch.allclose(x, x_reconstructed, atol=tolerance), \
         'Inverted projection does not give the true result.'
 
@@ -57,7 +57,7 @@ def projection_jacobian(n_points, n_dim, scale, const):
     determinants = torch.zeros(n_points)
     for i in range(n_points):
         jacobian[i,:,:] = torch.autograd.functional.jacobian(
-          pnc.pdf._invert_projection, (y[i], const)
+          pnc.probability._invert_projection, (y[i], const)
         )[0]
         determinants[i] = torch.linalg.det(jacobian[i,:,:])
 
@@ -79,11 +79,11 @@ def test_jacobian(projection_jacobian):
     tolerance = projection_jacobian['tolerance']
 
     # Compute the Jacobian matrix for each point
-    jacobian = pnc.pdf._invert_projection_jacobian_matrix(y, const)
+    jacobian = pnc.probability._invert_projection_jacobian_matrix(y, const)
     # Compute the determinant of the Jacobian matrix for each point
-    determinants = pnc.pdf._invert_projection_det(y, const)
+    determinants = pnc.probability._invert_projection_det(y, const)
     # Compute the log determinants
-    log_determinants = pnc.pdf._invert_projection_log_det(y, const)
+    log_determinants = pnc.probability._invert_projection_log_det(y, const)
 
     assert not torch.isinf(determinants).any(), 'Determinants are infinite'
     assert torch.allclose(jacobian, jacobian_autograd, atol=tolerance), \
@@ -108,7 +108,7 @@ def gaussian_parameters(n_points, n_dim, mean_type, eigvals, eigvecs, sigma, con
       n_dim=n_dim, eigvals=eigvals, eigvecs=eigvecs
     ) * sigma**2
 
-    y = pnc.sampling.sample(mean_x, covariance_x, const=const, n_samples=n_points)
+    y = pnc.sample(mean_x, covariance_x, const=const, n_samples=n_points)
 
     return {
         "mean_x": mean_x,
@@ -133,11 +133,11 @@ def test_pdf(const, gaussian_parameters):
     y = gaussian_parameters['y']
 
     # Compute the pdf
-    pdf = pnc.pdf.pdf(
+    pdf = pnc.pdf(
       mean_x=mean_x, covariance_x=covariance_x, const=const, y=y
     )
     # Compute the log pdf
-    log_pdf = pnc.pdf.log_pdf(
+    log_pdf = pnc.log_pdf(
       mean_x=mean_x, covariance_x=covariance_x, const=const, y=y
     )
 
