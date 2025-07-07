@@ -19,7 +19,7 @@ def mean(mean_x, covariance_x, M=None):
     Compute the mean of X'MX where X~N(mean_x, covariance_x).
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of normally distributed X.
 
@@ -30,8 +30,8 @@ def mean(mean_x, covariance_x, M=None):
           Matrix in quadratic form. If a vector is provided,
           it is used as the diagonal of M. Default is the identity matrix.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape ()
           Expected value of the quadratic form
     """
@@ -53,7 +53,7 @@ def _mean_diagonal(mean_x, covariance_x, M_diagonal):
     Compute the mean of X'MX where X~N(mean_x, covariance_x) and M is diagonal.
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of normally distributed X.
 
@@ -63,8 +63,8 @@ def _mean_diagonal(mean_x, covariance_x, M_diagonal):
       M: torch.Tensor, shape (n_dim,), optional
           Diagonal elements of the diagonal matrix to multiply by.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape ()
           Expected value of the quadratic form.
     """
@@ -79,7 +79,7 @@ def variance(mean_x, covariance_x, M=None):
     Compute the variance of X'MX, where X~N(mean_x, covariance_x).
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of normally distributed X.
 
@@ -91,7 +91,7 @@ def variance(mean_x, covariance_x, M=None):
           in which case it is assumed to be diagonal. If None, M=I.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape ()
           Variance of quadratic form.
     """
@@ -115,12 +115,12 @@ def variance(mean_x, covariance_x, M=None):
 
 def _variance_diagonal(mean_x, covariance_x, M_diagonal):
     """
-    Computes the variance of the quadratic form given
+    Compute the variance of the quadratic form given
     by Gaussian variable X and matrix M, where X~N(mean_x, covariance_x)
     and M is diagonal.
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of normally distributed X.
 
@@ -131,7 +131,7 @@ def _variance_diagonal(mean_x, covariance_x, M_diagonal):
           Diagonal elements of the diagonal matrix to multiply by.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape ()
         Variance of quadratic form.
     """
@@ -148,7 +148,7 @@ def qf_covariance(mean_x, covariance_x, M, M2):
     Compute the covariance of X'MX and X'M2X, where X ~ N(mean_x, covariance_x).
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of normally distributed X.
 
@@ -162,7 +162,7 @@ def qf_covariance(mean_x, covariance_x, M, M2):
           Matrix of second quadratic form.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape ()
           Covariance of X'MX and X'M2X. Scalar
     """
@@ -183,7 +183,7 @@ def qf_linear_covariance(mean_x, covariance_x, M, b):
     Compute the covariance of X'MX and X'b, where X ~ N(mean_x, covariance_x).
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of normally distributed X.
 
@@ -197,7 +197,7 @@ def qf_linear_covariance(mean_x, covariance_x, M, b):
           Vector for linear form.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape ()
           Covariance of X'MX and X'b.
     """
@@ -206,14 +206,10 @@ def qf_linear_covariance(mean_x, covariance_x, M, b):
 
 
 def _product_trace(A, B):
-    """
-    Efficiently compute tr(A*B).
-    """
+    """Efficiently compute tr(A*B)."""
     return torch.einsum("ij,ji->", A, B)
 
 
 def _product_trace4(A, B, C, D):
-    """
-    Efficiently compute tr(A*B*C*D).
-    """
+    """Efficiently compute tr(A*B*C*D)."""
     return torch.einsum("ij,jk,kl,li->", A, B, C, D)

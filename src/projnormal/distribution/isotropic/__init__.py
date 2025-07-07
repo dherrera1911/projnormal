@@ -1,6 +1,7 @@
-from .probability import pdf, log_pdf
+"""Subpackage with functions for projected normal distribution with isotropic covariance."""
 from .moments import mean, second_moment
-from .sampling import sample, empirical_moments
+from .probability import log_pdf, pdf
+from .sampling import empirical_moments, sample
 
 __all__ = ["pdf", "log_pdf", "mean", "second_moment", "sample", "empirical_moments"]
 

@@ -1,6 +1,4 @@
 """Approximation to the moments of the general projected normal distribution."""
-import torch
-
 from ..const import moments as const_moments
 
 __all__ = ["mean", "second_moment"]
@@ -19,16 +17,16 @@ def mean(mean_x, covariance_x):
     The approximation is based on the function
     f(u,v) = u/sqrt(u^2 + v), where u=X_i and v = (X'X - X_i^2).
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
         Covariance matrix of X elements.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape (n_dim,)
           Expected value for the projected normal.
     """
@@ -45,7 +43,7 @@ def second_moment(mean_x, covariance_x):
     function f(n,d) = n/d, where n = X_i*X_j and d = X'X.
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -53,7 +51,7 @@ def second_moment(mean_x, covariance_x):
         Covariance matrix of X elements.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_dim, n_dim)
           Second moment matrix of Y
     """

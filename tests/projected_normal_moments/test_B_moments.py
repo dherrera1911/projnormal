@@ -1,6 +1,7 @@
 """Test transform/untransform approach to approximate X/X'BX moments."""
 import pytest
 import torch
+
 import projnormal.distribution.const as pnc
 import projnormal.distribution.ellipse_const as pnec
 import projnormal.param_sampling as par_samp
@@ -15,8 +16,7 @@ tol_sm = 1e-4
 # Instantiate parameters
 @pytest.fixture(scope="function")
 def gaussian_parameters(n_dim, mean_type, eigvals, eigvecs, sigma, const):
-    """ Fixture to generate Gaussian parameters for tests."""
-
+    """Fixture to generate Gaussian parameters for tests."""
     # Initialize the mean of the gaussian
     # Parameters of distribution
     mean_x = par_samp.make_mean(
@@ -45,6 +45,7 @@ def gaussian_parameters(n_dim, mean_type, eigvals, eigvecs, sigma, const):
 @pytest.mark.parametrize("sigma", [0.1])
 @pytest.mark.parametrize("const", [0, 0.1])
 def test_B_mapping(gaussian_parameters):
+    """Test the transform/untransform approach to approximate X/X'BX moments."""
     # Unpack parameters
     mean_x = gaussian_parameters["mean_x"]
     covariance_x = gaussian_parameters["covariance_x"]

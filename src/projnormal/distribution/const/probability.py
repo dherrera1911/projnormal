@@ -2,7 +2,6 @@
 import torch
 import torch.distributions.multivariate_normal as mvn
 
-
 __all__ = ["pdf", "log_pdf"]
 
 
@@ -17,7 +16,7 @@ def pdf(mean_x, covariance_x, const, y):
     normal distribution with an extra additive constant const in the denominator.
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -31,7 +30,7 @@ def pdf(mean_x, covariance_x, const, y):
           Points where to evaluate the PDF.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_points)
           PDF evaluated at each y.
     """
@@ -47,7 +46,7 @@ def log_pdf(mean_x, covariance_x, const, y):
     normal distribution with an extra additive constant const in the denominator.
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -61,7 +60,7 @@ def log_pdf(mean_x, covariance_x, const, y):
           Points where to evaluate the PDF.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_points)
           Log-PDF evaluated at each y.
     """
@@ -82,10 +81,10 @@ def log_pdf(mean_x, covariance_x, const, y):
 
 def _invert_projection(y, const):
     """
-    Invert the function projection f(X) = X/(X'X + const)^0.5
+    Invert the function projection f(X) = X/(X'X + const)^0.5.
 
     Parameters
-    ----------------
+    ----------
       y : torch.Tensor, shape (n_points, n_dim)
           Observed points in the ball.
 
@@ -93,7 +92,7 @@ def _invert_projection(y, const):
           Constant added to the denominator.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_points, n_dim)
           Pre-projection points.
     """
@@ -107,7 +106,7 @@ def _invert_projection_jacobian_matrix(y, const):
     Compute the Jacobian matrix of the inverse projection.
 
     Parameters
-    ----------------
+    ----------
       y : torch.Tensor, shape (n_points, n_dim)
           Observed points in the ball.
 
@@ -115,7 +114,7 @@ def _invert_projection_jacobian_matrix(y, const):
           Constant added to the denominator.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_points, n_dim, n_dim)
           Jacobian matrix of the inverse projection.
     """
@@ -124,13 +123,12 @@ def _invert_projection_jacobian_matrix(y, const):
     J_multiplier = torch.sqrt(const / (1 - y_sq_norm))
     J_matrix = torch.einsum("...d,...e->...de", y, y / (1 - y_sq_norm.view(-1, 1)))
     # Add identity to the diagonal
-    diag_idx = torch.arange(n_dim)
     is_batch = y.dim() == 2
     if is_batch:
         # Make identity matrix for each batch
         n_batch = y.shape[0]
-        I = torch.eye(n_dim, device=y.device).unsqueeze(0).expand(n_batch, -1, -1)
-        J_matrix += I
+        eye = torch.eye(n_dim, device=y.device).unsqueeze(0).expand(n_batch, -1, -1)
+        J_matrix += eye
     else:
         J_matrix += torch.eye(n_dim, device=y.device)
     # Put multiplier and matrix together
@@ -144,7 +142,7 @@ def _invert_projection_det(y, const):
     Y = X/(X'X + const)^0.5 at each point y.
 
     Parameters
-    ----------------
+    ----------
       y : torch.Tensor, shape (n_points, n_dim)
           Observed points in the ball.
 
@@ -152,7 +150,7 @@ def _invert_projection_det(y, const):
           Constant added to the denominator.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_points)
           Determinant of the Jacobian matrix of the inverse projection.
     """
@@ -171,7 +169,7 @@ def _invert_projection_log_det(y, const):
     matrix A.
 
     Parameters
-    ----------------
+    ----------
       y : torch.Tensor, shape (n_points, n_dim)
           Observed points in the ball.
 
@@ -179,7 +177,7 @@ def _invert_projection_log_det(y, const):
           Constant added to the denominator.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_points)
           Log-determinant of the Jacobian matrix of the inverse projection.
     """

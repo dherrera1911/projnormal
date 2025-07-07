@@ -15,16 +15,16 @@ def mean(mean_x, var_x):
     Compute the expected value of the variable Y = X/(X'X)^0.5,
     where X~N(mean_x, var_x*I). Y has a projected normal distribution.
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
       var_x : torch.Tensor, shape ()
           Variance of X elements.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape (n_dim,)
           Expected value of projected normal.
     """
@@ -51,16 +51,16 @@ def second_moment(mean_x, var_x):
     Compute the second moment of the projected normal with
     isotropic covariance, Y = X/||X||, where X~N(mean_x, sigma^2*I).
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
       var_x : torch.Tensor, shape ()
           Variance of X elements.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape (n_dim, n_dim)
           Second moment matrix of the projected normal.
     """
@@ -96,16 +96,16 @@ def batch_second_moment(mean_x, var_x):
 
     This function computes this average efficiently.
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       mean_x : torch.Tensor, shape (n_points, n_dim)
           Mean of X.
 
       var_x : torch.Tensor, shape ()
           Variance of X elements.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape (n_dim, n_dim)
           Average second moment of projected gaussians.
     """
@@ -140,16 +140,16 @@ def _iso_sm_weights(mean_x, sigma):
     matrix in the formula for the second moment matrix of the
     isotropic projected normal.
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
       sigma : torch.Tensor, shape ()
           Standard deviation of the noise.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape (n_points) 
           Weigths for the outer products of the means for
           each random variable.

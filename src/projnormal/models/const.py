@@ -2,11 +2,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
+
 import projnormal.distribution.const as const_dist
 
 from .constraints import Positive
 from .projected_normal import ProjNormal
-
 
 __all__ = [
   "ProjNormalConst",
@@ -19,13 +19,13 @@ def __dir__():
 
 class ProjNormalConst(ProjNormal):
     """
-    This class implements the general projected normal distirbution with
-    a const denominator constant. The variable Y following the distribution
+    General projected normal distirbution projecting to the interior
+    of the sphere. The variable Y following the distribution
     is defined as Y = X / sqrt(||X||^2 + const), where X~N(mean_x, covariance_x).
     The class can be used to fit distribution parameters to data.
 
     Attributes
-    -----------
+    ----------
       mean_x : torch.Tensor, shape (n_dim)
           Mean of X. It is constrained to the unit sphere.
 
@@ -36,7 +36,7 @@ class ProjNormalConst(ProjNormal):
           The const denominator constant. It is constrained to be positive.
 
     Methods
-    ----------
+    -------
       moments():
           Compute the moments using a Taylor approximation.
 
@@ -77,7 +77,7 @@ class ProjNormalConst(ProjNormal):
         """Initialize an instance of the ProjNormalConst class.
 
         Parameters
-        ------------
+        ----------
           n_dim : int, optional
               Dimension of the underlying Gaussian distribution. If mean
               and covariance are provided, this is not required.
@@ -111,12 +111,12 @@ class ProjNormalConst(ProjNormal):
         Compute the log pdf at points y under the projected normal distribution.
 
         Parameters
-        ----------------
+        ----------
           y : torch.Tensor, shape (n_points, n_dim)
               Points to evaluate the log pdf.
 
         Returns
-        ----------------
+        -------
           torch.Tensor, shape (n_points)
               Log PDF of the point.
         """
@@ -130,4 +130,5 @@ class ProjNormalConst(ProjNormal):
 
 
     def __dir__(self):
+        """List of methods available in the ProjNormal class."""
         return super().__dir__() + ["const"]

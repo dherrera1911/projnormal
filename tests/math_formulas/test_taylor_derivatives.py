@@ -1,6 +1,7 @@
 """Test the formulas of the Taylor approximation to the moments."""
 import pytest
 import torch
+
 import projnormal.distribution.const as pnc
 import projnormal.param_sampling as par_samp
 
@@ -12,23 +13,26 @@ def relative_error(x, y):
 
 # Function of taylor approximation
 def f(u, v):
-    ' f = u/sqrt(b*u^2+v) '
+    """F = u/sqrt(b*u^2+v)."""
     return u / (torch.sqrt( u**2 + v))
 
 
 def d2f_du2_autograd(u, v):
+    """Compute derivatives with autograd."""
     df_du = torch.autograd.grad(f(u, v), u, create_graph=True)[0]
     d2f_du2 = torch.autograd.grad(df_du, u)[0]
     return d2f_du2
 
 
 def d2f_dv2_autograd(u, v):
+    """Compute derivatives with autograd."""
     df_dv = torch.autograd.grad(f(u, v), v, create_graph=True)[0]
     d2f_dv2 = torch.autograd.grad(df_dv, v)[0]
     return d2f_dv2
 
 
 def d2f_dudv_autograd(u, v):
+    """Compute derivatives with autograd."""
     df_du = torch.autograd.grad(f(u, v), u, create_graph=True)[0]
     d2f_dudv = torch.autograd.grad(df_du, v)[0]
     return d2f_dudv
@@ -73,6 +77,7 @@ def taylor_derivatives_data(n_dim, sigma, cov_type):
 @pytest.mark.parametrize('sigma', [0.01, 0.5, 1])
 @pytest.mark.parametrize('cov_type', ['random', 'diagonal'])
 def test_taylor_approximation_derivatives(taylor_derivatives_data, n_dim, sigma, cov_type):
+    """Test the Taylor approximation derivatives against autograd results."""
     # Unpack data
 
     # Distribution parameters

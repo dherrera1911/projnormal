@@ -4,7 +4,6 @@ import torch
 
 from ..projected_normal import pdf as gen_pdf
 
-
 __all__ = ["pdf", "log_pdf"]
 
 
@@ -18,7 +17,7 @@ def pdf(mean_x, var_x, y):
     with parameters mean_x and covariance var_x*eye(n_dim) at points y.
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -29,7 +28,7 @@ def pdf(mean_x, var_x, y):
           Points where to evaluate the PDF.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_points)
           PDF evaluated at each y.
     """
@@ -44,7 +43,7 @@ def log_pdf(mean_x, var_x, y):
     normal distribution with parameters mean_x and covariance var_x*eye(n_dim) at points y.
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -55,7 +54,7 @@ def log_pdf(mean_x, var_x, y):
           Points where to evaluate the PDF.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_points)
           log-PDF evaluated at each y.
     """

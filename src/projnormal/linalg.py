@@ -1,4 +1,4 @@
-"""Linear algebra utilities to deal with denominator positive definite matrix B"""
+"""Linear algebra utilities to deal with denominator positive definite matrix B."""
 import torch
 
 __all__ = [

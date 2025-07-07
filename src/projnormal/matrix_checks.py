@@ -1,5 +1,5 @@
+"""Functions to check properties of matrices."""
 import torch
-
 
 __all__ = [
   "is_symmetric", "is_positive_definite", "is_positive_semidefinite"
@@ -13,16 +13,16 @@ def __dir__():
 def is_symmetric(matrix, atol=5e-6):
     """Check if a matrix is symmetric.
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       matrix : torch.Tensor, shape (n_dim, n_dim)
           Matrix to check for symmetry.
 
       atol : float, optional
           Absolute tolerance for the check. Default is 5e-6.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       bool
           True if B is symmetric, False otherwise
     """
@@ -32,13 +32,13 @@ def is_symmetric(matrix, atol=5e-6):
 def is_positive_definite(matrix):
     """Check if a matrix is positive definite.
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       matrix : torch.Tensor, shape (n_dim, n_dim)
           Matrix to check for positive definiteness.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       bool
           True if B is positive definite, False otherwise
     """
@@ -48,13 +48,13 @@ def is_positive_definite(matrix):
 def is_positive_semidefinite(matrix):
     """Check if a matrix is positive definite.
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       matrix : torch.Tensor, shape (n_dim, n_dim)
           Matrix to check for positive semidefiniteness.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       bool
           True if B is positive definite, False otherwise
     """

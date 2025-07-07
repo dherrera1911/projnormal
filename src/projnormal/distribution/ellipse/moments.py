@@ -1,6 +1,4 @@
 """Approximation to the moments of the general projected normal distribution projected onto ellipse given by matrix B."""
-import torch
-from projnormal.linalg import spd_sqrt
 
 from ..ellipse_const import moments as _pnec_moments
 
@@ -21,8 +19,8 @@ def mean(mean_x, covariance_x, B=None, B_chol=None):
     Either the matrix B or its square root and its inverse can be provided.
     If B is provided, the square root and inverse are computed internally.
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -35,8 +33,8 @@ def mean(mean_x, covariance_x, B=None, B_chol=None):
       B_chol : torch.Tensor, shape (n_dim, n_dim), optional
         Cholesky decomposition of B. Can be provided to avoid recomputing it.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape (n_dim,)
           Expected value for the projected normal on ellipse.
     """
@@ -51,7 +49,7 @@ def second_moment(mean_x, covariance_x, B=None, B_chol=None):
     general projected normal distribution.
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -65,7 +63,7 @@ def second_moment(mean_x, covariance_x, B=None, B_chol=None):
         Cholesky decomposition of B. Can be provided to avoid recomputing it.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_dim, n_dim)
           Second moment matrix of Y.
     """

@@ -1,24 +1,24 @@
-"""Test the const projected normal class"""
+"""Test the const projected normal class."""
 import pytest
 import torch
-import projnormal.param_sampling as par_samp
+
+import projnormal.distribution.const as pnc
 import projnormal.matrix_checks as checks
 import projnormal.models as models
-import projnormal.distribution.const as pnc
-
+import projnormal.param_sampling as par_samp
 
 torch.manual_seed(1)
 TOLERANCE = 0.025
 MAX_ITER = 30
 
 def norm_leq_1(gamma):
+    """Check if the norm of gamma is less than or equal to 1."""
     return torch.norm(gamma) <= 1
 
 # Instantiate parameters, get empirical moments
 @pytest.fixture(scope="function")
 def gaussian_parameters(n_dim, mean_type, sigma):
-    """ Fixture to generate Gaussian parameters for tests."""
-
+    """Fixture to generate Gaussian parameters for tests."""
     # Initialize the mean of the gaussian
     # Parameters of distribution
     mean_x = par_samp.make_mean(

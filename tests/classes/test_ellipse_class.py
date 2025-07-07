@@ -1,11 +1,10 @@
 """Test the projected normal class."""
 import pytest
 import torch
-import projnormal.param_sampling as par_samp
-import projnormal.matrix_checks as checks
-import projnormal.models as models
-import projnormal.distribution.ellipse as pne
 
+import projnormal.distribution.ellipse as pne
+import projnormal.models as models
+import projnormal.param_sampling as par_samp
 
 torch.manual_seed(1)
 TOLERANCE = 0.025
@@ -15,8 +14,7 @@ N_DIRS = 2
 # Instantiate parameters, get empirical moments
 @pytest.fixture(scope="function")
 def gaussian_parameters(n_dim, sigma):
-    """ Fixture to generate Gaussian parameters for tests."""
-
+    """Fixture to generate Gaussian parameters for tests."""
     # Initialize the mean of the gaussian
     # Parameters of distribution
     mean_x = par_samp.make_mean(n_dim=n_dim)

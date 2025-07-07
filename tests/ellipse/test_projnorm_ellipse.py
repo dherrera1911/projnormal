@@ -1,15 +1,15 @@
 """Test the Taylor approximation to ellipse projected normal moments."""
 import pytest
 import torch
+
 import projnormal.distribution.ellipse as pne
-import projnormal.param_sampling as par_samp
 import projnormal.matrix_checks as checks
+import projnormal.param_sampling as par_samp
 
 
 @pytest.fixture(scope="function")
 def sample_parameters(n_dim, sigma):
-    """ Fixture to generate Gaussian parameters for tests."""
-
+    """Fixture to generate Gaussian parameters for tests."""
     # Initialize the mean of the gaussian
     # Parameters of distribution
     mean_x = par_samp.make_mean(n_dim=n_dim)
@@ -25,6 +25,7 @@ def sample_parameters(n_dim, sigma):
 @pytest.mark.parametrize("n_dim", [5])
 @pytest.mark.parametrize("sigma", [0.2])
 def test_taylor_moments(sample_parameters):
+    """Test the Taylor approximation to ellipse projected normal moments."""
     n_samples = 500000
 
     # Unpack parameters

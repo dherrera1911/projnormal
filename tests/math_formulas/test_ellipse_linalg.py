@@ -1,6 +1,6 @@
-""" Test the formulas of the ellipse_linalg module."""
-import pytest
+"""Test the formulas of the ellipse_linalg module."""
 import torch
+
 import projnormal
 
 

@@ -1,9 +1,7 @@
 """Probability density function (PDF) for the general projected normal distribution."""
 import torch
-from projnormal.linalg import spd_sqrt
 
 from ..const import pdf as _pnc_pdf
-
 
 __all__ = ["pdf", "log_pdf"]
 
@@ -20,7 +18,7 @@ def pdf(mean_x, covariance_x, y, const, B=None, B_chol=None):
     on an ellipsoid.
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -41,7 +39,7 @@ def pdf(mean_x, covariance_x, y, const, B=None, B_chol=None):
           Can be provided to avoid recomputing it.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_points)
           PDF evaluated at each y.
     """
@@ -51,8 +49,7 @@ def pdf(mean_x, covariance_x, y, const, B=None, B_chol=None):
       y=y,
       const=const,
       B=B,
-      B_sqrt=B_sqrt,
-      B_sqrt_ldet=B_sqrt_ldet
+      B_chol=B_chol,
     )
     pdf = torch.exp(lpdf)
     return pdf
@@ -65,7 +62,7 @@ def log_pdf(mean_x, covariance_x, y, const, B=None, B_chol=None):
     normal distribution.
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -82,7 +79,7 @@ def log_pdf(mean_x, covariance_x, y, const, B=None, B_chol=None):
           Symmetric positive definite matrix defining the ellipse.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_points)
           Log-PDF evaluated at each y.
     """

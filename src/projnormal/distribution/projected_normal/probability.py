@@ -1,7 +1,6 @@
 """Probability density function (PDF) for the general projected normal distribution."""
 import torch
 
-
 __all__ = ["pdf", "log_pdf"]
 
 
@@ -16,7 +15,7 @@ def pdf(mean_x, covariance_x, y):
     normal distribution.
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -27,7 +26,7 @@ def pdf(mean_x, covariance_x, y):
           Points where to evaluate the PDF.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_points)
           PDF evaluated at each y.
     """
@@ -43,7 +42,7 @@ def log_pdf(mean_x, covariance_x, y):
     normal distribution.
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -54,7 +53,7 @@ def log_pdf(mean_x, covariance_x, y):
           Points where to evaluate the PDF.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_points)
           Log-PDF evaluated at each y.
     """
@@ -84,7 +83,7 @@ def _M_value(alpha, n_dim):
     Compute value of recursive function M in the projected normal pdf, with input alpha.
 
     Parameters
-    ----------------
+    ----------
       alpha : torch.Tensor, shape (n_points)
           Input to function M.
 
@@ -92,7 +91,7 @@ def _M_value(alpha, n_dim):
           Dimension of the non-projected Gaussian.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape(n_points)
           Value of M(alpha).
     """

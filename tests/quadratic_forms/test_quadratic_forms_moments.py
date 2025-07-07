@@ -1,8 +1,10 @@
 """Tests for quadratic moments formulas of quadratic forms of random variables."""
 import pytest
 import torch
-import projnormal.quadratic_forms as qf
+
 import projnormal.param_sampling as par_samp
+import projnormal.quadratic_forms as qf
+
 
 @pytest.fixture(scope="function")
 def quadratic_moments_data(n_dim, sigma):
@@ -45,7 +47,6 @@ def quadratic_moments_data(n_dim, sigma):
 @pytest.mark.parametrize('sigma', [0.1, 1])
 def test_qf_moments(quadratic_moments_data, n_dim, sigma):
     """Test the quadratic moments formulas."""
-
     # Unpack distribution parameters
     mean_x = quadratic_moments_data['mean_x']
     covariance_x = quadratic_moments_data['covariance_x']

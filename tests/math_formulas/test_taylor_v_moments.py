@@ -1,7 +1,7 @@
 """Test the computation of the moments of auxiliary variable in Taylor approximation."""
-import time
 import pytest
 import torch
+
 import projnormal.distribution.const as pnc
 import projnormal.param_sampling as par_samp
 import projnormal.quadratic_forms as qf
@@ -54,7 +54,7 @@ def v_moments_naive(mean_x, covariance_x, method='analytic'):
 # Fixture to set up the parameters and compute the moments naively
 @pytest.fixture(scope='function')
 def taylor_moments_data(n_dim, sigma):  # Add 'request' as a parameter
-
+    """Fixture to set up the parameters and compute the moments naively."""
     # Tolerance
     tolerance = 0.001
 
@@ -83,6 +83,7 @@ def taylor_moments_data(n_dim, sigma):  # Add 'request' as a parameter
 @pytest.mark.parametrize('sigma', [0.1, 1])
 @pytest.mark.parametrize('cov_type', ['random', 'diagonal'])
 def test_taylor_v_variable_moments(taylor_moments_data, n_dim, sigma, cov_type):
+    """Test the computation of the moments of auxiliary variable in Taylor approximation."""
     # Unpack data
 
     # Distribution parameters

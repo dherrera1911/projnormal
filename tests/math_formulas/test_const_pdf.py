@@ -1,6 +1,7 @@
 """Test the PDF implementation for projected normal with denominator constant."""
 import pytest
 import torch
+
 import projnormal.distribution.const as pnc
 import projnormal.param_sampling as par_samp
 
@@ -32,7 +33,7 @@ def projection_result(n_points, n_dim, scale, const):
 @pytest.mark.parametrize('scale', [1])
 @pytest.mark.parametrize('const', [0.1, 1])
 def test_inverted_projection(const, projection_result):
-
+    """Test that the inverted projection gives the expected result."""
     x = projection_result['x']
     y = projection_result['y']
 
@@ -71,7 +72,6 @@ def projection_jacobian(n_points, n_dim, scale, const):
 @pytest.mark.parametrize('const', [0.5, 1, 3])
 def test_jacobian(projection_jacobian):
     """Test the computation of the Jacobian matrix for the inverse projection."""
-    x = projection_jacobian['x']
     y = projection_jacobian['y']
     const = projection_jacobian['const']
     jacobian_autograd = projection_jacobian['jacobian']
@@ -98,7 +98,7 @@ def test_jacobian(projection_jacobian):
 # Instantiate parameters
 @pytest.fixture(scope="function")
 def gaussian_parameters(n_points, n_dim, mean_type, eigvals, eigvecs, sigma, const):
-    """ Fixture to generate Gaussian parameters for tests."""
+    """Fixture to generate Gaussian parameters for tests."""
     # Initialize the mean of the gaussian
     # Parameters of distribution
     mean_x = par_samp.make_mean(
@@ -125,7 +125,8 @@ def gaussian_parameters(n_points, n_dim, mean_type, eigvals, eigvecs, sigma, con
 @pytest.mark.parametrize('const', [0.5, 1, 10])
 def test_pdf(const, gaussian_parameters):
     """Test that the pdf of the projected gaussian with additive constant
-    does not return nan or inf and is consistent with the log pdf."""
+    does not return nan or inf and is consistent with the log pdf.
+    """
     # Unpack parameters
     mean_x = gaussian_parameters['mean_x']
     covariance_x = gaussian_parameters['covariance_x']

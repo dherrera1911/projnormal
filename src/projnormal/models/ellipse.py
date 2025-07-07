@@ -2,12 +2,10 @@
 import geotorch
 import torch
 import torch.nn as nn
-import torch.nn.utils.parametrize as parametrize
+
 import projnormal.distribution.ellipse_const as ellipse_const_dist
 
-from .constraints import Positive
 from .projected_normal import ProjNormal
-
 
 __all__ = [
   "ProjNormalEllipse",
@@ -28,7 +26,7 @@ class ProjNormalEllipse(ProjNormal):
     The class can be used to fit distribution parameters to data.
 
     Attributes
-    -----------
+    ----------
       mean_x : torch.Tensor, shape (n_dim)
           Mean of X. It is constrained to the unit sphere.
 
@@ -39,7 +37,7 @@ class ProjNormalEllipse(ProjNormal):
           The ellipse matrix. It is constrained to be symmetric positive definite.
 
     Methods
-    ----------
+    -------
       moments():
           Compute the moments using a Taylor approximation.
 
@@ -80,7 +78,7 @@ class ProjNormalEllipse(ProjNormal):
         """Initialize an instance of the ProjNormalEllipseParent class.
 
         Parameters
-        ------------
+        ----------
           n_dim : int, optional
               Dimension of the underlying Gaussian distribution. If mean
               and covariance are provided, this is not required.
@@ -110,7 +108,7 @@ class ProjNormalEllipse(ProjNormal):
         and B is a symmetric positive definite matrix.
 
         Returns
-        ---------
+        -------
         dict
             Dictionary containing the mean, covariance and second moment
             of the projected normal.
@@ -142,7 +140,7 @@ class ProjNormalEllipse(ProjNormal):
         where X~N(mean_x, covariance_x), by sampling from the distribution.
 
         Returns
-        ----------------
+        -------
         dict
             Dictionary containing the mean, covariance and second moment
             of the projected normal.
@@ -163,12 +161,12 @@ class ProjNormalEllipse(ProjNormal):
         Compute the log pdf at points y under the projected normal distribution.
 
         Parameters
-        ----------------
+        ----------
           y : torch.Tensor, shape (n_points, n_dim)
               Points to evaluate the log pdf.
 
         Returns
-        ----------------
+        -------
           torch.Tensor, shape (n_points)
               Log PDF of the point. (n_points)
         """
@@ -182,12 +180,12 @@ class ProjNormalEllipse(ProjNormal):
         Compute the pdf at points y under the projected normal distribution.
 
         Parameters
-        ----------------
+        ----------
           y : torch.Tensor, shape (n_points, n_dim)
               Points to evaluate the pdf.
 
         Returns
-        ----------------
+        -------
           torch.Tensor, shape (n_points)
               PDF of the point.
         """
@@ -200,12 +198,12 @@ class ProjNormalEllipse(ProjNormal):
         """Sample from the distribution.
 
         Parameters
-        ----------------
+        ----------
           n_samples : int
               Number of samples to draw.
 
         Returns
-        ----------------
+        -------
           torch.Tensor, shape (n_samples, n_dim)
               Samples from the distribution.
         """
@@ -215,9 +213,10 @@ class ProjNormalEllipse(ProjNormal):
                 covariance_x=self.covariance_x,
                 n_samples=n_samples,
                 const=self.const,
-                B=B,
+                B=self.B,
             )
         return samples
 
     def __dir__(self):
+        """List of methods available in the ProjNormal class."""
         return super().__dir__() + ["B"]

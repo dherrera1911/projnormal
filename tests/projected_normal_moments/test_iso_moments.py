@@ -2,6 +2,7 @@
 
 import pytest
 import torch
+
 import projnormal.distribution.isotropic as pniso
 import projnormal.param_sampling as par_samp
 
@@ -56,8 +57,10 @@ def iso_data(request):
     indirect=True,
 )
 class TestIsotropicNoiseCase:
+    """Test moments of isotropic projected normal distribution."""
 
     def test_mean_error(self, iso_data):
+        """Test the mean of isotropic projected normal distribution."""
         # unpack data
         mean_x = iso_data['mean_x']
         sigma = iso_data['sigma']
@@ -74,6 +77,7 @@ class TestIsotropicNoiseCase:
         assert mean_error < iso_data['tolerance']
 
     def test_second_moment_error(self, iso_data):
+        """Test the second moment of isotropic projected normal distribution."""
         # unpack data
         mean_x = iso_data['mean_x']
         sigma = iso_data['sigma']

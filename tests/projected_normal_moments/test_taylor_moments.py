@@ -1,9 +1,10 @@
-"""Test the Taylor approximation to projected normal moments"""
+"""Test the Taylor approximation to projected normal moments."""
 import pytest
 import torch
+
 import projnormal.distribution.const as pnc
-import projnormal.param_sampling as par_samp
 import projnormal.matrix_checks as checks
+import projnormal.param_sampling as par_samp
 
 torch.manual_seed(0)
 TOLERANCE = 0.04
@@ -17,8 +18,7 @@ def relative_error(x, y):
 # Instantiate parameters
 @pytest.fixture(scope="function")
 def gaussian_parameters(n_dim, mean_type, eigvals, eigvecs, sigma, const):
-    """ Fixture to generate Gaussian parameters for tests."""
-
+    """Fixture to generate Gaussian parameters for tests."""
     # Initialize the mean of the gaussian
     # Parameters of distribution
     mean_x = par_samp.make_mean(
@@ -43,6 +43,7 @@ def gaussian_parameters(n_dim, mean_type, eigvals, eigvecs, sigma, const):
 @pytest.mark.parametrize("sigma", [0.2])
 @pytest.mark.parametrize("const", [0, 0.1])
 def test_taylor_stability(gaussian_parameters):
+    """Test that the Taylor approximation to projected normal moments is numerically stable."""
     # Unpack parameters
     mean_x = gaussian_parameters["mean_x"]
     covariance_x = gaussian_parameters["covariance_x"]
@@ -80,6 +81,7 @@ def test_taylor_stability(gaussian_parameters):
 @pytest.mark.parametrize("const", [0, 1])
 @pytest.mark.parametrize("n_samples", [200000])
 def test_taylor_vs_empirical(gaussian_parameters, n_samples):
+    """Test the Taylor approximation against empirical moments."""
     # Unpack parameters
     mean_x = gaussian_parameters["mean_x"]
     covariance_x = gaussian_parameters["covariance_x"]

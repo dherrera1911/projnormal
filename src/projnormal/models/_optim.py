@@ -17,7 +17,7 @@ STOP_EPOCHS = 3 # Consecutive epochs to stop training if loss change is below at
 
 
 def mse_loss(momentsA, momentsB):
-    """ Compute the Euclidean distance between the observed and model moments. """
+    """Compute the Euclidean distance between the observed and model moments."""
     distance_means_sq = torch.sum(
         (momentsA["mean"]*20 - momentsB["mean"]*20)**2
     )
@@ -28,7 +28,7 @@ def mse_loss(momentsA, momentsB):
 
 
 def norm_loss(momentsA, momentsB):
-    """ Compute the Euclidean distance between the observed and model moments. """
+    """Compute the Euclidean distance between the observed and model moments."""
     distance_means_sq = torch.sqrt(
       torch.sum((momentsA["mean"] - momentsB["mean"])**2) + 1e-8
     )
@@ -39,7 +39,7 @@ def norm_loss(momentsA, momentsB):
 
 
 def _mm_data_check(data):
-    """ Check that data is of type expected for moment matching. """
+    """Check that data is of type expected for moment matching."""
     # Check data is a dictionary
     if not isinstance(data, dict):
         raise ValueError("Data must be a dictionary for moment_matching.")
@@ -51,7 +51,7 @@ def _mm_data_check(data):
 
 
 def _ll_data_check(data, n_dim):
-    """ Check that data is of type expected for log-likelihood fitting. """
+    """Check that data is of type expected for log-likelihood fitting."""
     # Check that data is a pytorch tensor
     if not isinstance(data, torch.Tensor):
         raise ValueError("Data must be a torch.Tensor for log-likelihood fitting.")
@@ -120,7 +120,7 @@ def lbfgs_loop(
         Additional arguments to pass to LBFGS optimizer.
 
     Returns
-    ----------
+    -------
     dict
         Dictionary containing the loss and training time at each epoch.
     """
@@ -274,7 +274,7 @@ def nadam_loop(
     training_time = []
     total_start_time = time.time()
 
-    for e in tqdm(
+    for _e in tqdm(
         range(max_epochs), desc="Epochs", unit="epoch", disable=not show_progress
     ):
         # Forward pass

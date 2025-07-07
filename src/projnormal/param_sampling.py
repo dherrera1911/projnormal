@@ -1,5 +1,5 @@
+"""Functions to sample parameters of the projected normal distribution."""
 import torch
-
 
 __all__ = [
   "make_spdm",
@@ -22,10 +22,10 @@ def _make_orthogonal_matrix(n_dim):
 
 
 def make_spdm(n_dim, eigvals='uniform', eigvecs='random'):
-    """ Make a symmetric positive definite matrix.
+    """Make a symmetric positive definite matrix.
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       n_dim : int
           Dimension of matrix
 
@@ -40,8 +40,8 @@ def make_spdm(n_dim, eigvals='uniform', eigvecs='random'):
           - 'random': Random orthogonal matrix.
           - 'identity': Identity matrix.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape (n_dim, n_dim)
           Symmetric positive definite matrix with specified eigvals.
     """
@@ -72,10 +72,10 @@ def make_spdm(n_dim, eigvals='uniform', eigvecs='random'):
 
 
 def make_mean(n_dim, shape='gaussian', sparsity=0.1):
-    """ Generate a vector to use as the mean of a multivariate normal.
+    """Generate a vector to use as the mean of a multivariate normal.
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       n_dim : int
           Dimension of the mean vector.
 
@@ -89,8 +89,8 @@ def make_mean(n_dim, shape='gaussian', sparsity=0.1):
             determined by the sparsity parameter.
         - sparsity: For 'sparse' shape, the fraction of non-zero elements
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape (n_dim,)
           Mean vector of the specified shape.
     """
@@ -117,18 +117,18 @@ def make_mean(n_dim, shape='gaussian', sparsity=0.1):
 
 
 def make_ortho_vectors(n_dim, n_vec):
-    """ Generate a set of orthogonal vectors.
+    """Generate a set of orthogonal vectors.
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       n_dim : int
           Dimension of the vectors.
 
       n_vec : int
           Number of orthogonal vectors to generate. Must be less than n_dim.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape (n_dim, n_vec)
           Orthogonal vectors of size n_dim x n_vec.
     """

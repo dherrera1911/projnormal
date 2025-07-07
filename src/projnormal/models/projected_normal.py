@@ -1,13 +1,14 @@
 """Class for the general projected normal distribution."""
+import geotorch
 import torch
 import torch.nn as nn
 import torch.nn.utils.parametrize as parametrize
+
 import projnormal.distribution.const as const_dist
 import projnormal.distribution.projected_normal as prnorm_dist
-import geotorch
-from .constraints import Sphere
-from ._optim import lbfgs_loop, nadam_loop
 
+from ._optim import lbfgs_loop, nadam_loop
+from .constraints import Sphere
 
 __all__ = [
   "ProjNormal",
@@ -21,12 +22,12 @@ def __dir__():
 #### Class for the projected normal distribution with learnable parameters
 class ProjNormal(nn.Module):
     """
-    This class implements the general projected normal distirbution,
-    which described the variable Y= X/||X||, where X~N(mean_x, covariance_x).
+    General projected normal distirbution,
+    describing the variable Y= X/||X||, where X~N(mean_x, covariance_x).
     The class can be used to fit distribution parameters to data.
 
     Attributes
-    -----------
+    ----------
       mean_x : torch.Tensor, shape (n_dim)
           Mean of X. It is constrained to the unit sphere.
 
@@ -34,7 +35,7 @@ class ProjNormal(nn.Module):
           Covariance of X. It is constrained to be symmetric positive definite.
 
     Methods
-    ----------
+    -------
       moments():
           Compute the moments using a Taylor approximation.
 
@@ -74,7 +75,7 @@ class ProjNormal(nn.Module):
         """Initialize an instance of the ProjNormal class.
 
         Parameters
-        ------------
+        ----------
           n_dim : int, optional
               Dimension of the underlying Gaussian distribution. If mean
               and covariance are provided, this is not required.
@@ -121,7 +122,7 @@ class ProjNormal(nn.Module):
         of the variable Y = X/||X||, where X~N(mean_x, covariance_x).
 
         Returns
-        ---------
+        -------
           dict
               Dictionary containing the mean, covariance and second moment
               of the projected normal.
@@ -147,7 +148,7 @@ class ProjNormal(nn.Module):
         by sampling from the distribution.
 
         Returns
-        ----------------
+        -------
           dict
               Dictionary containing the mean, covariance and second moment
               of the projected normal.
@@ -167,12 +168,12 @@ class ProjNormal(nn.Module):
         Compute the log pdf at points y under the projected normal distribution.
 
         Parameters
-        ----------------
+        ----------
           y : torch.Tensor, shape (n_points, n_dim)
               Points to evaluate the log pdf.
 
         Returns
-        ----------------
+        -------
           torch.Tensor, shape (n_points)
               Log PDF of the point. (n_points)
         """
@@ -189,12 +190,12 @@ class ProjNormal(nn.Module):
         Compute the pdf at points y under the projected normal distribution.
 
         Parameters
-        ----------------
+        ----------
           y : torch.Tensor, shape (n_points, n_dim)
               Points to evaluate the pdf.
 
         Returns
-        ----------------
+        -------
           torch.Tensor, shape (n_points)
               PDF of the point.
         """
@@ -206,12 +207,12 @@ class ProjNormal(nn.Module):
         """Sample from the distribution.
 
         Parameters
-        ----------------
+        ----------
           n_samples : int
               Number of samples to draw.
 
         Returns
-        ----------------
+        -------
           torch.Tensor, shape (n_samples, n_dim)
               Samples from the distribution.
         """
@@ -242,7 +243,7 @@ class ProjNormal(nn.Module):
         Fit the distribution parameters through moment matching.
 
         Parameters
-        ----------------
+        ----------
           data_moments : dict
             Dictionary containing the observed moments. Must contain the keys
               - 'mean': torch.Tensor, shape (n_dim)
@@ -282,7 +283,7 @@ class ProjNormal(nn.Module):
               to control the learning rate schedule.
 
         Returns
-        ----------------
+        -------
           dict
               Dictionary containing the loss and training time.
         """
@@ -364,7 +365,7 @@ class ProjNormal(nn.Module):
         Fit the distribution parameters through maximum likelihood.
 
         Parameters
-        ----------------
+        ----------
           y : torch.Tensor, shape (n_samples, n_dim)
               Observed data.
 
@@ -395,7 +396,7 @@ class ProjNormal(nn.Module):
               Additional keyword arguments passed to the NAdam optimizer.
 
         Returns
-        ----------------
+        -------
           dict
               Dictionary containing the loss and training time.
         """
@@ -450,7 +451,7 @@ class ProjNormal(nn.Module):
         as the initial guess (making sure the mean is normalized).
 
         Parameters
-        ----------------
+        ----------
           data : dict
             Dictionary containing the observed moments. Must contain the keys
               - 'mean': torch.Tensor, shape (n_dim)
@@ -471,7 +472,7 @@ class ProjNormal(nn.Module):
         Substitute the current covariance_x constraint with a new parametrization.
 
         Parameters
-        -----------
+        ----------
           Parametrization : torch.nn.Module
             Pytorch Parametrization implementing constraints.
             It is an object that inherits from torch.nn.Module and implements
@@ -481,7 +482,7 @@ class ProjNormal(nn.Module):
             `projnormal.models.constraints`
 
         References
-        ------------
+        ----------
         .. [1] https://docs.pytorch.org/tutorials/intermediate/parametrizations.html
         """
         parametrize.remove_parametrizations(self, "covariance_x")
@@ -489,6 +490,7 @@ class ProjNormal(nn.Module):
 
 
     def __dir__(self):
+        """List of methods available in the ProjNormal class."""
         return ["mean_x", "covariance_x", "moments", "log_pdf", "pdf",
                 "moments_empirical", "sample", "moment_match", "moment_init",
                 "add_covariance_parametrization"]

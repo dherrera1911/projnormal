@@ -1,9 +1,9 @@
 """Module with the classes for the projected normal distribution."""
-from .projected_normal import ProjNormal as ProjNormal
+from . import constraints as constraints
 from .const import ProjNormalConst as ProjNormalConst
 from .ellipse import ProjNormalEllipse as ProjNormalEllipse
 from .ellipse_const import ProjNormalEllipseConst as ProjNormalEllipseConst
-from . import constraints as constraints
+from .projected_normal import ProjNormal as ProjNormal
 
 __all__ = [
   "ProjNormal",

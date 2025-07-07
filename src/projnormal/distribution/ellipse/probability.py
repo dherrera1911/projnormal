@@ -1,5 +1,4 @@
 """Probability density function (PDF) for the general projected normal distribution."""
-import torch
 
 __all__ = ["pdf", "log_pdf"]
 
@@ -10,7 +9,7 @@ def __dir__():
 
 def pdf(mean_x, covariance_x, y, B=None):
     """
-    Function to compute the probability density function (PDF) for the
+    Compute the probability density function (PDF) for the
     variable Y = X/sqrt(X'BX) where X ~ N(mean_x, covariance_x).
     It is not currently implemented.
     """
@@ -22,7 +21,7 @@ def pdf(mean_x, covariance_x, y, B=None):
 
 def log_pdf(mean_x, covariance_x, y, B=None):
     """
-    Function to compute the log probability density function (log PDF) for the
+    Compute the log probability density function (log PDF) for the
     variable Y = X/sqrt(X'BX) where X ~ N(mean_x, covariance_x).
     It is not currently implemented.
     """

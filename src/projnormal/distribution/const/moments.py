@@ -1,7 +1,7 @@
 """Approximation to the moments of the general projected normal distribution with additive const term in denominator."""
 import torch
-import projnormal.quadratic_forms.moments as qfm
 
+import projnormal.quadratic_forms.moments as qfm
 
 __all__ = ["mean", "second_moment"]
 
@@ -19,8 +19,8 @@ def mean(mean_x, covariance_x, const=0):
     The approximation is based on the function
     f(u,v) = u/sqrt(u^2 + v + const), where u=X_i and v = (X'X - X_i^2).
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -31,8 +31,8 @@ def mean(mean_x, covariance_x, const=0):
         Constant added to the denominator. Must be >= 0.
         Default is 0.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape (n_dim,)
           Expected value for the projected normal.
     """
@@ -75,7 +75,7 @@ def second_moment(mean_x, covariance_x, const):
     function f(n,d) = n/d, where n = X_i*X_j and d = X'X + const.
 
     Parameters
-    ----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -86,7 +86,7 @@ def second_moment(mean_x, covariance_x, const):
           Constant added to the denominator. Must be >= 0.
 
     Returns
-    ----------------
+    -------
       torch.Tensor, shape (n_dim, n_dim)
           Second moment matrix of Y
     """
@@ -131,8 +131,8 @@ def _get_v_mean(mean_x, covariance_x, const=0):
 
     Computes the expected value of each v_i.
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -143,8 +143,8 @@ def _get_v_mean(mean_x, covariance_x, const=0):
           Constant added to the denominator. Must be >= 0.
           Default is 0.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape (n_dim,)
           Expected value of auxiliary variable v.
     """
@@ -165,16 +165,16 @@ def _get_v_var(mean_x, covariance_x):
     of the projected normal mean, where X~N(mean_x, covariance_x).
     Computes the variance of each v_i.
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
         Covariance matrix of X elements.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape (n_dim,)
           Variance of auxiliary variable V.
     """
@@ -209,16 +209,16 @@ def _get_v_cov(mean_x, covariance_x):
     Computes the covariance between each element of V and the
     corresponding X_i.
 
-    Parameters:
-    ----------------
+    Parameters
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
       covariance_x : torch.Tensor, shape (n_dim, n_dim)
         Covariance matrix of X elements.
 
-    Returns:
-    ----------------
+    Returns
+    -------
       torch.Tensor, shape (n_dim,)
           Covariance between each element of V and the corresponding X_i.
     """

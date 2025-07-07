@@ -18,7 +18,7 @@ def sample(mean_x, covariance_x, M, n_samples):
     Sample from the quadratic form X'MX, where X~N(mean_x, covariance_x).
 
     Parameters
-    -----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of normally distributed X.
 
@@ -32,7 +32,7 @@ def sample(mean_x, covariance_x, M, n_samples):
           Number of samples to generate.
 
     Returns
-    -----------------
+    -------
       torch.Tensor, shape (n_samples,)
           Samples from the quadratic form.
     """
@@ -52,7 +52,7 @@ def empirical_moments(mean_x, covariance_x, M, n_samples):
     Compute an empirical approximation to the moments of X'MX for X~N(mean_x, covariance_x).
 
     Parameters
-    -----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of normal distribution X.
 
@@ -66,7 +66,7 @@ def empirical_moments(mean_x, covariance_x, M, n_samples):
           Number of samples to use.
 
     Returns
-    -----------------
+    -------
       dict
           Dictionary with fields
             - "mean": torch.Tensor, shape ()
@@ -86,7 +86,7 @@ def empirical_covariance(mean_x, covariance_x, M1, M2, n_samples):
     two quadratic forms X'MX and X'MX, where X~N(mean_x, covariance_x).
 
     Parameters
-    -----------------
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of normally distributed X.
 
@@ -103,7 +103,7 @@ def empirical_covariance(mean_x, covariance_x, M1, M2, n_samples):
           Number of samples to generate use.
 
     Returns
-    -----------------
+    -------
       torch.Tensor, shape ()
         Covariance between the two quadratic forms.
     """

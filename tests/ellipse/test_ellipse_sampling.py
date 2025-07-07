@@ -2,6 +2,7 @@
 import pytest
 import torch
 import torch.distributions.multivariate_normal as mvn
+
 import projnormal.distribution.ellipse as pne
 import projnormal.param_sampling as par_samp
 
@@ -22,8 +23,7 @@ def ellipse_prnorm_sampling(mean_x, covariance_x, B, n_samples=1000):
 
 @pytest.fixture(scope="function")
 def sample_parameters(n_dim, sigma):
-    """ Fixture to generate Gaussian parameters for tests."""
-
+    """Fixture to generate Gaussian parameters for tests."""
     # Initialize the mean of the gaussian
     # Parameters of distribution
     mean_x = par_samp.make_mean(n_dim=n_dim)
@@ -40,6 +40,7 @@ def sample_parameters(n_dim, sigma):
 @pytest.mark.parametrize("n_dim", [5])
 @pytest.mark.parametrize("sigma", [0.2])
 def test_ellipse_sampling(sample_parameters):
+    """Test that the ellipse sampling matches the package sampling."""
     n_samples = 500000
     # Unpack parameters
     mean_x = sample_parameters["mean_x"]

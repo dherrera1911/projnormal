@@ -16,8 +16,8 @@ def sample(mean_x, var_x, n_samples):
     Sample from the variable Y = X/(X'X)^0.5, where X~N(mean_x, var_x*I).
     Y has a projected normal distribution.
 
-    Parameters:
-    -----------------
+    Parameters
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -27,8 +27,8 @@ def sample(mean_x, var_x, n_samples):
       n_samples : int
           Number of samples.
 
-    Returns:
-    -----------------
+    Returns
+    -------
       torch.Tensor, shape (n_samples, n_dim)
           Samples from the projected normal.
     """
@@ -49,8 +49,8 @@ def empirical_moments(mean_x, var_x, n_samples):
     Y = X/(X'X)^0.5, where X~N(mean_x, var_x*I). The mean and covariance are
     obtained by sampling from the distribution.
 
-    Parameters:
-    -----------------
+    Parameters
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -60,8 +60,8 @@ def empirical_moments(mean_x, var_x, n_samples):
       n_samples : int
           Number of samples.
 
-    Returns:
-    -----------------
+    Returns
+    -------
       dict
           Dictionary with the following keys and values
             'mean' : torch.Tensor, shape (n_dim,)

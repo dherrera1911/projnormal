@@ -2,7 +2,6 @@
 import torch
 import torch.distributions.multivariate_normal as mvn
 
-
 __all__ = ["sample", "empirical_moments"]
 
 
@@ -16,8 +15,8 @@ def sample(mean_x, covariance_x, const, n_samples):
     The variable Y has a general projected normal distribution with an extra
     constant const added to the denominator.
 
-    Parameters:
-    -----------------
+    Parameters
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -30,8 +29,8 @@ def sample(mean_x, covariance_x, const, n_samples):
       n_samples : int
           Number of samples.
 
-    Returns:
-    -----------------
+    Returns
+    -------
       torch.Tensor, shape (n_samples, n_dim)
           Samples from the projected normal.
     """
@@ -52,8 +51,8 @@ def empirical_moments(mean_x, covariance_x, const, n_samples):
     distribution. The variable Y has a projected normal distribution with an extra
     constant const added to the denominator.
 
-    Parameters:
-    -----------------
+    Parameters
+    ----------
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
@@ -66,8 +65,8 @@ def empirical_moments(mean_x, covariance_x, const, n_samples):
       n_samples : int
           Number of samples.
 
-    Returns:
-    -----------------
+    Returns
+    -------
       dict
           Dictionary with the following keys and values
             'mean' : torch.Tensor, shape (n_dim,)

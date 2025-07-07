@@ -1,9 +1,6 @@
-"""
-Constraints to keep the distribution parameters in a valid region.
-"""
+"""Constraints to keep the distribution parameters in a valid region."""
 import torch
 import torch.nn as nn
-from torch.nn.utils.parametrizations import orthogonal
 
 __all__ = [
   "Sphere",
@@ -11,6 +8,7 @@ __all__ = [
   "PositiveOffset",
   "Isotropic",
   "Diagonal",
+  "ConstrainedSPD",
 ]
 
 
@@ -23,7 +21,7 @@ def __dir__():
 ################
 
 class Sphere(nn.Module):
-    """Constrains the input tensor to lie on the sphere."""
+    """Constrains tensor to lie on the sphere."""
 
     def forward(self, X):
         """
@@ -66,7 +64,8 @@ class Sphere(nn.Module):
 ################
 
 def _softmax(X):
-    """ Function to convert elements of X to positive numbers.
+    """
+    Convert elements of X to positive numbers.
     The function applied is P = log(1 + exp(X)) + epsilon.
 
     Parameters
@@ -86,7 +85,8 @@ def _softmax(X):
 
 
 def _inv_softmax(P):
-    """ Inverse of softmax, converts positive numbers to reals.
+    """
+    Inverse of softmax, converts positive numbers to reals.
 
     Parameters
     ----------
@@ -105,7 +105,7 @@ def _inv_softmax(P):
 
 
 class Positive(nn.Module):
-    """Constrains the input vector to be positive."""
+    """Constrains values to be positive."""
 
     def forward(self, X):
         """
@@ -141,7 +141,7 @@ class Positive(nn.Module):
 
 
 class PositiveOffset(nn.Module):
-    """Constrains the input number to be positive larger than an offset."""
+    """Constrains values to be larger than a positive value."""
 
     def __init__(self, offset=1.0):
         """
@@ -208,7 +208,7 @@ class Isotropic(nn.Module):
 
     def forward(self, val):
         """
-        Transform the input number into an isotropic matrix
+        Transform the input number into an isotropic matrix.
 
         Parameters
         ----------
@@ -226,7 +226,7 @@ class Isotropic(nn.Module):
 
     def right_inverse(self, M):
         """
-        Assign as val tr(M)/n_dim
+        Assign as val tr(M)/n_dim.
 
         Parameters
         ----------
@@ -280,3 +280,74 @@ class Diagonal(nn.Module):
         diagonal_pos = torch.diagonal(M)
         return _inv_softmax(diagonal_pos)
 
+
+class ConstrainedSPD(nn.Module):
+    """Constrains a matrix M to be of the form
+    M = d * torch.eye(n_dim) + W, where W is a symmetric positive
+    semi-definite matrix of rank at most k.
+    The value d is a fixed positive scalar.
+    """
+
+    def __init__(self, d=1.0, k=1):
+        """
+        Parameters
+        ----------
+        d : float
+            Fixed positive scalar to be added to the diagonal of the matrix.
+
+        k : int
+            Rank of the symmetric positive semi-definite matrix W.
+            Must be less than or equal to n_dim.
+        """
+        super().__init__()
+        self.register_buffer("d", torch.as_tensor(d))
+        self.k = k
+
+
+    def forward(self, vecs):
+        """
+        Generate a constrained SPD matrix as eye + vecs @ vecs.T.
+
+        Parameters
+        ----------
+        vecs : torch.Tensor (n_dim, k).
+            Input vectors in euclidean space.
+
+        Returns
+        -------
+        torch.Tensor (n_dim, n_dim).
+            Constrained SPD matrix.
+        """
+        low_rank = torch.einsum("ik,jk->ij", vecs, vecs)
+        return self.d * torch.eye(vecs.shape[0], device=vecs.device) + low_rank
+
+
+    def right_inverse(self, M):
+        """
+        Set the vectors that are used to make the low rank matrix W
+        as the (scaled) k eigenvectors with largest eigenvalues of M.
+
+        Parameters
+        ----------
+        M : torch.Tensor
+            Input matrix. Must have positive diagonal entries.
+
+        Returns
+        -------
+        torch.Tensor (n_dim, k).
+            Vectors that can be used to reconstruct the SPD matrix.
+        """
+        # Eigen decomposition
+        eigenvalues, eigenvectors = torch.linalg.eigh(M)
+
+        # Get the indices of the k largest eigenvalues
+        k_largest_indices = torch.argsort(eigenvalues, descending=True)[:self.k]
+        # Select the corresponding eigenvectors
+        vecs = eigenvectors[:, k_largest_indices]
+
+        # Scale by the square root of the eigenvalues minus the fixed scalar d
+        vecs = torch.einsum(
+          'ik,k->ik', vecs, torch.sqrt(eigenvalues[k_largest_indices] - self.d)
+        )
+
+        return vecs
