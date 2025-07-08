@@ -44,9 +44,9 @@ def _mm_data_check(data):
     if not isinstance(data, dict):
         raise ValueError("Data must be a dictionary for moment_matching.")
     # Check if the data is complete
-    if not all(key in data for key in ["mean", "covariance", "second_moment"]):
+    if not all(key in data for key in ["mean", "covariance"]):
         raise ValueError(
-          "Data must contain the keys 'mean', 'covariance' and 'second_moment'."
+          "Data must contain the keys 'mean' and 'covariance'."
         )
 
 

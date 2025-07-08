@@ -248,7 +248,6 @@ class ProjNormal(nn.Module):
             Dictionary containing the observed moments. Must contain the keys
               - 'mean': torch.Tensor, shape (n_dim)
               - 'covariance': torch.Tensor, shape (n_dim, n_dim)
-              - 'second_moment': torch.Tensor, shape (n_dim, n_dim)
 
           max_epochs : int, optional
               Number of max training epochs. By default 50.
@@ -292,9 +291,9 @@ class ProjNormal(nn.Module):
             raise ValueError("Data must be a dictionary.")
 
         # Check if the data is complete
-        if not all(key in data_moments for key in ["mean", "covariance", "second_moment"]):
+        if not all(key in data_moments for key in ["mean", "covariance"]):
             raise ValueError(
-              "Data must contain the keys 'mean', 'covariance' and 'second_moment'."
+              "Data must contain the keys 'mean' and 'covariance'."
             )
 
         if optimizer == "NAdam":
