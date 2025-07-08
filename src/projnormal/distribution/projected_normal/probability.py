@@ -19,8 +19,8 @@ def pdf(mean_x, covariance_x, y):
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
-      var_x : torch.Tensor, shape ()
-          Variance of X elements.
+      covariance_x : torch.Tensor, shape (n_dim, n_dim)
+          Covariance of X.
 
       y : torch.Tensor, shape (n_points, n_dim)
           Points where to evaluate the PDF.
@@ -46,8 +46,8 @@ def log_pdf(mean_x, covariance_x, y):
       mean_x : torch.Tensor, shape (n_dim,)
           Mean of X.
 
-      var_x : torch.Tensor, shape ()
-          Variance of X elements.
+      covariance_x : torch.Tensor, shape (n_dim, n_dim)
+          Covariance of X.
 
       y : torch.Tensor, shape (n_points, n_dim)
           Points where to evaluate the PDF.
