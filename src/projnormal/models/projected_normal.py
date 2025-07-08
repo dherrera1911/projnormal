@@ -61,9 +61,6 @@ class ProjNormal(nn.Module):
       moment_init() :
           Initialize the distribution parameters using the observed moments
           as the initial guess.
-
-      add_covariance_parametrization() :
-          Substitute the current covariance_x constraint with a new parametrization.
     """
 
     def __init__(
@@ -466,30 +463,7 @@ class ProjNormal(nn.Module):
                               )
 
 
-    def add_covariance_parametrization(self, Parametrization):
-        """
-        Substitute the current covariance_x constraint with a new parametrization.
-
-        Parameters
-        ----------
-          Parametrization : torch.nn.Module
-            Pytorch Parametrization implementing constraints.
-            It is an object that inherits from torch.nn.Module and implements
-            a forward method that takes an unconstrained parameter
-            and returns an SPD matrix with desired constraint.
-            See available parametrizations in module
-            `projnormal.models.constraints`
-
-        References
-        ----------
-        .. [1] https://docs.pytorch.org/tutorials/intermediate/parametrizations.html
-        """
-        parametrize.remove_parametrizations(self, "covariance_x")
-        parametrize.register_parametrization(self, "covariance_x", Parametrization())
-
-
     def __dir__(self):
         """List of methods available in the ProjNormal class."""
         return ["mean_x", "covariance_x", "moments", "log_pdf", "pdf",
-                "moments_empirical", "sample", "moment_match", "moment_init",
-                "add_covariance_parametrization"]
+                "moments_empirical", "sample", "moment_match", "moment_init"]

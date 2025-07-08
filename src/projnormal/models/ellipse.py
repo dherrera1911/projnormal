@@ -63,9 +63,6 @@ class ProjNormalEllipse(ProjNormal):
       moment_init() :
           Initialize the distribution parameters using the observed moments
           as the initial guess.
-
-      add_covariance_parametrization() :
-          Substitute the current covariance_x constraint with a new parametrization.
     """
 
     def __init__(

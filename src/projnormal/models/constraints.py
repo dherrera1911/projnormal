@@ -319,7 +319,8 @@ class ConstrainedSPD(nn.Module):
             Constrained SPD matrix.
         """
         low_rank = torch.einsum("ik,jk->ij", vecs, vecs)
-        return self.d * torch.eye(vecs.shape[0], device=vecs.device) + low_rank
+        Id = torch.eye(vecs.shape[0], device=vecs.device, dtype=vecs.dtype)
+        return self.d * Id + low_rank
 
 
     def right_inverse(self, M):
