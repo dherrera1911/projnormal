@@ -2,7 +2,7 @@
 
 import torch
 
-from ..projected_normal import sampling as _png_sampling
+from .. import projected_normal as projected_normal_dist
 
 __all__ = ["sample", "empirical_moments"]
 
@@ -35,7 +35,7 @@ def sample(mean_x, var_x, n_samples):
     covariance_x = var_x * torch.eye(
       len(mean_x), device=mean_x.device, dtype=mean_x.dtype
     )
-    samples_prnorm = _png_sampling.sample(
+    samples_prnorm = projected_normal_dist.sample(
       mean_x=mean_x,
       covariance_x=covariance_x,
       n_samples=n_samples,
@@ -74,7 +74,7 @@ def empirical_moments(mean_x, var_x, n_samples):
     covariance_x = var_x * torch.eye(
       len(mean_x), device=mean_x.device, dtype=mean_x.dtype
     )
-    moment_dict = _png_sampling.empirical_moments(
+    moment_dict = projected_normal_dist.empirical_moments(
       mean_x=mean_x,
       covariance_x=covariance_x,
       n_samples=n_samples,

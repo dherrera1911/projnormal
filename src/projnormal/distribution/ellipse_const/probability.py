@@ -1,7 +1,7 @@
 """Probability density function (PDF) for the general projected normal distribution."""
 import torch
 
-from ..const import pdf as _pnc_pdf
+from .. import const as const_dist
 
 __all__ = ["pdf", "log_pdf"]
 
@@ -78,6 +78,10 @@ def log_pdf(mean_x, covariance_x, y, const, B=None, B_chol=None):
       B : torch.Tensor, shape (n_dim, n_dim), optional
           Symmetric positive definite matrix defining the ellipse.
 
+      B_chol : torch.Tensor, shape (n_dim, n_dim), optional
+          Cholesky decomposition matrix L, such that B = LL'.
+          Can be provided to avoid recomputing it.
+
     Returns
     -------
       torch.Tensor, shape (n_points)
@@ -95,7 +99,7 @@ def log_pdf(mean_x, covariance_x, y, const, B=None, B_chol=None):
 
     # Compute the PDF of the transformed variable
     B_chol_ldet = torch.sum(torch.log(torch.diag(B_chol)))
-    lpdf = _pnc_pdf.log_pdf(
+    lpdf = const_dist.log_pdf(
       mean_x=mean_z,
       covariance_x=covariance_z,
       y=y_z,

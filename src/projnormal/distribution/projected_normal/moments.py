@@ -1,5 +1,5 @@
 """Approximation to the moments of the general projected normal distribution."""
-from ..const import moments as const_moments
+from .. import const as const_dist
 
 __all__ = ["mean", "second_moment"]
 
@@ -30,7 +30,7 @@ def mean(mean_x, covariance_x):
       torch.Tensor, shape (n_dim,)
           Expected value for the projected normal.
     """
-    return const_moments.mean(mean_x, covariance_x, const=0)
+    return const_dist.mean(mean_x, covariance_x, const=0)
 
 
 def second_moment(mean_x, covariance_x):
@@ -55,4 +55,4 @@ def second_moment(mean_x, covariance_x):
       torch.Tensor, shape (n_dim, n_dim)
           Second moment matrix of Y
     """
-    return const_moments.second_moment(mean_x, covariance_x, const=0)
+    return const_dist.second_moment(mean_x, covariance_x, const=0)

@@ -1,6 +1,6 @@
 """Sampling functions for the general projected normal distribution."""
 
-from ..ellipse_const import sampling as _pnec_sampling
+from .. import ellipse_const as ellipse_const_dist
 
 __all__ = ["sample", "empirical_moments"]
 
@@ -39,7 +39,7 @@ def sample(mean_x, covariance_x, n_samples, B=None, B_chol=None):
       torch.Tensor, shape (n_samples, n_dim)
           Samples from the projected normal.
     """
-    return _pnec_sampling.sample(mean_x=mean_x, covariance_x=covariance_x,
+    return ellipse_const_dist.sample(mean_x=mean_x, covariance_x=covariance_x,
                                  n_samples=n_samples, const=0, B=B, B_chol=B_chol)
 
 
@@ -78,5 +78,7 @@ def empirical_moments(mean_x, covariance_x, n_samples, B=None, B_chol=None):
             'second_moment' : torch.Tensor, shape (n_dim, n_dim)
                 Second moment of the projected normal.
     """
-    return _pnec_sampling.empirical_moments(mean_x=mean_x, covariance_x=covariance_x,
-                                           n_samples=n_samples, const=0, B=B, B_chol=B_chol)
+    return ellipse_const_dist.empirical_moments(
+      mean_x=mean_x, covariance_x=covariance_x, n_samples=n_samples,
+      const=0, B=B, B_chol=B_chol
+    )

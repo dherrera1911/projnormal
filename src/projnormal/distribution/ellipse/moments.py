@@ -1,6 +1,6 @@
 """Approximation to the moments of the general projected normal distribution projected onto ellipse given by matrix B."""
 
-from ..ellipse_const import moments as _pnec_moments
+from .. import ellipse_const as ellipse_const_dist
 
 __all__ = ["mean", "second_moment"]
 
@@ -38,7 +38,7 @@ def mean(mean_x, covariance_x, B=None, B_chol=None):
       torch.Tensor, shape (n_dim,)
           Expected value for the projected normal on ellipse.
     """
-    return _pnec_moments.mean(mean_x=mean_x, covariance_x=covariance_x,
+    return ellipse_const_dist.mean(mean_x=mean_x, covariance_x=covariance_x,
                               const=0, B=B, B_chol=B_chol)
 
 
@@ -67,5 +67,5 @@ def second_moment(mean_x, covariance_x, B=None, B_chol=None):
       torch.Tensor, shape (n_dim, n_dim)
           Second moment matrix of Y.
     """
-    return _pnec_moments.second_moment(mean_x=mean_x, covariance_x=covariance_x,
-                                      const=0, B=B, B_chol=B_chol)
+    return ellipse_const_dist.second_moment(mean_x=mean_x, covariance_x=covariance_x,
+                                       const=0, B=B, B_chol=B_chol)

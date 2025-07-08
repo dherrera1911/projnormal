@@ -2,7 +2,7 @@
 
 import torch
 
-from ..projected_normal import pdf as gen_pdf
+from .. import projected_normal as projected_normal_dist
 
 __all__ = ["pdf", "log_pdf"]
 
@@ -61,5 +61,5 @@ def log_pdf(mean_x, var_x, y):
     iso_cov = torch.eye(
       mean_x.shape[0], device=var_x.device, dtype=var_x.dtype
     ) * var_x
-    lpdf = gen_pdf.log_pdf(mean_x, iso_cov, y)
+    lpdf = projected_normal_dist.log_pdf(mean_x, iso_cov, y)
     return lpdf

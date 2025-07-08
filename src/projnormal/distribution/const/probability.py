@@ -35,8 +35,7 @@ def pdf(mean_x, covariance_x, const, y):
           PDF evaluated at each y.
     """
     lpdf = log_pdf(mean_x, covariance_x, const, y)
-    pdf = torch.exp(lpdf)
-    return pdf
+    return torch.exp(lpdf)
 
 
 def log_pdf(mean_x, covariance_x, const, y):

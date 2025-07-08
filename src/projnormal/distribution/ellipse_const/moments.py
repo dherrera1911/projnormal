@@ -1,7 +1,7 @@
 """Approximation to the moments of the general projected normal distribution projected onto ellipse given by matrix B."""
 import torch
 
-from ..const import moments as _pnc_moments
+from .. import const as const_dist
 
 __all__ = ["mean", "second_moment"]
 
@@ -52,7 +52,7 @@ def mean(mean_x, covariance_x, const, B=None, B_chol=None):
     covariance_z = B_chol.T @ covariance_x @ B_chol
 
     # Compute the mean in the new basis
-    gamma_z = _pnc_moments.mean(
+    gamma_z = const_dist.mean(
       mean_x=mean_z,
       covariance_x=covariance_z,
       const=const
@@ -103,7 +103,7 @@ def second_moment(mean_x, covariance_x, const, B=None, B_chol=None):
     covariance_z = B_chol.T @ covariance_x @ B_chol
 
     # Compute the second moment in the new basis
-    sm_z = _pnc_moments.second_moment(
+    sm_z = const_dist.second_moment(
       mean_x=mean_z,
       covariance_x=covariance_z,
       const=const

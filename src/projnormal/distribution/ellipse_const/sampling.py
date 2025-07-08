@@ -1,7 +1,7 @@
 """Sampling functions for the general projected normal distribution."""
 import torch
 
-from ..const import sampling as _pnc_sampling
+from .. import const as const_dist
 
 __all__ = ["sample", "empirical_moments"]
 
@@ -52,7 +52,7 @@ def sample(mean_x, covariance_x, n_samples, const, B=None, B_chol=None):
     covariance_z = B_chol.T @ covariance_x @ B_chol
 
     # Sample from the standard projected normal
-    samples_prnorm_z = _pnc_sampling.sample(
+    samples_prnorm_z = const_dist.sample(
       mean_x=mean_z,
       covariance_x=covariance_z,
       n_samples=n_samples,
@@ -110,7 +110,7 @@ def empirical_moments(mean_x, covariance_x, const, n_samples, B=None, B_chol=Non
     mean_z = B_chol.T @ mean_x
     covariance_z = B_chol.T @ covariance_x @ B_chol
 
-    moment_dict_z = _pnc_sampling.empirical_moments(
+    moment_dict_z = const_dist.empirical_moments(
       mean_x=mean_z,
       covariance_x=covariance_z,
       n_samples=n_samples,
