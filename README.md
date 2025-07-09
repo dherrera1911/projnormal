@@ -1,4 +1,4 @@
-# projnormal: Python implementation of the Projected Normal Distribution
+# `projnormal`: Python implementation of the Projected Normal Distribution
 
 `projnormal` is a Python package for working with the
 projected normal (also known as the angular Gaussian)
@@ -15,7 +15,12 @@ That is, the projected normal distribution is obtained
 by projecting a Gaussian random variable
 onto the unit sphere $\mathbb{S}^{n-1}$.
 
-## Overview: Projected Normal Distribution
+The package was introduced in the preprint
+["Projected Normal Distribution: Moment Approximations and Generalizations"](https://arxiv.org/abs/2506.17461),
+where the formulas implemented in this package are presented.
+
+
+## Projected Normal Distribution
 
 `projnormal` implements the following functionalities for
 the projected normal distribution:
@@ -70,7 +75,7 @@ print("True covariance matrix: \n", covariance_x)
 ```
     
 
-## Overview: Variants of the Projected Normal Distribution
+## Variants of the Projected Normal Distribution
 
 `projnormal` also provides functionality to work with
 generalized versions of the projected normal distribution,
@@ -132,7 +137,7 @@ print("Fitted constant: ", pngen_fit.const.detach())
 print("True constant: ", const)
 ```
 
-## Overview: Moment approximations
+## Moment approximations
 
 `projnormal` also provides formulas for analytically approximating
 the first and second moments of the projected normal distribution
@@ -174,4 +179,55 @@ print("Fitted covariance matrix: \n", pn_fit.covariance_x.detach())
 print("True covariance matrix: \n", covariance_x)
 ```
 
+
+## Installation
+
+### Virtual environment
+
+We recommend installing the package in a virtual environment. For this,
+you can first install `miniconda` 
+([install instructions link](https://docs.anaconda.com/miniconda/install/#quick-command-line-install)),
+and then create a virtual environment with Python 3.11 using the following
+shell command:
+
+```bash
+conda create -n my-projnormal python=3.11
+```
+
+You can then activate the virtual environment with the following command:
+
+```bash
+conda activate my-projnormal
+```
+
+You should activate the `my-sqfa` environment to install the package, and every
+time you want to use it.
+
+
+### Install package
+
+To install the package, you can clone the GitHub
+repository and install in editable mode using `pip`:
+
+```bash
+git clone https://github.com/dherrera1911/projnormal.git
+cd projnormal
+pip install -e "."
+```
+
+## Citation
+
+If you use `projnormal` in your research, please cite the
+preprint ["Projected Normal Distribution: Moment Approximations and Generalizations"](https://arxiv.org/abs/2506.17461):
+
+```bibtex
+@misc{herreraesposito2025projected,
+      title={Projected Normal Distribution: Moment Approximations and Generalizations},
+      author={Daniel Herrera-Esposito and Johannes Burge},
+      year={2025},
+      eprint={2506.17461},
+      archivePrefix={arXiv},
+      url={https://arxiv.org/abs/2506.17461}, 
+}
+```
 
