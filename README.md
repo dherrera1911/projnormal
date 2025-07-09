@@ -1,36 +1,175 @@
-# Projected normal distribution
+# projnormal: A Pytorch package for the projected normal distribution
 
-The projected normal distribution (PN) or angular Gaussian
-is flexible distribution on the hypersphere, that is obtained by
-projecting a multivariate normal distribution onto the
-hypersphere. This is a known distribution
-in the field of directional statistics.
+`projnormal` is a Python package for working with the
+projected normal (also known as the angular Gaussian)
+and related distributions. It uses a PyTorch backend
+to provide efficient computations and fitting procedures.
 
-This package implements a set of functionalities related to the PN
-distribution and quadratic forms of random variables in Pytorch.
-Some of the functionalities include:
+Given a variable $\mathbf{x} \in \mathbb{R}^n$ following
+a multivariate normal distribution
+$\mathbf{x} \sim \mathcal{N}(\boldsymbol{\mu}, \Sigma)$,
+the variable$\mathbf{y} = \frac{\mathbf{x}}{\|\mathbf{x}\|}$
+follows a projected normal distribution, denoted
+as $\mathbf{y} \sim \mathcal{PN}(\boldsymbol{\mu}, \Sigma)$.
+That is, the projected normal distribution is obtained
+by projecting a Gaussian random variable
+onto the unit sphere $\mathbb{S}^{n-1}$.
 
-- The pdf and log-pdf formulas for the PN
-- Maximum-likelihood estimation of the parameters of the PN
-- Sampling from the PN
-- Exact formulas for the first and second moments of the PN in
-  the case where the projected normal is isotropic
-- Approximate formulas for the first and second moments of the PN
-  in the general case
-- Optimization procedures to fit the PN through moment matching
+## Overview: Projected Normal Distribution
 
-Most of the functions can also be used for a generalized
-version of the PN, where the normal distribution is projected
-onto an ellipse, and where a constant is added to the
-denominator, so that the distribution is inside the unit
-sphere (i.e. in the unit ball) rather than on the unit sphere.
+`projnormal` implements the PDF and log-PDF of the
+projected normal distribution, and provides routines
+for maximum-likelihood estimation (MLE) of its parameters.
+It also includes sampling methods, approximation to
+the first and second moments of the distribution,
+and optimization procedures for fitting the parameters
+via moment matching.
 
-Also, the package provides formulas for different moments of
-quadratic forms of random variables.
+In the example code below, we generate samples from a
+projected normal distribution and compute the PDF of these
+samples. The necessary formulas are implemented in the
+submodule `projnormal.distribution.projected_normal`.
 
-This package is still under development, and the documentation
-is not yet complete. Installation instructions and example
-notebooks will be provided in the future.
+```python
+import torch
+import projnormal
+import projnormal.distribution.projected_normal as pn_dist
 
+# First we randomly sample a mean vector and covariance matrix
+N_DIM = 3  # The formulas work with any dimension
+mean_x = projnormal.param_sampling.make_mean(N_DIM)
+covariance_x = projnormal.param_sampling.make_spdm(N_DIM)
+
+# Generate samples from the projected normal distribution
+samples = pn_dist.sample(
+  mean_x=mean_x, covariance_x=covariance_x, n_samples=2000
+)
+
+# Compute the PDF of the samples
+pdf_values = pn_dist.pdf(
+  mean_x=mean_x, covariance_x=covariance_x, y=samples
+)
+```
+
+In the following example, we initialize a `ProjNormal` object
+and use it to fit the distribution parameters to the samples we generated.
+
+```python
+# Initialize a ProjNormal object to fit
+pn_fit = projnormal.models.ProjNormal(n_dim=N_DIM)
+
+# Fit the parameters of the projected normal distribution
+pn_fit.max_likelihood(y=samples)
+
+# Check the fitted parameters against the original parameters
+print("Fitted mean vector:", pn_fit.mean_x.detach()) 
+print("True mean vector:", mean_x)
+
+print("Fitted covariance matrix: \n", pn_fit.covariance_x.detach())
+print("True covariance matrix: \n", covariance_x)
+```
+    
+
+## Overview: Variants of the Projected Normal Distribution
+
+`projnormal` also provides functionality to work with
+generalized versions of the projected normal distribution,
+of the form
+$$\mathbf{y} = \frac{\mathbf{x}}{\sqrt{\mathbf{x}^T \mathbf{B} \mathbf{x} + c}}$$
+where $\mathbf{B}$ is a positive-definite matrix and $c$ is a
+non-negative constant. The formulas for these variants of the
+distribution are implemented in the sub-package `projnormal.distribution`
+(like `projnormal.distribution.projected_normal` above).
+
+In the next example code we generate samples and compute the PDF
+for a generalized projected normal distribution of the
+form described above.
+
+```python
+import projnormal.distribution.ellipse_const as pngen_dist
+
+# We generate a B matrix and a constant c
+B = projnormal.param_sampling.make_spdm(N_DIM) * 2.0
+const = torch.as_tensor(2.0)
+
+# Generate samples from the projected normal distribution
+samples = pngen_dist.sample(
+  mean_x=mean_x, covariance_x=covariance_x, B=B, const=const, n_samples=2000
+)
+
+# Compute the PDF of the samples
+pdf_values = pngen_dist.pdf(
+  mean_x=mean_x, covariance_x=covariance_x, B=B, const=const, y=samples
+)
+```
+
+Next, we initialize a `ProjNormalEllipseConst` object
+and use it to fit the distribution parameters.
+
+```python
+# Initialize a ProjNormal object to fit
+pngen_fit = projnormal.models.ProjNormalEllipseConst(
+    n_dim=N_DIM,
+    B=torch.eye(N_DIM) * 0.1, # Make sure samples are inside initial distribution support
+)
+
+# Fit the parameters of the projected normal distribution
+pngen_fit.max_likelihood(y=samples, n_cycles=1)
+
+# Check the fitted parameters against the original parameters
+print("Fitted mean vector:", pngen_fit.mean_x.detach()) 
+print("True mean vector:", mean_x)
+
+print("Fitted covariance matrix: \n", pngen_fit.covariance_x.detach())
+print("True covariance matrix: \n", covariance_x)
+
+print("Fitted B matrix: \n", pngen_fit.B.detach())
+print("True B matrix: \n", B)
+
+print("Fitted constant: ", pngen_fit.const.detach())
+print("True constant: ", const)
+```
+
+## Overview: Moment approximations
+
+`projnormal` also provides formulas for analytically approximating
+the first and second moments of the projected normal distribution
+and its variants, as shown in the following example code.
+
+```python
+samples = pn_dist.sample(
+  mean_x=mean_x, covariance_x=covariance_x, n_samples=5000
+)
+
+mean_y_empirical = samples.mean(dim=0)
+sm_y_empirical = samples.T @ samples / (samples.shape[0] - 1)
+
+mean_y_approx = pn_dist.mean(mean_x, covariance_x)
+sm_y_approx = pn_dist.second_moment(mean_x, covariance_x)
+```
+
+These formulas can also be used to fit the distribution
+parameters via moment matching:
+
+```python
+# Put the empirical moments in a dictionary
+data_moments = {
+    "mean": mean_y_empirical,
+    "covariance": torch.cov(samples.T),
+}
+
+# Initialize a ProjNormal object to fit
+pn_fit = projnormal.models.ProjNormal(n_dim=N_DIM)
+
+# Fit the parameters via moment matching
+pn_fit.moment_match(data_moments)
+
+# Check the fitted parameters against the original parameters
+print("Fitted mean vector:", pn_fit.mean_x.detach()) 
+print("True mean vector:", mean_x)
+
+print("Fitted covariance matrix: \n", pn_fit.covariance_x.detach())
+print("True covariance matrix: \n", covariance_x)
+```
 
 
