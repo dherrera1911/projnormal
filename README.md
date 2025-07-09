@@ -8,7 +8,7 @@ to provide efficient computations and fitting procedures.
 Given a variable $\mathbf{x} \in \mathbb{R}^n$ following
 a multivariate normal distribution
 $\mathbf{x} \sim \mathcal{N}(\boldsymbol{\mu}, \Sigma)$,
-the variable $\mathbf{y} = \frac{\mathbf{x}}{\|\mathbf{x}\|}$
+the variable $\mathbf{y} = \frac{\mathbf{x}}{||\mathbf{x}||}$
 follows a projected normal distribution, denoted
 as $\mathbf{y} \sim \mathcal{PN}(\boldsymbol{\mu}, \Sigma)$.
 That is, the projected normal distribution is obtained
