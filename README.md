@@ -17,7 +17,7 @@ onto the unit sphere $\mathbb{S}^{n-1}$.
 
 The package was introduced in the preprint
 ["Projected Normal Distribution: Moment Approximations and Generalizations"](https://arxiv.org/abs/2506.17461),
-where the formulas implemented in this package are presented.
+which presents the implemented formulas.
 
 
 ## Projected Normal Distribution
@@ -30,9 +30,9 @@ the projected normal distribution:
 * Approximations of the first and second moments
 * Moment matching routines
 
-In the example code below, we generate samples from a
-projected normal distribution and compute the PDF of these
-samples. The necessary formulas are implemented in the
+In the example code below, we generate samples from
+$\mathcal{PN}(\boldsymbol{\mu}, \Sigma)$ and compute their
+PDF. The necessary formulas are implemented in the
 submodule `projnormal.distribution.projected_normal`.
 
 ```python
@@ -40,24 +40,25 @@ import torch
 import projnormal
 import projnormal.distribution.projected_normal as pn_dist
 
-# First we randomly sample a mean vector and covariance matrix
-N_DIM = 3  # The formulas work with any dimension
+# Sample distribution parameters
+
+N_DIM = 3  # The package work with any dimension
 mean_x = projnormal.param_sampling.make_mean(N_DIM)
 covariance_x = projnormal.param_sampling.make_spdm(N_DIM)
 
-# Generate samples from the projected normal distribution
+# Generate distribution samples
 samples = pn_dist.sample(
   mean_x=mean_x, covariance_x=covariance_x, n_samples=2000
 )
 
-# Compute the PDF of the samples
+# Compute samples PDF
 pdf_values = pn_dist.pdf(
   mean_x=mean_x, covariance_x=covariance_x, y=samples
 )
 ```
 
-In the following example, we initialize a `ProjNormal` object
-and use it to fit the distribution parameters to the samples we generated.
+Next, we initialize a `ProjNormal` object and use it
+to fit the distribution parameters to the samples.
 
 ```python
 # Initialize a ProjNormal object to fit
@@ -77,20 +78,18 @@ print("True covariance matrix: \n", covariance_x)
 
 ## Variants of the Projected Normal Distribution
 
-`projnormal` also provides functionality to work with
-generalized versions of the projected normal distribution,
-of the form
+`projnormal` also implements generalized versions of the
+projected normal distribution, of the form
 
 $$\mathbf{y} = \frac{\mathbf{x}}{\sqrt{\mathbf{x}^T \mathbf{B} \mathbf{x} + c}}$$
 
 where $\mathbf{B}$ is a positive-definite matrix and $c$ is a
-non-negative constant. The formulas for these variants of the
-distribution are implemented in the sub-package `projnormal.distribution`
-(like `projnormal.distribution.projected_normal` above).
+non-negative constant. The formulas for this variant of the
+distribution are implemented in the
+module `projnormal.distribution.ellipse_const`.
 
-In the next example code we generate samples and compute the PDF
-for a generalized projected normal distribution of the
-form described above.
+In the next example we generate samples and compute their PDF
+for this generalized version of the projected normal.
 
 ```python
 import projnormal.distribution.ellipse_const as pngen_dist
@@ -110,8 +109,9 @@ pdf_values = pngen_dist.pdf(
 )
 ```
 
-Next, we initialize a `ProjNormalEllipseConst` object
-and use it to fit the distribution parameters.
+Next, we initialize a `ProjNormalEllipseConst` object, which
+implements the formulas for the generalized projected normal
+distribution, and use it to fit the distribution parameters.
 
 ```python
 # Initialize a ProjNormal object to fit
