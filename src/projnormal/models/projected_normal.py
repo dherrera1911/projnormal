@@ -465,5 +465,5 @@ class ProjNormal(nn.Module):
 
     def __dir__(self):
         """List of methods available in the ProjNormal class."""
-        return ["mean_x", "covariance_x", "moments", "log_pdf", "pdf",
+        return ["mean_x", "covariance_x", "moments", "log_pdf", "pdf", "max_likelihood",
                 "moments_empirical", "sample", "moment_match", "moment_init"]
