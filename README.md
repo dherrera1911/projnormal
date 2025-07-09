@@ -1,4 +1,4 @@
-# projnormal: A Pytorch package for the projected normal distribution
+# projnormal: Python implementation of the Projected Normal Distribution
 
 `projnormal` is a Python package for working with the
 projected normal (also known as the angular Gaussian)
@@ -8,7 +8,7 @@ to provide efficient computations and fitting procedures.
 Given a variable $\mathbf{x} \in \mathbb{R}^n$ following
 a multivariate normal distribution
 $\mathbf{x} \sim \mathcal{N}(\boldsymbol{\mu}, \Sigma)$,
-the variable$\mathbf{y} = \frac{\mathbf{x}}{\|\mathbf{x}\|}$
+the variable $\mathbf{y} = \frac{\mathbf{x}}{\|\mathbf{x}\|}$
 follows a projected normal distribution, denoted
 as $\mathbf{y} \sim \mathcal{PN}(\boldsymbol{\mu}, \Sigma)$.
 That is, the projected normal distribution is obtained
@@ -17,13 +17,13 @@ onto the unit sphere $\mathbb{S}^{n-1}$.
 
 ## Overview: Projected Normal Distribution
 
-`projnormal` implements the PDF and log-PDF of the
-projected normal distribution, and provides routines
-for maximum-likelihood estimation (MLE) of its parameters.
-It also includes sampling methods, approximation to
-the first and second moments of the distribution,
-and optimization procedures for fitting the parameters
-via moment matching.
+`projnormal` implements the following functionalities for
+the projected normal distribution:
+* PDF and log-PDF formulas
+* Maximum-likelihood parameter estimation
+* Distribution sampling
+* Approximations of the first and second moments
+* Moment matching routines
 
 In the example code below, we generate samples from a
 projected normal distribution and compute the PDF of these
@@ -75,7 +75,9 @@ print("True covariance matrix: \n", covariance_x)
 `projnormal` also provides functionality to work with
 generalized versions of the projected normal distribution,
 of the form
+
 $$\mathbf{y} = \frac{\mathbf{x}}{\sqrt{\mathbf{x}^T \mathbf{B} \mathbf{x} + c}}$$
+
 where $\mathbf{B}$ is a positive-definite matrix and $c$ is a
 non-negative constant. The formulas for these variants of the
 distribution are implemented in the sub-package `projnormal.distribution`
