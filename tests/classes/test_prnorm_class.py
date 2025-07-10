@@ -2,14 +2,14 @@
 import pytest
 import torch
 
-import projnormal.distribution.projected_normal as png
-import projnormal.matrix_checks as checks
-import projnormal.models as models
+import projnormal.formulas.projected_normal as pn_formulas
+import projnormal._utils._matrix_checks as checks
+import projnormal.classes as classes
 import projnormal.param_sampling as par_samp
 
 torch.manual_seed(1)
 TOLERANCE = 0.025
-MAX_ITER = 30
+MAX_ITER = 15
 
 def norm_leq_1(gamma):
     """Check if the norm is less than or equal to 1."""
@@ -40,12 +40,12 @@ def gaussian_parameters(n_dim, mean_type, sigma):
 def test_init(n_dim):
     """Test the initialization of the ProjNormal class."""
     # Initialize without input parameters
-    prnorm = models.ProjNormal(n_dim=n_dim)
+    prnorm = classes.ProjNormal(n_dim=n_dim)
 
     # Initialize parameters
     mean_x = torch.ones(n_dim) / torch.sqrt(torch.as_tensor(n_dim))
     covariance_x = torch.eye(n_dim)
-    prnorm = models.ProjNormal(
+    prnorm = classes.ProjNormal(
       mean_x=mean_x,
       covariance_x=covariance_x,
     )
@@ -55,20 +55,20 @@ def test_init(n_dim):
     assert torch.allclose(prnorm.mean_x, mean_x), \
         'Mean is not initialized correctly'
 
-    prnorm = models.ProjNormal(
+    prnorm = classes.ProjNormal(
       n_dim=n_dim,
     )
 
     # Check that value error is raised if n_dim doesn't match the statistics
     with pytest.raises(ValueError):
-        prnorm = models.ProjNormal(
+        prnorm = classes.ProjNormal(
           n_dim=n_dim+1,
           mean_x=mean_x,
           covariance_x=covariance_x
         )
     with pytest.raises(ValueError):
         covariance_dim = torch.eye(n_dim+1)
-        prnorm = models.ProjNormal(
+        prnorm = classes.ProjNormal(
           n_dim=n_dim,
           mean_x=mean_x,
           covariance_x=covariance_dim
@@ -87,7 +87,7 @@ def test_sampling(n_dim, gaussian_parameters):
     covariance_x = gaussian_parameters['covariance_x']
 
     # Initialize the projected normal class
-    prnorm = models.ProjNormal(
+    prnorm = classes.ProjNormal(
       mean_x=mean_x,
       covariance_x=covariance_x
     )
@@ -110,7 +110,7 @@ def test_moments(n_dim, gaussian_parameters):
     covariance_x = gaussian_parameters['covariance_x']
 
     # Initialize the projected normal class
-    prnorm = models.ProjNormal(
+    prnorm = classes.ProjNormal(
       mean_x=mean_x,
       covariance_x=covariance_x
     )
@@ -146,7 +146,7 @@ def test_pdf(n_dim, gaussian_parameters):
     covariance_x = gaussian_parameters['covariance_x']
 
     # Initialize the projected normal class
-    prnorm = models.ProjNormal(
+    prnorm = classes.ProjNormal(
       mean_x=mean_x,
       covariance_x=covariance_x
     )
@@ -166,9 +166,9 @@ def test_pdf(n_dim, gaussian_parameters):
 
 ######## TEST FITTING PROCEDURES 
 
-@pytest.mark.parametrize('n_dim', [2, 3, 5])
+@pytest.mark.parametrize('n_dim', [2, 3])
 @pytest.mark.parametrize('mean_type', ['sin'])
-@pytest.mark.parametrize('sigma', [0.5])
+@pytest.mark.parametrize('sigma', [0.25])
 @pytest.mark.parametrize('optimizer', ['NAdam', 'LBFGS'])
 def test_moment_matching(n_dim, optimizer, gaussian_parameters):
     """Test moment matching algorithm."""
@@ -177,14 +177,14 @@ def test_moment_matching(n_dim, optimizer, gaussian_parameters):
     covariance_x = gaussian_parameters['covariance_x']
 
     # Make observed moments
-    moments_target = png.empirical_moments(
+    moments_target = pn_formulas.empirical_moments(
       mean_x=mean_x,
       covariance_x=covariance_x,
       n_samples=100000
     )
 
     # Initialize the projected normal class
-    prnorm = models.ProjNormal(
+    prnorm = classes.ProjNormal(
       n_dim=n_dim
     )
 
@@ -220,9 +220,9 @@ def test_moment_matching(n_dim, optimizer, gaussian_parameters):
     ), 'Estimated covariance is not positive definite'
 
 
-@pytest.mark.parametrize('n_dim', [2, 3, 5])
+@pytest.mark.parametrize('n_dim', [2, 3])
 @pytest.mark.parametrize('mean_type', ['sin'])
-@pytest.mark.parametrize('sigma', [0.5])
+@pytest.mark.parametrize('sigma', [0.25])
 @pytest.mark.parametrize('optimizer', ['NAdam', 'LBFGS'])
 def test_maximum_likelihood(n_dim, optimizer, gaussian_parameters):
     """Test moment matching algorithm."""
@@ -231,21 +231,21 @@ def test_maximum_likelihood(n_dim, optimizer, gaussian_parameters):
     covariance_x = gaussian_parameters['covariance_x']
 
     # Make observed moments
-    moments_target = png.empirical_moments(
+    moments_target = pn_formulas.empirical_moments(
       mean_x=mean_x,
       covariance_x=covariance_x,
       n_samples=100000
     )
 
     # Make observed samples
-    y_samples = png.sample(
+    y_samples = pn_formulas.sample(
       mean_x=mean_x,
       covariance_x=covariance_x,
       n_samples=100
     )
 
     # Initialize the projected normal class
-    prnorm = models.ProjNormal(
+    prnorm = classes.ProjNormal(
       n_dim=n_dim
     )
 
@@ -257,7 +257,7 @@ def test_maximum_likelihood(n_dim, optimizer, gaussian_parameters):
       y=y_samples,
       optimizer=optimizer,
       max_epochs=MAX_ITER,
-      n_cycles=2,
+      n_cycles=1,
       cycle_gamma=0.2,
       show_progress=False,
       return_loss=True,

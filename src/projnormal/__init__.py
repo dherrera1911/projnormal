@@ -1,11 +1,11 @@
 """
-Projected normal distribution, moment approximations, pdfs and fitting
-functionalities.
+Formulas and fitting procedures for the projected normal
+and related distributions.
 """
 # __init__.py
-from . import distribution as distribution
-from . import linalg as linalg
-from . import matrix_checks as matrix_checks
-from . import models as models
-from . import param_sampling as param_sampling
+from . import formulas as formulas
+from . import classes as classes
+from . import param_sampling
 from . import quadratic_forms as quadratic_forms
+from ._utils import _linalg
+from ._utils import _matrix_checks

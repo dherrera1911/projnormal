@@ -2,7 +2,7 @@
 import pytest
 import torch
 
-import projnormal.distribution.const as pnc
+import projnormal.formulas.projected_normal_c as pnc_formulas
 import projnormal.param_sampling as par_samp
 import projnormal.quadratic_forms as qf
 
@@ -97,13 +97,13 @@ def test_taylor_v_variable_moments(taylor_moments_data, n_dim, sigma, cov_type):
     v_cov_naive = taylor_moments_data['v_cov']
 
     # Efficient computation results
-    v_mean = pnc.moments._get_v_mean(
+    v_mean = pnc_formulas.moments._get_v_mean(
       mean_x=mean_x, covariance_x=covariance_x
     )
-    v_var = pnc.moments._get_v_var(
+    v_var = pnc_formulas.moments._get_v_var(
       mean_x=mean_x, covariance_x=covariance_x
     )
-    v_cov = pnc.moments._get_v_cov(
+    v_cov = pnc_formulas.moments._get_v_cov(
       mean_x=mean_x, covariance_x=covariance_x
     )
 

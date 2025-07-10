@@ -3,7 +3,7 @@
 import pytest
 import torch
 
-import projnormal.distribution.isotropic as pniso
+import projnormal.formulas.projected_normal_iso as pniso_formulas
 import projnormal.param_sampling as par_samp
 
 
@@ -29,7 +29,7 @@ def iso_data(request):
 
     # Get empirical estimates
     var_x = torch.as_tensor(sigma**2)
-    moments_empirical = pniso.empirical_moments(
+    moments_empirical = pniso_formulas.empirical_moments(
         mean_x, var_x, n_samples=n_samples
     )
 
@@ -67,7 +67,7 @@ class TestIsotropicNoiseCase:
         mean_empirical = iso_data['mean_empirical']
         # Get analytical estimate
         var_x = torch.as_tensor(sigma**2)
-        mean_analytic = pniso.mean(
+        mean_analytic = pniso_formulas.mean(
           mean_x=mean_x, var_x=var_x
         )
         # Check error
@@ -84,7 +84,7 @@ class TestIsotropicNoiseCase:
         second_m_empirical = iso_data['second_moment_empirical']
         # Get analytical estimate
         var_x = torch.as_tensor(sigma**2)
-        second_m_analytic = pniso.second_moment(mean_x=mean_x, var_x=var_x)
+        second_m_analytic = pniso_formulas.second_moment(mean_x=mean_x, var_x=var_x)
         # Check error
         second_m_error = relative_error(
           second_m_empirical, second_m_analytic

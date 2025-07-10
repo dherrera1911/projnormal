@@ -2,7 +2,7 @@
 import pytest
 import torch
 
-import projnormal.distribution.const as pnc
+import projnormal.formulas.projected_normal_c as pnc_formulas
 import projnormal.param_sampling as par_samp
 
 torch.manual_seed(1)
@@ -38,7 +38,7 @@ def test_inverted_projection(const, projection_result):
     y = projection_result['y']
 
     tolerance = projection_result['tolerance']
-    x_reconstructed = pnc.probability._invert_projection(y, const)
+    x_reconstructed = pnc_formulas.probability._invert_projection(y, const)
     assert torch.allclose(x, x_reconstructed, atol=tolerance), \
         'Inverted projection does not give the true result.'
 
@@ -58,7 +58,7 @@ def projection_jacobian(n_points, n_dim, scale, const):
     determinants = torch.zeros(n_points)
     for i in range(n_points):
         jacobian[i,:,:] = torch.autograd.functional.jacobian(
-          pnc.probability._invert_projection, (y[i], const)
+          pnc_formulas.probability._invert_projection, (y[i], const)
         )[0]
         determinants[i] = torch.linalg.det(jacobian[i,:,:])
 
@@ -79,11 +79,11 @@ def test_jacobian(projection_jacobian):
     tolerance = projection_jacobian['tolerance']
 
     # Compute the Jacobian matrix for each point
-    jacobian = pnc.probability._invert_projection_jacobian_matrix(y, const)
+    jacobian = pnc_formulas.probability._invert_projection_jacobian_matrix(y, const)
     # Compute the determinant of the Jacobian matrix for each point
-    determinants = pnc.probability._invert_projection_det(y, const)
+    determinants = pnc_formulas.probability._invert_projection_det(y, const)
     # Compute the log determinants
-    log_determinants = pnc.probability._invert_projection_log_det(y, const)
+    log_determinants = pnc_formulas.probability._invert_projection_log_det(y, const)
 
     assert not torch.isinf(determinants).any(), 'Determinants are infinite'
     assert torch.allclose(jacobian, jacobian_autograd, atol=tolerance), \
@@ -108,7 +108,7 @@ def gaussian_parameters(n_points, n_dim, mean_type, eigvals, eigvecs, sigma, con
       n_dim=n_dim, eigvals=eigvals, eigvecs=eigvecs
     ) * sigma**2
 
-    y = pnc.sample(mean_x, covariance_x, const=const, n_samples=n_points)
+    y = pnc_formulas.sample(mean_x, covariance_x, const=const, n_samples=n_points)
 
     return {
         "mean_x": mean_x,
@@ -134,11 +134,11 @@ def test_pdf(const, gaussian_parameters):
     y = gaussian_parameters['y']
 
     # Compute the pdf
-    pdf = pnc.pdf(
+    pdf = pnc_formulas.pdf(
       mean_x=mean_x, covariance_x=covariance_x, const=const, y=y
     )
     # Compute the log pdf
-    log_pdf = pnc.log_pdf(
+    log_pdf = pnc_formulas.log_pdf(
       mean_x=mean_x, covariance_x=covariance_x, const=const, y=y
     )
 

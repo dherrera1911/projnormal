@@ -1,4 +1,4 @@
-"""Moments of quadratic forms of multidimensional Gaussian distributions."""
+
 import torch
 import torch.distributions.multivariate_normal as mvn
 
@@ -15,26 +15,29 @@ def __dir__():
 
 def sample(mean_x, covariance_x, M, n_samples):
     """
-    Sample from the quadratic form X'MX, where X~N(mean_x, covariance_x).
+    Sample from the quadratic form :math:`x^T M x`,
+    where :math:`x` follows a multivariate normal distribution
+    :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
 
     Parameters
     ----------
-      mean_x : torch.Tensor, shape (n_dim,)
-          Mean of normally distributed X.
+      mean_x : ``torch.Tensor``
+          Mean of `x`. Shape ``(n_dim)``.
 
-      covariance_x : torch.Tensor, shape (n_dim, n_dim)
-          Covariance of the normal distribution.
+      covariance_x : ``torch.Tensor``
+          Covariance of `x`. Shape ``(n_dim, n_dim)`` or scalar (isotropic covariance).
 
-      M: torch.Tensor, shape (n_dim, n_dim).
-          Matrix of the quadratic form.
+      M : ``torch.Tensor``, optional
+          Matrix in quadratic form.  If a vector is provided, it is used as the diagonal of `M`.
+          Default is the identity matrix. Shape ``(n_dim, n_dim)`` or ``(n_dim,)``.
 
-      n_samples: int
+      n_samples : ``int``
           Number of samples to generate.
 
     Returns
     -------
-      torch.Tensor, shape (n_samples,)
-          Samples from the quadratic form.
+      ``torch.Tensor``
+          Samples from the quadratic form. Shape is ``(n_samples, n_dim)``.
     """
     dist = mvn.MultivariateNormal(
       loc=mean_x, covariance_matrix=covariance_x
@@ -49,29 +52,28 @@ def sample(mean_x, covariance_x, M, n_samples):
 
 def empirical_moments(mean_x, covariance_x, M, n_samples):
     """
-    Compute an empirical approximation to the moments of X'MX for X~N(mean_x, covariance_x).
+    Compute an empirical approximation to the moments of the quadratic form
+    :math:`x^T M x`, where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
 
     Parameters
     ----------
-      mean_x : torch.Tensor, shape (n_dim,)
-          Mean of normal distribution X.
+      mean_x : ``torch.Tensor``
+          Mean of `x`. Shape ``(n_dim)``.
 
-      covariance_x : torch.Tensor, shape (n_dim, n_dim)
-          Covariance of the normal distribution.
+      covariance_x : ``torch.Tensor``
+          Covariance of `x`. Shape ``(n_dim, n_dim)`` or scalar (isotropic covariance).
 
-      M: torch.Tensor, shape (n_dim, n_dim).
-          Matrix of the quadratic form.
+      M : ``torch.Tensor``, optional
+          Matrix in quadratic form.  If a vector is provided, it is used as the diagonal of `M`.
+          Default is the identity matrix. Shape ``(n_dim, n_dim)`` or ``(n_dim,)``.
 
-      n_samples: int
+      n_samples: ``int``
           Number of samples to use.
 
     Returns
     -------
-      dict
-          Dictionary with fields
-            - "mean": torch.Tensor, shape ()
-            - "var": torch.Tensor, shape ()
-            - "second_moment": torch.Tensor, shape ()
+      ``dict``
+          Dictionary with fields ``mean``, ``var``, and ``second_moment``.
     """
     samples_qf = sample(mean_x, covariance_x, M, n_samples)
     mean = torch.mean(samples_qf)
@@ -87,25 +89,27 @@ def empirical_covariance(mean_x, covariance_x, M1, M2, n_samples):
 
     Parameters
     ----------
-      mean_x : torch.Tensor, shape (n_dim,)
-          Mean of normally distributed X.
+      mean_x : ``torch.Tensor``
+          Mean of `x`. Shape ``(n_dim)``.
 
-      covariance_x : torch.Tensor, shape (n_dim, n_dim)
-          Covariance of the normal distribution.
+      covariance_x : ``torch.Tensor``
+          Covariance of `x`. Shape ``(n_dim, n_dim)`` or scalar (isotropic covariance).
 
-      M1: torch.Tensor, shape (n_dim, n_dim).
-          Matrix of the first quadratic form.
+      M1 : ``torch.Tensor``, optional
+          Matrix in quadratic form.  If a vector is provided, it is used as the diagonal of `M`.
+          Default is the identity matrix. Shape ``(n_dim, n_dim)``.
 
-      M2: torch.Tensor, shape (n_dim, n_dim).
-          Matrix of the second quadratic form.
+      M2 : ``torch.Tensor``, optional
+          Matrix in quadratic form.  If a vector is provided, it is used as the diagonal of `M`.
+          Default is the identity matrix. Shape ``(n_dim, n_dim)``.
 
-      n_samples: int
+      n_samples: ``int``
           Number of samples to generate use.
 
     Returns
     -------
-      torch.Tensor, shape ()
-        Covariance between the two quadratic forms.
+      ``torch.Tensor``
+        Covariance between the two quadratic forms. Shape is ``(1,)``.
     """
     dist = mvn.MultivariateNormal(loc=mean_x, covariance_matrix=covariance_x)
     X = dist.sample([n_samples])

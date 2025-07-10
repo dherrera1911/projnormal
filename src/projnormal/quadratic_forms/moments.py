@@ -1,5 +1,6 @@
 """Moments of quadratic forms of multidimensional Gaussian distributions."""
 
+from __future__ import annotations
 import torch
 
 __all__ = [
@@ -14,26 +15,28 @@ def __dir__():
     return __all__
 
 
-def mean(mean_x, covariance_x, M=None):
+def mean(mean_x: torch.Tensor, covariance_x: torch.Tensor, M: torch.Tensor | None = None) -> torch.Tensor:
     """
-    Compute the mean of X'MX where X~N(mean_x, covariance_x).
+    Compute the mean of :math:`x^T M x`, where :math:`x`
+    follows a multivariate normal distribution
+    :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
 
     Parameters
     ----------
-      mean_x : torch.Tensor, shape (n_dim,)
-          Mean of normally distributed X.
+      mean_x : ``torch.Tensor``
+          Mean of `x`. Shape ``(n_dim)``.
 
-      covariance_x : torch.Tensor, shape (n_dim, n_dim)
-          Covariance of the normal distribution.
+      covariance_x : ``torch.Tensor``
+          Covariance of `x`. Shape ``(n_dim, n_dim)`` or scalar (isotropic covariance).
 
-      M: torch.Tensor, shape (n_dim, n_dim) or (n_dim,), optional
-          Matrix in quadratic form. If a vector is provided,
-          it is used as the diagonal of M. Default is the identity matrix.
+      M : ``torch.Tensor``, optional
+          Matrix in quadratic form.  If a vector is provided, it is used as the diagonal of `M`.
+          Default is the identity matrix. Shape ``(n_dim, n_dim)`` or ``(n_dim,)``.
 
     Returns
     -------
-      torch.Tensor, shape ()
-          Expected value of the quadratic form
+      ``torch.Tensor``
+          Expected value of the quadratic form. Shape ``()``.
     """
     if M is None:
         M = torch.ones(
@@ -50,23 +53,25 @@ def mean(mean_x, covariance_x, M=None):
 
 def _mean_diagonal(mean_x, covariance_x, M_diagonal):
     """
-    Compute the mean of X'MX where X~N(mean_x, covariance_x) and M is diagonal.
+    Compute the mean of :math:`x^T M x`, where :math:`x`
+    follows a multivariate normal distribution
+    :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)` and :math:`M` is diagonal.
 
     Parameters
     ----------
-      mean_x : torch.Tensor, shape (n_dim,)
-          Mean of normally distributed X.
+      mean_x : ``torch.Tensor``
+          Mean of `x`. Shape ``(n_dim)``.
 
-      covariance_x : torch.Tensor, shape (n_dim, n_dim)
-          Covariance of the normal distribution.
+      covariance_x : ``torch.Tensor``
+          Covariance of `x`. Shape ``(n_dim, n_dim)``.
 
-      M: torch.Tensor, shape (n_dim,), optional
-          Diagonal elements of the diagonal matrix to multiply by.
+      M_diagonal : ``torch.Tensor``
+          Diagonal elements of the matrix `M`. Shape ``(n_dim,)``.
 
     Returns
     -------
-      torch.Tensor, shape ()
-          Expected value of the quadratic form.
+      ``torch.Tensor``
+          Expected value of the quadratic form. Shape ``()``.
     """
     term1 = torch.einsum("ii,i->", covariance_x, M_diagonal)
     term2 = torch.einsum("i,i,i->", mean_x, M_diagonal, mean_x)
@@ -76,28 +81,30 @@ def _mean_diagonal(mean_x, covariance_x, M_diagonal):
 
 def variance(mean_x, covariance_x, M=None):
     """
-    Compute the variance of X'MX, where X~N(mean_x, covariance_x).
+    Compute the variance of :math:`x^T M x`, where :math:`x`
+    follows a multivariate normal distribution
+    :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
 
     Parameters
     ----------
-      mean_x : torch.Tensor, shape (n_dim,)
-          Mean of normally distributed X.
+      mean_x : ``torch.Tensor``
+          Mean of `x`. Shape ``(n_dim)``.
 
-      covariance_x : torch.Tensor, shape (n_dim, n_dim)
-          Covariance of the normal distribution.
+      covariance_x : ``torch.Tensor``
+          Covariance of `x`. Shape ``(n_dim, n_dim)``.
 
-      M: torch.Tensor, shape (n_dim, n_dim) or (n_dim,), optional
-          Matrix to multiply by. Can either be a matrix or a vector,
-          in which case it is assumed to be diagonal. If None, M=I.
+      M : ``torch.Tensor``
+          Matrix in the quadratic form. If a vector is provided, it is used as the diagonal of `M`.
+          Default is the identity matrix. Shape ``(n_dim, n_dim)`` or ``(n_dim,)``.
 
     Returns
     -------
-      torch.Tensor, shape ()
-          Variance of quadratic form.
+      ``torch.Tensor``
+          Variance of the quadratic form. Shape ``()``.
     """
     if M is None:
         M = torch.ones(
-          len(mean_x), dtype=mean_x.dtype, device=mean_x.device
+            len(mean_x), dtype=mean_x.dtype, device=mean_x.device
         )
     if M.dim() == 1:
         psi_qf = _variance_diagonal(mean_x, covariance_x, M)
@@ -106,34 +113,33 @@ def variance(mean_x, covariance_x, M=None):
         trace = _product_trace4(A=M, B=covariance_x, C=M, D=covariance_x)
         # Compute the quadratic form term
         mean_qf = torch.einsum(
-          "d,db,bk,km,m->", mean_x, M, covariance_x, M, mean_x
+            "d,db,bk,km,m->", mean_x, M, covariance_x, M, mean_x
         )
-        # Add terms
         psi_qf = 2 * trace + 4 * mean_qf
     return psi_qf
 
 
 def _variance_diagonal(mean_x, covariance_x, M_diagonal):
     """
-    Compute the variance of the quadratic form given
-    by Gaussian variable X and matrix M, where X~N(mean_x, covariance_x)
-    and M is diagonal.
+    Compute the variance of :math:`x^T M x`, where :math:`x`
+    follows a multivariate normal distribution
+    :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)` and :math:`M` is diagonal.
 
     Parameters
     ----------
-      mean_x : torch.Tensor, shape (n_dim,)
-          Mean of normally distributed X.
+      mean_x : ``torch.Tensor``, shape ``torch.Size([n_dim])``
+          Mean of `x`.
 
-      covariance_x : torch.Tensor, shape (n_dim, n_dim)
-          Covariance of the normal distribution.
+      covariance_x : ``torch.Tensor``, shape ``torch.Size([n_dim, n_dim])``
+          Covariance of `x`.
 
-      M_diagonal: torch.Tensor, shape (n_dim,).
-          Diagonal elements of the diagonal matrix to multiply by.
+      M_diagonal : ``torch.Tensor``, shape ``torch.Size([n_dim])``
+          Diagonal elements of the matrix `M`.
 
     Returns
     -------
-      torch.Tensor, shape ()
-        Variance of quadratic form.
+      ``torch.Tensor``, shape ``torch.Size([])``
+          Variance of the quadratic form.
     """
     trace = torch.einsum("i,ij,j,ji->", M_diagonal, covariance_x, M_diagonal, covariance_x)
     mean_qf = torch.einsum(
@@ -145,71 +151,97 @@ def _variance_diagonal(mean_x, covariance_x, M_diagonal):
 
 def qf_covariance(mean_x, covariance_x, M, M2):
     """
-    Compute the covariance of X'MX and X'M2X, where X ~ N(mean_x, covariance_x).
+    Compute the covariance between :math:`x^T M x` and :math:`x^T M_2 x`,
+    where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
 
     Parameters
     ----------
-      mean_x : torch.Tensor, shape (n_dim,)
-          Mean of normally distributed X.
+      mean_x : ``torch.Tensor``
+          Mean of `x`. A vector of shape ``(n_dim,)``.
 
-      covariance_x : torch.Tensor, shape (n_dim, n_dim)
-          Covariance of the normal distribution.
+      covariance_x : ``torch.Tensor``
+          Covariance of `x`. A scalar implies isotropic covariance. Shape ``(n_dim, n_dim)`` or scalar.
 
-      M: torch.Tensor, shape (n_dim, n_dim)
-          Matrix of first quadratic form.
+      M : ``torch.Tensor``
+          Matrix of the first quadratic form. Shape ``(n_dim, n_dim)``
 
-      M2: torch.Tensor, shape (n_dim, n_dim)
-          Matrix of second quadratic form.
+      M2 : ``torch.Tensor``
+          Matrix of the second quadratic form. Shape ``(n_dim, n_dim)``
 
     Returns
     -------
-      torch.Tensor, shape ()
-          Covariance of X'MX and X'M2X. Scalar
+      ``torch.Tensor``
+          Covariance of the two quadratic forms. Shape ``()``.
     """
-    # Compute the trace of M*covariance*M2*covariance
     if covariance_x.dim() == 2:
         trace = _product_trace4(A=M, B=covariance_x, C=M2, D=covariance_x)
-    elif covariance_x.dim() == 0:  # Isotropic case
+    else:  # scalar covariance (isotropic)
         trace = _product_trace(A=M, B=M2) * covariance_x**2
-    # Compute mean term
     mean_term = torch.einsum("d,db,bk,km,m->", mean_x, M, covariance_x, M2, mean_x)
-    # Add terms
     cov_quadratic = 2 * trace + 4 * mean_term
     return cov_quadratic
 
 
 def qf_linear_covariance(mean_x, covariance_x, M, b):
     """
-    Compute the covariance of X'MX and X'b, where X ~ N(mean_x, covariance_x).
+    Compute the covariance between :math:`x^T M x` and the linear form :math:`x^T b`,
+    where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
 
     Parameters
     ----------
-      mean_x : torch.Tensor, shape (n_dim,)
-          Mean of normally distributed X.
+      mean_x : ``torch.Tensor``
+          Mean of `x`. A vector of shape ``(n_dim,)``.
 
-      covariance_x : torch.Tensor, shape (n_dim, n_dim)
-          Covariance of the normal distribution.
+      covariance_x : ``torch.Tensor``
+          Covariance of `x`. Shape ``(n_dim, n_dim)``.
 
-      M: torch.Tensor, shape (n_dim, n_dim)
-          Matrix of first quadratic form.
+      M : ``torch.Tensor``
+          Matrix for the quadratic form. Shape ``(n_dim, n_dim)``.
 
-      b: torch.Tensor, shape (n_dim,)
-          Vector for linear form.
+      b : ``torch.Tensor``
+          Vector for the linear form. Shape ``(n_dim,)``.
 
     Returns
     -------
-      torch.Tensor, shape ()
-          Covariance of X'MX and X'b.
+      ``torch.Tensor``
+          Covariance between the quadratic and linear forms.
     """
     cov_quadratic = 2 * torch.einsum("i,ij,jk,k->", mean_x, M, covariance_x, b)
     return cov_quadratic
 
 
 def _product_trace(A, B):
-    """Efficiently compute tr(A*B)."""
+    """
+    Efficiently compute the trace of a matrix product.
+
+    Parameters
+    ----------
+      A : ``torch.Tensor``, shape ``torch.Size([n_dim, n_dim])``
+          First matrix.
+
+      B : ``torch.Tensor``, shape ``torch.Size([n_dim, n_dim])``
+          Second matrix.
+
+    Returns
+    -------
+      ``torch.Tensor``, shape ``torch.Size([])``
+          Trace of ``A @ B``.
+    """
     return torch.einsum("ij,ji->", A, B)
 
 
 def _product_trace4(A, B, C, D):
-    """Efficiently compute tr(A*B*C*D)."""
+    """
+    Efficiently compute the trace of four matrix products.
+
+    Parameters
+    ----------
+      A, B, C, D : ``torch.Tensor``, each shape ``torch.Size([n_dim, n_dim])``
+          Matrices to multiply in order.
+
+    Returns
+    -------
+      ``torch.Tensor``, shape ``torch.Size([])``
+          Trace of ``A @ B @ C @ D``.
+    """
     return torch.einsum("ij,jk,kl,li->", A, B, C, D)

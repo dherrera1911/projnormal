@@ -2,14 +2,12 @@
 import pytest
 import torch
 
-import projnormal.distribution.ellipse as pne
-import projnormal.models as models
+import projnormal.formulas.projected_normal_B as pnb_formulas
+import projnormal.classes as classes
 import projnormal.param_sampling as par_samp
 
 torch.manual_seed(1)
 TOLERANCE = 0.025
-MAX_ITER = 30
-N_DIRS = 2
 
 # Instantiate parameters, get empirical moments
 @pytest.fixture(scope="function")
@@ -36,7 +34,7 @@ def test_init(n_dim):
     covariance_x = torch.eye(n_dim)
     B = par_samp.make_spdm(n_dim)
 
-    prnorm = models.ProjNormalEllipse(
+    prnorm = classes.ProjNormalEllipse(
       mean_x=mean_x,
       covariance_x=covariance_x,
       B=B,
@@ -68,7 +66,7 @@ def test_empirical_moments(n_dim, gaussian_parameters):
     B = par_samp.make_spdm(n_dim)
 
     # Initialize the projected normal class
-    prnorm = models.ProjNormalEllipse(
+    prnorm = classes.ProjNormalEllipse(
       mean_x=mean_x,
       covariance_x=covariance_x,
       B=B,
@@ -79,7 +77,7 @@ def test_empirical_moments(n_dim, gaussian_parameters):
 
     # Sample using the function
     B2 = prnorm.B.detach().clone()
-    emp_moments_other = pne.empirical_moments(
+    emp_moments_other = pnb_formulas.empirical_moments(
       mean_x=mean_x,
       covariance_x=covariance_x,
       B=B2,
@@ -102,7 +100,7 @@ def test_moments(n_dim, gaussian_parameters):
     covariance_x = gaussian_parameters['covariance_x']
     B = par_samp.make_spdm(n_dim)
 
-    prnorm = models.ProjNormalEllipse(
+    prnorm = classes.ProjNormalEllipse(
       mean_x=mean_x,
       covariance_x=covariance_x,
       B=B,
@@ -114,12 +112,12 @@ def test_moments(n_dim, gaussian_parameters):
 
     # Sample using the function
     B2 = prnorm.B.detach().clone()
-    gamma = pne.mean(
+    gamma = pnb_formulas.mean(
       mean_x=mean_x,
       covariance_x=covariance_x,
       B=B2,
     )
-    second_moment = pne.second_moment(
+    second_moment = pnb_formulas.second_moment(
       mean_x=mean_x,
       covariance_x=covariance_x,
       B=B2,

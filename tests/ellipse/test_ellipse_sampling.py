@@ -3,7 +3,7 @@ import pytest
 import torch
 import torch.distributions.multivariate_normal as mvn
 
-import projnormal.distribution.ellipse as pne
+import projnormal.formulas.projected_normal_B as pnb_formulas
 import projnormal.param_sampling as par_samp
 
 
@@ -47,11 +47,11 @@ def test_ellipse_sampling(sample_parameters):
     covariance_x = sample_parameters["covariance_x"]
     B = sample_parameters["B"]
 
-    samples_pkg = pne.sample(
+    samples_pkg = pnb_formulas.sample(
       mean_x, covariance_x, B=B, n_samples=n_samples
     )
 
-    moments_pkg = pne.empirical_moments(
+    moments_pkg = pnb_formulas.empirical_moments(
       mean_x, covariance_x, B=B, n_samples=n_samples
     )
 

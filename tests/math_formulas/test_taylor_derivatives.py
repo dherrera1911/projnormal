@@ -2,7 +2,7 @@
 import pytest
 import torch
 
-import projnormal.distribution.const as pnc
+import projnormal.formulas.projected_normal_c as pnc_formulas
 import projnormal.param_sampling as par_samp
 
 
@@ -48,7 +48,7 @@ def taylor_derivatives_data(n_dim, sigma, cov_type):
     )
     covariance_x = par_samp.make_spdm(n_dim=n_dim) * torch.as_tensor(sigma**2)
     # Compute mean of auxiliary variables
-    v_mean = pnc.moments._get_v_mean(
+    v_mean = pnc_formulas.moments._get_v_mean(
       mean_x=mean_x, covariance_x=covariance_x
     )
 
@@ -90,9 +90,9 @@ def test_taylor_approximation_derivatives(taylor_derivatives_data, n_dim, sigma,
     dudv_autograd = taylor_derivatives_data['dudv_autograd']
 
     # Compute derivatives using the function being tested
-    du2 = pnc.moments._get_dfdu2(u=mean_x, v=v_mean)
-    dv2 = pnc.moments._get_dfdv2(u=mean_x, v=v_mean)
-    dudv = pnc.moments._get_dfdudv(u=mean_x, v=v_mean)
+    du2 = pnc_formulas.moments._get_dfdu2(u=mean_x, v=v_mean)
+    dv2 = pnc_formulas.moments._get_dfdv2(u=mean_x, v=v_mean)
+    dudv = pnc_formulas.moments._get_dfdudv(u=mean_x, v=v_mean)
 
     # Compute the relative error
     du2_error = relative_error(du2, du2_autograd)

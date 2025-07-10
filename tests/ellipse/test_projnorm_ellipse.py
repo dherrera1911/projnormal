@@ -2,8 +2,8 @@
 import pytest
 import torch
 
-import projnormal.distribution.ellipse as pne
-import projnormal.matrix_checks as checks
+import projnormal.formulas.projected_normal_B as pnb_formulas
+import projnormal._utils._matrix_checks as checks
 import projnormal.param_sampling as par_samp
 
 
@@ -34,10 +34,10 @@ def test_taylor_moments(sample_parameters):
     B = sample_parameters["B"]
 
     # Get taylor approximation moments
-    gamma_taylor = pne.mean(
+    gamma_taylor = pnb_formulas.mean(
       mean_x=mean_x, covariance_x=covariance_x, B=B
     )
-    sm_taylor = pne.second_moment(
+    sm_taylor = pnb_formulas.second_moment(
         mean_x=mean_x, covariance_x=covariance_x, B=B
     )
 
@@ -45,7 +45,7 @@ def test_taylor_moments(sample_parameters):
     assert checks.is_symmetric(sm_taylor)
     assert checks.is_positive_definite(sm_taylor)
 
-    moments = pne.empirical_moments(
+    moments = pnb_formulas.empirical_moments(
         mean_x=mean_x, covariance_x=covariance_x,
         B=B, n_samples=n_samples
     )

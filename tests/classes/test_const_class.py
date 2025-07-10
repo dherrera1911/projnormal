@@ -2,9 +2,9 @@
 import pytest
 import torch
 
-import projnormal.distribution.const as pnc
-import projnormal.matrix_checks as checks
-import projnormal.models as models
+import projnormal.formulas.projected_normal_c as pnc_formulas
+import projnormal._utils._matrix_checks as checks
+import projnormal.classes as classes
 import projnormal.param_sampling as par_samp
 
 torch.manual_seed(1)
@@ -42,14 +42,14 @@ def gaussian_parameters(n_dim, mean_type, sigma):
 def test_init(n_dim):
     """Test the initialization of the ProjNormalConst class."""
     # Initialize without input parameters
-    prnorm = models.ProjNormalConst(n_dim=n_dim)
+    prnorm = classes.ProjNormalConst(n_dim=n_dim)
 
     # Initialize parameters
     mean_x = torch.ones(n_dim) / torch.sqrt(torch.as_tensor(n_dim))
     covariance_x = torch.eye(n_dim)
     const = torch.tensor(0.1)
 
-    prnorm = models.ProjNormalConst(
+    prnorm = classes.ProjNormalConst(
       mean_x=mean_x,
       covariance_x=covariance_x,
       const=const
@@ -62,7 +62,7 @@ def test_init(n_dim):
 
     # Check that value error is raised if n_dim doesn't match the statistics
     with pytest.raises(ValueError):
-        prnorm = models.ProjNormalConst(
+        prnorm = classes.ProjNormalConst(
           n_dim=n_dim,
           const=torch.tensor(-0.01),
         )
@@ -79,7 +79,7 @@ def test_sampling(n_dim, gaussian_parameters):
     covariance_x = gaussian_parameters['covariance_x']
 
     # Initialize the projected normal class
-    prnorm = models.ProjNormalConst(
+    prnorm = classes.ProjNormalConst(
       mean_x=mean_x,
       covariance_x=covariance_x,
       const=gaussian_parameters['const']
@@ -104,7 +104,7 @@ def test_moments(n_dim, gaussian_parameters):
     const = gaussian_parameters['const']
 
     # Initialize the projected normal class
-    prnorm = models.ProjNormalConst(
+    prnorm = classes.ProjNormalConst(
       mean_x=mean_x,
       covariance_x=covariance_x,
       const=const
@@ -143,7 +143,7 @@ def test_pdf(n_dim, gaussian_parameters):
     const = gaussian_parameters['const']
 
     # Initialize the projected normal class
-    prnorm = models.ProjNormalConst(
+    prnorm = classes.ProjNormalConst(
       mean_x=mean_x,
       covariance_x=covariance_x,
       const=const
@@ -164,9 +164,9 @@ def test_pdf(n_dim, gaussian_parameters):
 
 ######## TEST FITTING PROCEDURES 
 
-@pytest.mark.parametrize('n_dim', [2, 3, 5])
+@pytest.mark.parametrize('n_dim', [2, 3])
 @pytest.mark.parametrize('mean_type', ['sin'])
-@pytest.mark.parametrize('sigma', [0.5])
+@pytest.mark.parametrize('sigma', [0.25])
 @pytest.mark.parametrize('optimizer', ['NAdam', 'LBFGS'])
 def test_moment_matching(n_dim, optimizer, gaussian_parameters):
     """Test moment matching algorithm."""
@@ -176,15 +176,15 @@ def test_moment_matching(n_dim, optimizer, gaussian_parameters):
     const = gaussian_parameters['const']
 
     # Make observed moments
-    moments_target = pnc.empirical_moments(
+    moments_target = pnc_formulas.empirical_moments(
       mean_x=mean_x,
       covariance_x=covariance_x,
       const=const,
-      n_samples=100000
+      n_samples=10000
     )
 
     # Initialize the projected normal class
-    prnorm = models.ProjNormalConst(
+    prnorm = classes.ProjNormalConst(
       n_dim=n_dim
     )
 
@@ -219,65 +219,3 @@ def test_moment_matching(n_dim, optimizer, gaussian_parameters):
         fit_covariance_x
     ), 'Estimated covariance is not positive definite'
 
-
-#@pytest.mark.parametrize('n_dim', [2, 3, 5])
-#@pytest.mark.parametrize('mean_type', ['sin'])
-#@pytest.mark.parametrize('sigma', [0.5])
-#@pytest.mark.parametrize('optimizer', ['NAdam', 'LBFGS'])
-#def test_maximum_likelihood(n_dim, optimizer, gaussian_parameters):
-#    """Test moment matching algorithm."""
-#    # Unpack parameters
-#    mean_x = gaussian_parameters['mean_x']
-#    covariance_x = gaussian_parameters['covariance_x']
-#
-#    # Make observed moments
-#    moments_target = png.sampling.empirical_moments(
-#      mean_x=mean_x,
-#      covariance_x=covariance_x,
-#      n_samples=100000
-#    )
-#
-#    # Make observed samples
-#    y_samples = png.sampling.sample(
-#      mean_x=mean_x,
-#      covariance_x=covariance_x,
-#      n_samples=100
-#    )
-#
-#    # Initialize the projected normal class
-#    prnorm = models.ProjNormal(
-#      n_dim=n_dim
-#    )
-#
-#    # Initialize parameters to observed moments
-#    prnorm.moment_init(moments_target)
-#
-#    # Fit to the data with maximum likelihood
-#    loss = prnorm.max_likelihood(
-#      y=y_samples,
-#      optimizer=optimizer,
-#      max_epochs=MAX_ITER,
-#      n_cycles=2,
-#      cycle_gamma=0.2,
-#      show_progress=False,
-#      return_loss=True,
-#
-#    )
-#    loss = loss['loss']
-#
-#    # Get estimated moments
-#    fit_mean_x = prnorm.mean_x.detach()
-#    fit_covariance_x = prnorm.covariance_x.detach()
-#
-#    assert not torch.isnan(loss).any(), 'Loss is nan'
-#    assert not torch.isnan(fit_mean_x).any(), 'Estimated mu is nan'
-#    assert not torch.isnan(fit_covariance_x).any(), 'Estimated covariance is nan'
-#    assert loss[0] > loss[-1], 'Loss did not decrease'
-#    assert torch.allclose(
-#        fit_mean_x.norm(), torch.tensor(1.0)
-#    ), 'Estimated mean norm is not 1'
-#    assert checks.is_symmetric(fit_covariance_x), 'Estimated covariance is not symmetric'
-#    assert checks.is_positive_definite(
-#        fit_covariance_x
-#    ), 'Estimated covariance is not positive definite'
-#

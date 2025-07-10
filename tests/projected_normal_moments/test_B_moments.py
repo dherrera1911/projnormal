@@ -2,8 +2,8 @@
 import pytest
 import torch
 
-import projnormal.distribution.const as pnc
-import projnormal.distribution.ellipse_const as pnec
+import projnormal.formulas.projected_normal_c as pnc_formulas
+import projnormal.formulas.projected_normal_Bc as pnbc_formulas
 import projnormal.param_sampling as par_samp
 
 # Make double the default precision
@@ -56,10 +56,10 @@ def test_B_mapping(gaussian_parameters):
     B_sqt_inv = torch.linalg.inv(B_sqrt)
 
     # Get taylor approximation moments to Y=X'BX with package functions
-    gamma_taylor = pnec.mean(
+    gamma_taylor = pnbc_formulas.mean(
       mean_x=mean_x, covariance_x=covariance_x, const=const, B=B,
     )
-    sm_taylor = pnec.second_moment(
+    sm_taylor = pnbc_formulas.second_moment(
         mean_x=mean_x, covariance_x=covariance_x, const=const, B=B
     )
 
@@ -67,10 +67,10 @@ def test_B_mapping(gaussian_parameters):
     # First compute moments in transformed space
     mean_z = mean_x @ B_sqrt
     covariance_z = B_sqrt @ covariance_x @ B_sqrt.T
-    gamma_prime = pnc.mean(
+    gamma_prime = pnc_formulas.mean(
       mean_x=mean_z, covariance_x=covariance_z, const=const
     )
-    sm_prime = pnc.second_moment(
+    sm_prime = pnc_formulas.second_moment(
         mean_x=mean_z, covariance_x=covariance_z, const=const
     )
     # Now transform back to original space
