@@ -33,12 +33,12 @@ the projected normal distribution:
 In the example code below, we generate samples from
 $\mathcal{PN}(\boldsymbol{\mu}, \Sigma)$ and compute their
 PDF. The necessary formulas are implemented in the
-submodule `projnormal.distribution.projected_normal`.
+submodule `projnormal.formulas.projected_normal`.
 
 ```python
 import torch
 import projnormal
-import projnormal.distribution.projected_normal as pn_dist
+import projnormal.formulas.projected_normal as pn_dist
 
 # Sample distribution parameters
 
@@ -62,7 +62,7 @@ to fit the distribution parameters to the samples.
 
 ```python
 # Initialize a ProjNormal object to fit
-pn_fit = projnormal.models.ProjNormal(n_dim=N_DIM)
+pn_fit = projnormal.classes.ProjNormal(n_dim=N_DIM)
 
 # Fit the parameters of the projected normal distribution
 pn_fit.max_likelihood(y=samples)
@@ -86,13 +86,13 @@ $$\mathbf{y} = \frac{\mathbf{x}}{\sqrt{\mathbf{x}^T \mathbf{B} \mathbf{x} + c}}$
 where $\mathbf{B}$ is a positive-definite matrix and $c$ is a
 non-negative constant. The formulas for this variant of the
 distribution are implemented in the
-module `projnormal.distribution.ellipse_const`.
+module `projnormal.formulas.projected_normal_Bc`.
 
 In the next example we generate samples and compute their PDF
 for this generalized version of the projected normal.
 
 ```python
-import projnormal.distribution.ellipse_const as pngen_dist
+import projnormal.formulas.projected_normal_Bc as pngen_dist
 
 # We generate a B matrix and a constant c
 B = projnormal.param_sampling.make_spdm(N_DIM) * 2.0
@@ -114,8 +114,8 @@ implements the formulas for the generalized projected normal
 distribution, and use it to fit the distribution parameters.
 
 ```python
-# Initialize a ProjNormal object to fit
-pngen_fit = projnormal.models.ProjNormalEllipseConst(
+# Initialize a ProjNormalEllipseConst object to fit
+pngen_fit = projnormal.classes.ProjNormalEllipseConst(
     n_dim=N_DIM,
     B=torch.eye(N_DIM) * 0.1, # Make sure samples are inside initial distribution support
 )
@@ -166,7 +166,7 @@ data_moments = {
 }
 
 # Initialize a ProjNormal object to fit
-pn_fit = projnormal.models.ProjNormal(n_dim=N_DIM)
+pn_fit = projnormal.classes.ProjNormal(n_dim=N_DIM)
 
 # Fit the parameters via moment matching
 pn_fit.moment_match(data_moments)
