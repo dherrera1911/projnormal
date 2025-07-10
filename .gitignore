@@ -6,3 +6,6 @@ __pycache__/
 *.coverage*
 mini.py
 *.swp
+docs/build/
+docs/source/tutorials/*.py
+docs/source/generated
