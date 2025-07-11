@@ -24,12 +24,12 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="0.5007929"
-     inkscape:cx="356.43477"
-     inkscape:cy="302.52026"
-     inkscape:window-width="1680"
-     inkscape:window-height="1013"
-     inkscape:window-x="0"
-     inkscape:window-y="30"
+     inkscape:cx="680.9202"
+     inkscape:cy="218.65326"
+     inkscape:window-width="1920"
+     inkscape:window-height="1043"
+     inkscape:window-x="1680"
+     inkscape:window-y="0"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1" />
   <defs
@@ -10134,6 +10134,13 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(12.267177,-9.7520514)">
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.853161;paint-order:markers stroke fill"
+       id="rect2345"
+       width="237.24632"
+       height="74.445732"
+       x="-12.263447"
+       y="9.7560024" />
     <path
        id="path7"
        d="m 135.23049,170.10285 -9.55622,0.0133 -0.01,-9.77945 9.47785,-0.0158 0.0881,9.78191 z"
