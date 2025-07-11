@@ -14,10 +14,9 @@ kernelspec:
 # Fitting distributions to data
 
 This tutorial explains how to fit the distributions provided by
-the `projnormal` package to data. While mathematical formulas for the
-distributions (e.g., PDFs, moments, sampling functions) are implemented
-in `projnormal.formulas`, the classes and methods used for fitting distributions
-to data are available in `projnormal.models`.
+the `projnormal` package to data. 
+The classes and methods used for fitting the distributions
+data are available in `projnormal.models`.
 
 We'll demonstrate fitting two different projected normal distributions:
 
@@ -60,10 +59,11 @@ pn_fit_mle = projnormal.classes.ProjNormal(n_dim=N_DIM)
 pn_fit_mle.max_likelihood(samples, show_progress=False)
 
 # Print the fitted parameters
-print("True mean:", mean_x.numpy())
-print("Fitted mean (MLE):", pn_fit_mle.mean_x.detach().numpy())
-print("True covariance (sampling):", cov_x.detach().numpy())
-print("Fitted covariance (MLE):", pn_fit_mle.covariance_x.detach().numpy())
+print("True mean:\n", mean_x.numpy())
+print("Fitted mean (MLE):\n", pn_fit_mle.mean_x.detach().numpy())
+
+print("True covariance (sampling):\n", cov_x.numpy())
+print("Fitted covariance (MLE):\n", pn_fit_mle.covariance_x.detach().numpy())
 ```
 
 Now, we can also fit the model using Moment Matching, which uses the sample moments
@@ -80,8 +80,8 @@ pn_fit_mm = projnormal.classes.ProjNormal(n_dim=N_DIM)
 pn_fit_mm.moment_match(data_moments=data_moments, show_progress=False)
 
 # Print the fitted parameters
-print("Fitted mean (Moment Matching):", pn_fit_mm.mean_x)
-print("Fitted covariance (Moment Matching):", pn_fit_mm.covariance_x)
+print("Fitted mean (Moment Matching):\n", pn_fit_mm.mean_x.detach().numpy())
+print("Fitted covariance (Moment Matching):\n", pn_fit_mm.covariance_x.detach().numpy())
 ```
 
 
@@ -111,12 +111,14 @@ pnc_fit_mle = projnormal.classes.ProjNormalConst(n_dim=N_DIM)
 pnc_fit_mle.max_likelihood(samples_const, show_progress=False)
 
 # Print the fitted parameters
-print("True mean (sampling):", mean_x.numpy())
-print("Fitted mean (MLE):", pnc_fit_mle.mean_x.detach().numpy())
-print("True covariance (sampling):", cov_x.numpy())
-print("Fitted covariance (MLE):", pnc_fit_mle.covariance_x.detach().numpy())
-print("True constant (sampling):", const.numpy())
-print("Fitted constant (MLE):", pnc_fit_mle.const.detach().numpy())
+print("True mean (sampling):\n", mean_x.numpy())
+print("Fitted mean (MLE):\n", pnc_fit_mle.mean_x.detach().numpy())
+
+print("True covariance (sampling):\n", cov_x.numpy())
+print("Fitted covariance (MLE):\n", pnc_fit_mle.covariance_x.detach().numpy())
+
+print("True constant (sampling):\n", const.numpy())
+print("Fitted constant (MLE):\n", pnc_fit_mle.const.detach().numpy())
 ```
 
 Finally, we can fit the `ProjNormalConst` model using Moment Matching as well.
@@ -132,7 +134,7 @@ pnc_fit_mm = projnormal.classes.ProjNormalConst(n_dim=N_DIM)
 pnc_fit_mm.moment_match(data_moments=data_moments_const, show_progress=False)
 
 # Print the fitted parameters
-print("Fitted mean (Moment Matching):", pnc_fit_mm.mean_x)
-print("Fitted covariance (Moment Matching):", pnc_fit_mm.covariance_x)
-print("Fitted constant (Moment Matching):", pnc_fit_mm.const)
+print("Fitted mean (Moment Matching):\n", pnc_fit_mm.mean_x.numpy())
+print("Fitted covariance (Moment Matching)\n:", pnc_fit_mm.covariance_x.detach().numpy())
+print("Fitted constant (Moment Matching)\n:", pnc_fit_mm.const.detach().numpy())
 ```

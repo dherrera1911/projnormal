@@ -26,6 +26,7 @@ caption: Tutorials
 
 tutorials/formulas.md
 tutorials/fitting.md
+tutorials/constraints.md
 ```
 
 

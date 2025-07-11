@@ -11,38 +11,39 @@ kernelspec:
   name: python3
 ---
 
-# Formulas available in `projnormal`
+# Formulas available in projnormal
 
-This document lists the mathematical formulas available in the `projnormal` package,
-and how they are organized.
+This document describes the organization of the formulas
+available in `projnormal` .
 
-`projnormal` provides functionalities for working with the
-projected normal distribution and some generalizations of it.
-A variable $\mathbf{y}$ following the projected normal distribution,
-denoted as $\mathbf{y} \sim \mathcal{PN}(\boldsymbol{\mu}, \Sigma)$,
+`projnormal` implements formulas for working with the
+projected normal distribution, and some generalized versions
+of this distribution.
+A random variable following the projected normal distribution,
+$\mathbf{y} \sim \mathcal{PN}(\boldsymbol{\mu}, \Sigma)$,
 is obtained by radially projecting a multivariate normal variable $\mathbf{x}$
 onto the unit sphere, i.e.,
 $\mathbf{y} = \frac{\mathbf{x}}{\|\mathbf{x}\|}$
 where $\mathbf{x} \sim \mathcal{N}(\boldsymbol{\mu}, \Sigma)$.
 
-The related variables also included in `projnormal` are of the form
+The generalizations of the projected normal included
+in the package are of the form
 
 $\mathbf{y} = \frac{\mathbf{x}}{\sqrt{\mathbf{x} \mathbf{B} \mathbf{x} + c}}$
 
-where $\mathbf{B}$ is a positive definite matrix and $c$ is a non-negative constant.
-Note that when $\mathbf{B}$ is the identity matrix and $c = 0$,
-this reduces to the projected normal distribution.
+where $\mathbf{B}$ is a positive definite matrix and $c$
+is a non-negative constant.
 
-The last variant included in `projnormal` is the special case of
-the projected normal distribution where $\Sigma = \mathbf{I} \sigma^2$, that is,
-the special case where $\mathbf{x}$ is an isotropic multivariate normal variable.
+Also, `projnormal` includes a separate implementation
+of the special case of the projected normal distribution
+where $\Sigma = \mathbf{I} \sigma^2$.
 
 For each of these distributions, `projnormal` provides formulas
-to obtain the log-PDF (and PDF) and to obtain the first
-and second moments (mean and covariance) of the distribution.
+to obtain the log-PDF, PDF, and the first
+and second moments of the distribution.
 
-The formulas for each of the distributions are available
-as modules in `projnormal.formulas`. Lets first 
+The formulas for each distribution are available
+as separate modules in `projnormal.formulas`. Lets first 
 focus in the basic projected normal distribution.
 
 ## Projected Normal Distribution formulas
