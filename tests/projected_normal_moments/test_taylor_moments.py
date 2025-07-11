@@ -2,8 +2,8 @@
 import pytest
 import torch
 
-import projnormal.formulas.projected_normal_c as pnc_formulas
 import projnormal._utils._matrix_checks as checks
+import projnormal.formulas.projected_normal_c as pnc_formulas
 import projnormal.param_sampling as par_samp
 
 torch.manual_seed(0)

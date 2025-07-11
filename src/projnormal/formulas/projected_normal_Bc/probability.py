@@ -11,7 +11,7 @@ def __dir__():
 
 
 def pdf(mean_x, covariance_x, y, const, B=None, B_chol=None):
-    """
+    r"""
     Compute the pdf at points y for the distribution of the variable
     :math:`y = x/\sqrt{x^T B x + c}`, where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`,
     :math:`B` is a symmetric positive definite matrix and :math:`c` is a positive constant.
@@ -56,11 +56,11 @@ def pdf(mean_x, covariance_x, y, const, B=None, B_chol=None):
 
 
 def log_pdf(mean_x, covariance_x, y, const, B=None, B_chol=None):
-    """
+    r"""
     Compute the log-pdf at points y for the distribution of the variable
     :math:`y = x/\sqrt{x^T B x + c}`, where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`,
     :math:`B` is a symmetric positive definite matrix and :math:`c` is a positive constant.
-    (:math:`y` has a projected normal distribution.)
+    (:math:`y` has a projected normal distribution.).
 
 
     Parameters

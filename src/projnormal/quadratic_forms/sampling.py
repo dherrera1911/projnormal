@@ -1,4 +1,4 @@
-
+"""Sampling of quadratic forms of multivariate Gaussian random variables."""
 import torch
 import torch.distributions.multivariate_normal as mvn
 
@@ -14,7 +14,7 @@ def __dir__():
 
 
 def sample(mean_x, covariance_x, M, n_samples):
-    """
+    r"""
     Sample from the quadratic form :math:`x^T M x`,
     where :math:`x` follows a multivariate normal distribution
     :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
@@ -51,7 +51,7 @@ def sample(mean_x, covariance_x, M, n_samples):
 
 
 def empirical_moments(mean_x, covariance_x, M, n_samples):
-    """
+    r"""
     Compute an empirical approximation to the moments of the quadratic form
     :math:`x^T M x`, where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
 

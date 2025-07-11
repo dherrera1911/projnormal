@@ -18,7 +18,7 @@ def __dir__():
 
 
 class ProjNormalConst(ProjNormal):
-    """
+    r"""
     Projected normal distribution variant, describing the variable
     :math:`y=x/\sqrt{||x||^2 + c}`, where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`
     follows a multivariate normal distribution and :math:`c` is a positive constant.

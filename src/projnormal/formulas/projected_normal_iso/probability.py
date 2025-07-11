@@ -12,7 +12,7 @@ def __dir__():
 
 
 def pdf(mean_x, var_x, y):
-    """
+    r"""
     Compute the pdf at points y for the distribution of the variable
     :math:`y = x/\sqrt{x^T x}`, where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`
     and :math:`\Sigma_x = \sigma^2 I` (isotropic covariance matrix).
@@ -40,7 +40,7 @@ def pdf(mean_x, var_x, y):
 
 
 def log_pdf(mean_x, var_x, y):
-    """
+    r"""
     Compute the log-pdf at points y for the distribution of the variable
     :math:`y = x/\sqrt{x^T x}`, where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`
     and :math:`\Sigma_x = \sigma^2 I` (isotropic covariance matrix).

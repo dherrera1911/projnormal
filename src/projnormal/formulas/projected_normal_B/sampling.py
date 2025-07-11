@@ -10,7 +10,7 @@ def __dir__():
 
 
 def sample(mean_x, covariance_x, n_samples, B=None, B_chol=None):
-    """
+    r"""
     Sample the variable :math:`y = x/\sqrt{x^T B x}`
     where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`
     and :math:`B` is a symmetric positive definite matrix.
@@ -44,7 +44,7 @@ def sample(mean_x, covariance_x, n_samples, B=None, B_chol=None):
 
 
 def empirical_moments(mean_x, covariance_x, n_samples, B=None, B_chol=None):
-    """
+    r"""
     Compute the mean, covariance and second moment of the variable
     :math:`y = x/\sqrt{x^T B x}`
     where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`

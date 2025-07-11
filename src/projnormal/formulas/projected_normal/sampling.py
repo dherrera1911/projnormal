@@ -9,7 +9,7 @@ def __dir__():
 
 
 def sample(mean_x, covariance_x, n_samples):
-    """
+    r"""
     Sample the variable :math:`y = x/\sqrt{x^T x}`
     where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
 
@@ -38,7 +38,7 @@ def sample(mean_x, covariance_x, n_samples):
 
 
 def empirical_moments(mean_x, covariance_x, n_samples):
-    """
+    r"""
     Compute the mean, covariance and second moment of the variable
     :math:`y = x/\sqrt{x^T x}`, where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`,
     by sampling from the distribution.

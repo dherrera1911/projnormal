@@ -18,7 +18,7 @@ def __dir__():
 
 
 class ProjNormalEllipseConst(ProjNormalEllipse):
-    """
+    r"""
     Projected normal distribution variant, describing the variable
     :math:`y=x/\sqrt{x^T B x + c}`, where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`
     follows a multivariate normal distribution, :math:`B` is a symmetric positive

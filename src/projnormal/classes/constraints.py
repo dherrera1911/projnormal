@@ -191,8 +191,9 @@ class PositiveOffset(nn.Module):
 ################
 
 class Isotropic(nn.Module):
-    """Constrain matrix to be :math:`M = \lambda \cdot I_n`, where
-    :math:`\lambda>0` and :math:`I_n` is the identity matrix."""
+    r"""Constrain matrix to be :math:`M = \lambda \cdot I_n`, where
+    :math:`\lambda>0` and :math:`I_n` is the identity matrix.
+    """
 
     def __init__(self, n_dim=None):
         """
@@ -282,7 +283,7 @@ class Diagonal(nn.Module):
 
 
 class ConstrainedSPD(nn.Module):
-    """Constrain matrix :math:`M` to be
+    r"""Constrain matrix :math:`M` to be
     :math:`M = d \cdot I_n + W`, where :math:`d>0` is a fixed scalar,
     :math:`I_n` is the identity matrix, and
     :math:`W` is a symmetric positive semi-definite matrix of rank at most `k`.

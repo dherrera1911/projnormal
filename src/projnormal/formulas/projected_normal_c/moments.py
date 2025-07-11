@@ -11,7 +11,7 @@ def __dir__():
 
 
 def mean(mean_x, covariance_x, const=0):
-    """
+    r"""
     Compute the mean of :math:`y = x/\sqrt{x^T x + c}`,
     where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`
     and :math:`c` is a positive constant.
@@ -63,7 +63,7 @@ def mean(mean_x, covariance_x, const=0):
 
 
 def second_moment(mean_x, covariance_x, const):
-    """
+    r"""
     Compute the second moment matrix of :math:`y = x/\sqrt{x^T x + c}`,
     where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)` and
     :math:`c` is a positive constant. Uses a Taylor approximation.

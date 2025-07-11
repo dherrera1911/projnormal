@@ -9,10 +9,10 @@ def __dir__():
 
 
 def mean(mean_x, covariance_x):
-    """
+    r"""
     Compute the mean of :math:`y = x/\sqrt{x^T x}`,
     where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)` via
-    Taylor approximation. (:math:`y` has a projected normal distribution.)
+    Taylor approximation. (:math:`y` has a projected normal distribution.).
 
     Parameters
     ----------
@@ -31,10 +31,10 @@ def mean(mean_x, covariance_x):
 
 
 def second_moment(mean_x, covariance_x):
-    """
+    r"""
     Compute the second moment matrix of :math:`y = x/\sqrt{x^T x}`,
     where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)` via Taylor approximation.
-    (:math:`y` has a projected normal distribution.)
+    (:math:`y` has a projected normal distribution.).
 
     Parameters
     ----------

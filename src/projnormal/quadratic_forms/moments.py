@@ -1,6 +1,7 @@
 """Moments of quadratic forms of multidimensional Gaussian distributions."""
 
 from __future__ import annotations
+
 import torch
 
 __all__ = [
@@ -16,7 +17,7 @@ def __dir__():
 
 
 def mean(mean_x: torch.Tensor, covariance_x: torch.Tensor, M: torch.Tensor | None = None) -> torch.Tensor:
-    """
+    r"""
     Compute the mean of :math:`x^T M x`, where :math:`x`
     follows a multivariate normal distribution
     :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
@@ -52,7 +53,7 @@ def mean(mean_x: torch.Tensor, covariance_x: torch.Tensor, M: torch.Tensor | Non
 
 
 def _mean_diagonal(mean_x, covariance_x, M_diagonal):
-    """
+    r"""
     Compute the mean of :math:`x^T M x`, where :math:`x`
     follows a multivariate normal distribution
     :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)` and :math:`M` is diagonal.
@@ -80,7 +81,7 @@ def _mean_diagonal(mean_x, covariance_x, M_diagonal):
 
 
 def variance(mean_x, covariance_x, M=None):
-    """
+    r"""
     Compute the variance of :math:`x^T M x`, where :math:`x`
     follows a multivariate normal distribution
     :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
@@ -120,7 +121,7 @@ def variance(mean_x, covariance_x, M=None):
 
 
 def _variance_diagonal(mean_x, covariance_x, M_diagonal):
-    """
+    r"""
     Compute the variance of :math:`x^T M x`, where :math:`x`
     follows a multivariate normal distribution
     :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)` and :math:`M` is diagonal.
@@ -150,7 +151,7 @@ def _variance_diagonal(mean_x, covariance_x, M_diagonal):
 
 
 def qf_covariance(mean_x, covariance_x, M, M2):
-    """
+    r"""
     Compute the covariance between :math:`x^T M x` and :math:`x^T M_2 x`,
     where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
 
@@ -183,7 +184,7 @@ def qf_covariance(mean_x, covariance_x, M, M2):
 
 
 def qf_linear_covariance(mean_x, covariance_x, M, b):
-    """
+    r"""
     Compute the covariance between :math:`x^T M x` and the linear form :math:`x^T b`,
     where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
 

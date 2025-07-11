@@ -11,13 +11,13 @@ def __dir__():
 
 
 def mean(mean_x, covariance_x, const, B=None, B_chol=None):
-    """
+    r"""
     Compute the mean of :math:`y = x/\sqrt{x^T B x + c}`,
     where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`,
     :math:`B` is a symmetric positive definite matrix and
     :math:`c` is a positive constant.
     Uses a Taylor approximation. (:math:`y` is distributed on the
-    ellipse defined by :math:`B`.)
+    ellipse defined by :math:`B`.).
 
     Parameters
     ----------
@@ -63,7 +63,7 @@ def mean(mean_x, covariance_x, const, B=None, B_chol=None):
 
 
 def second_moment(mean_x, covariance_x, const, B=None, B_chol=None):
-    """
+    r"""
     Compute the second moment matrix of :math:`y = x/\sqrt{x^T B x + c}`,
     where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`,
     :math:`B` is a symmetric positive definite matrix and

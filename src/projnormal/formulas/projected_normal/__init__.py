@@ -1,4 +1,4 @@
-"""Formulas for the projected normal distribution, given by :math:`y=x/\|x\|`."""
+r"""Formulas for the projected normal distribution, given by :math:`y=x/\|x\|`."""
 from .moments import mean, second_moment
 from .probability import log_pdf, pdf
 from .sampling import empirical_moments, sample

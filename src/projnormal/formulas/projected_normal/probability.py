@@ -9,10 +9,10 @@ def __dir__():
 
 
 def pdf(mean_x, covariance_x, y):
-    """
+    r"""
     Compute the pdf at points y for the distribution of the variable
     :math:`y = x/\sqrt{x^T x}`, where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
-    (:math:`y` has a projected normal distribution.)
+    (:math:`y` has a projected normal distribution.).
 
 
     Parameters
@@ -37,10 +37,10 @@ def pdf(mean_x, covariance_x, y):
 
 
 def log_pdf(mean_x, covariance_x, y):
-    """
+    r"""
     Compute the log-pdf at points y for the distribution of the variable
     :math:`y = x/\sqrt{x^T x}`, where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`.
-    (:math:`y` has a projected normal distribution.)
+    (:math:`y` has a projected normal distribution.).
 
 
     Parameters

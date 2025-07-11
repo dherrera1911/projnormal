@@ -11,7 +11,7 @@ def __dir__():
 
 
 def mean(mean_x, var_x):
-    """
+    r"""
     Compute the mean of :math:`y = x/\sqrt{x^T x}`,
     where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)` and
     :math:`\Sigma_x = \sigma^2 I`. This is done using the
@@ -50,7 +50,7 @@ def mean(mean_x, var_x):
 # Apply the isotropic covariance formula to get the covariance
 # for each stimulus
 def second_moment(mean_x, var_x):
-    """
+    r"""
     Compute the second moment matrix of :math:`y = x/\sqrt{x^T x}`,
     where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`
     and :math:`\Sigma_x = \sigma^2 I`. This is done using

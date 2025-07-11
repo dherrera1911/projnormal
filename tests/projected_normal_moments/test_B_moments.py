@@ -2,8 +2,8 @@
 import pytest
 import torch
 
-import projnormal.formulas.projected_normal_c as pnc_formulas
 import projnormal.formulas.projected_normal_Bc as pnbc_formulas
+import projnormal.formulas.projected_normal_c as pnc_formulas
 import projnormal.param_sampling as par_samp
 
 # Make double the default precision

@@ -1,4 +1,4 @@
-"""Formulas for the distribution of :math:`y=x/\sqrt{x^T B x}`."""
+r"""Formulas for the distribution of :math:`y=x/\sqrt{x^T B x}`."""
 from .moments import mean, second_moment
 from .probability import log_pdf, pdf
 from .sampling import empirical_moments, sample

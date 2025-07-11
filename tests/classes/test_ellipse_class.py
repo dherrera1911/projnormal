@@ -2,8 +2,8 @@
 import pytest
 import torch
 
-import projnormal.formulas.projected_normal_B as pnb_formulas
 import projnormal.classes as classes
+import projnormal.formulas.projected_normal_B as pnb_formulas
 import projnormal.param_sampling as par_samp
 
 torch.manual_seed(1)

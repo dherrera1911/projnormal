@@ -1,5 +1,6 @@
-"""Formulas describing the projected normal and related distributions obtained from
-a multivariate normal variable :math:`x\sim \mathcal{N}(\mu, \Sigma)`."""
+r"""Formulas describing the projected normal and related distributions obtained from
+a multivariate normal variable :math:`x\sim \mathcal{N}(\mu, \Sigma)`.
+"""
 from . import projected_normal as projected_normal
 from . import projected_normal_B as projected_normal_B
 from . import projected_normal_Bc as projected_normal_Bc
