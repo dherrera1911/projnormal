@@ -1,19 +1,19 @@
-# `projnormal`: Python implementation of the Projected Normal Distribution
+# `projnormal`
+
+![projnormal logo](docs/source/_static/cartoon.svg){width=500}
 
 `projnormal` is a Python package for working with the
-projected normal (also known as the angular Gaussian)
-and related distributions. It uses a PyTorch backend
-to provide efficient computations and fitting procedures.
+projected normal and related distributions. It uses a
+PyTorch backend to provide efficient computations and
+fitting procedures.
 
-Given a variable $\mathbf{x} \in \mathbb{R}^n$ following
-a multivariate normal distribution
+Given an $n$-dimensional variable
 $\mathbf{x} \sim \mathcal{N}(\boldsymbol{\mu}, \Sigma)$,
-the variable $\mathbf{y} = \frac{\mathbf{x}}{||\mathbf{x}||}$
+the variable obtained by radially projecting
+$\mathbf{x}$ onto the unit sphere,
+$\mathbf{y} = \frac{\mathbf{x}}{||\mathbf{x}||}$,
 follows a projected normal distribution, denoted
 as $\mathbf{y} \sim \mathcal{PN}(\boldsymbol{\mu}, \Sigma)$.
-That is, the projected normal distribution is obtained
-by projecting a Gaussian random variable
-onto the unit sphere $\mathbb{S}^{n-1}$.
 
 The package was introduced in the preprint
 ["Projected Normal Distribution: Moment Approximations and Generalizations"](https://arxiv.org/abs/2506.17461),
@@ -23,7 +23,7 @@ which presents the implemented formulas.
 ## Projected Normal Distribution
 
 `projnormal` implements the following functionalities for
-the projected normal distribution:
+the projected normal distribution (and related distributions):
 * PDF and log-PDF formulas
 * Maximum-likelihood parameter estimation
 * Distribution sampling
