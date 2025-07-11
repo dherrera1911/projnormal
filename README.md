@@ -101,14 +101,24 @@ You can then activate the virtual environment with the following command:
 conda activate my-projnormal
 ```
 
-You should activate the `my-sqfa` environment to install the package, and every
+You should activate the `my-projnormal` environment to install the package, and every
 time you want to use it.
 
 
-### Install package
+### Install package from PyPI
 
-To install the package, you can clone the GitHub
-repository and install in editable mode using `pip`:
+The easiest way to install the package is form the PyPI
+repository, using the following command:
+
+```bash
+pip install projnormal
+```
+
+### Install package from source
+
+To install the package from source (e.g., if you want to edit
+the code), you can clone the GitHub
+repository and install in editable mode using the following commands:
 
 ```bash
 git clone https://github.com/dherrera1911/projnormal.git
