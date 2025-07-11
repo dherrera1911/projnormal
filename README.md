@@ -1,6 +1,4 @@
-# `projnormal`
-
-![projnormal logo](docs/source/_static/cartoon.svg){width=500}
+<img src="docs/source/_static/cartoon.svg" alt="projnormal logo" width="500"/>
 
 `projnormal` is a Python package for working with the
 projected normal and related distributions. It uses a
