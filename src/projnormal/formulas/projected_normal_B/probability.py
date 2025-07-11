@@ -35,8 +35,7 @@ def pdf(mean_x, covariance_x, y, B=None):
           PDF evaluated at each y. Shape is ``(n_points,)``.
     """
     raise NotImplementedError(
-        "The PDF for the projected normal distribution with \
-      denominator \sqrt(x'Bx) is not implemented. "
+        "The PDF for this distribution is not implemented. "
     )
 
 
@@ -68,6 +67,5 @@ def log_pdf(mean_x, covariance_x, y, B=None):
           Log-PDF evaluated at each y. Shape is ``(n_points,)``.
     """
     raise NotImplementedError(
-        "The log PDF for the projected normal distribution with \
-      denominator \sqrt(x'Bx) is not implemented. "
+        "The log PDF for this distribution is not implemented. "
     )

@@ -166,7 +166,7 @@ def test_pdf(n_dim, gaussian_parameters):
 
 @pytest.mark.parametrize('n_dim', [2, 3])
 @pytest.mark.parametrize('mean_type', ['sin'])
-@pytest.mark.parametrize('sigma', [0.25])
+@pytest.mark.parametrize('sigma', [0.5])
 @pytest.mark.parametrize('optimizer', ['NAdam', 'LBFGS'])
 def test_moment_matching(n_dim, optimizer, gaussian_parameters):
     """Test moment matching algorithm."""
