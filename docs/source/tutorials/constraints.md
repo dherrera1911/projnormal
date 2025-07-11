@@ -50,29 +50,27 @@ problem, for example constraining $\Sigma_x$ or $\boldsymbol{\mu}_x$
 to have a specific structure that reduces the number of
 free parameters.
 
-## Setting constraints in `projnormal`
+## Setting constraints in projnormal
 
-`projnormal` implements constraints using PyTorch parametrizations,
-a useful built-in feature of PyTorch.
+`projnormal` implements constraints using a useful built-in
+feature of PyTorch called parametrizations.
 
-In short, once a learnable parameter (e.g.\ a vector or a matrix)
+In short, once a learnable parameter (e.g. a vector or a matrix)
 is defined in a PyTorch model, we can add a parametrization to it,
 which will ensure that the parameter stays within the
-desired constraints. See the PyTorch
-[parametrizations tutorial](https://docs.pytorch.org/tutorials/intermediate/parametrizations.html)
-for more details.
+desired constraints. For further details on parametrizations,
+see below, and refer to the PyTorch
+[parametrizations tutorial](https://docs.pytorch.org/tutorials/intermediate/parametrizations.html).
 
 `projnormal` provides some built-in constraints that can be
 added to the available classes. The next section shows
-how to add these constraints without explaining the
-details of how they work. Later, we explain how the user can
-define their own constraints.
+how to use these built-in constraints.
 
  
 ### Example: Adding a diagonal constraint to the covariance matrix
 
 Let's first initialize a `ProjNormal` model, which comes with
-the default constraints. 
+the default constraints of the package.
 
 
 ```{code-cell} ipython3
@@ -100,11 +98,11 @@ what `Sphere()` and `PSD()` are).
 
 `projnormal` has some constraints available in the
 module `projnormal.classes.constraints`.
-For example, we can constrain a matrix to be diagonal
-with positive diagonal elements using the `Diagonal()` constraint.
-To do this, we first need to remove the existing
-parametrization of the `covariance_x` parameter, and then
-add the new `Diagonal()` constraint to it. For this, the
+For example, the class `Diagonal()` constraints a matrix
+to be diagonal with positive diagonal elements.
+To use this parametrization for `covariance_x`, we
+first need to remove the existing parametrization, and then
+add the new `Diagonal()` constraint. For this, the
 `parametrize` module of PyTorch is used.
 
 ```{code-cell} ipython3
@@ -144,7 +142,7 @@ samples = projnormal.formulas.projected_normal.sample(
 pn_fit.max_likelihood(samples, show_progress=False)
 
 # Check the covariance matrix
-print("True covariance: \n", cov_x)
+print("True covariance: \n", cov_x.numpy())
 print("Fitted covariance: \n", pn_fit.covariance_x.detach().numpy())
 ```
 
@@ -163,9 +161,9 @@ provided by `projnormal`.
 
 In coarse terms, parametrizations work by taking an
 unconstrained parameter $\eta$ and transforming it into a
-constrained model parameter $\theta$ via a function
+constrained model parameter $\theta$, via a function
 $f(\eta) = \theta$. Let's illustrate this with the example of
-the `MyDiagonal()` constraint.
+the diagonal constraint.
 
 In this case, the constrained parameter $\theta$ is an
 $n$-by-$n$ diagonal matrix with positive diagonal elements.
@@ -236,6 +234,14 @@ an unconstrained parameter `eta`, we still only
 see `covariance_x` when accessing the model
 normally. For more information, see the
 [PyTorch parametrizations tutorial](https://docs.pytorch.org/tutorials/intermediate/parametrizations.html).
+
+:::{admonition} The `geotorch` package provides useful constraints
+For the symmetric positive definite constraint, `projnormal`
+uses the package `geotorch`, which implements a variety
+of constraints as PyTorch parametrizations.
+See the [geotorch documentation](https://geotorch.readthedocs.io/en/latest/)
+for more information.
+:::
 
 
 ### Example: Defining advanced constraints

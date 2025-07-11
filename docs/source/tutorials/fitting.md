@@ -34,7 +34,7 @@ import projnormal
 import torch
 
 # Distribution parameters
-N_DIM = 5
+N_DIM = 3
 mean_x = projnormal.param_sampling.make_mean(N_DIM)
 cov_x = projnormal.param_sampling.make_spdm(N_DIM)
 
@@ -62,7 +62,7 @@ pn_fit_mle.max_likelihood(samples, show_progress=False)
 print("True mean:\n", mean_x.numpy())
 print("Fitted mean (MLE):\n", pn_fit_mle.mean_x.detach().numpy())
 
-print("True covariance (sampling):\n", cov_x.numpy())
+print("True covariance:\n", cov_x.numpy())
 print("Fitted covariance (MLE):\n", pn_fit_mle.covariance_x.detach().numpy())
 ```
 
@@ -111,13 +111,13 @@ pnc_fit_mle = projnormal.classes.ProjNormalConst(n_dim=N_DIM)
 pnc_fit_mle.max_likelihood(samples_const, show_progress=False)
 
 # Print the fitted parameters
-print("True mean (sampling):\n", mean_x.numpy())
+print("True mean:\n", mean_x.numpy())
 print("Fitted mean (MLE):\n", pnc_fit_mle.mean_x.detach().numpy())
 
-print("True covariance (sampling):\n", cov_x.numpy())
+print("True covariance:\n", cov_x.numpy())
 print("Fitted covariance (MLE):\n", pnc_fit_mle.covariance_x.detach().numpy())
 
-print("True constant (sampling):\n", const.numpy())
+print("True constant:\n", const.numpy())
 print("Fitted constant (MLE):\n", pnc_fit_mle.const.detach().numpy())
 ```
 
