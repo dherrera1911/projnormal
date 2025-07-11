@@ -42,7 +42,7 @@ def pdf(mean_x, covariance_x, const, y):
 def log_pdf(mean_x, covariance_x, const, y):
     """
     Compute the log-pdf at points y for the distribution of the variable
-    :math:`y = x/\sqrt{x^T x}`, where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`
+    :math:`y = x/\sqrt{x^T x + c}`, where :math:`x \sim \mathcal{N}(\mu_x, \Sigma_x)`
     and :math:`c` is a positive constant
 
 
