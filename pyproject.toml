@@ -5,11 +5,11 @@ build-backend = "hatchling.build"
 [project]
 name = "projnormal"
 dynamic = ["version"]
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 authors = [
   {name = "Daniel Herrera-Esposito", email = "dherrera1911@gmail.com"}
 ]
-description = "A PyTorch implementation of the Projected Normal distribution with fitting capabilities."
+description = "A PyTorch implementation of the Projected Normal distribution and generalizations."
 readme = "README.md"
 license = {text = "MIT License"}
 
