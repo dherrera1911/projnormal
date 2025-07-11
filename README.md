@@ -1,4 +1,12 @@
-<img src="docs/source/_static/cartoon.svg" alt="projnormal logo" width="500"/>
+<img src="docs/source/_static/cartoon.svg" alt="projnormal logo" width="600"/>
+
+[![Build Status](https://github.com/dherrera1911/projnormal/actions/workflows/install.yml/badge.svg)](https://github.com/dherrera1911/projnormal/actions/workflows/install.yml)
+[![Tests Status](https://github.com/dherrera1911/projnormal/actions/workflows/tests.yml/badge.svg)](https://github.com/dherrera1911/projnormal/actions/workflows/tests.yml)
+[![Documentation Status](https://readthedocs.org/projects/projnormal/badge/?version=latest)](https://projnormal.readthedocs.io/en/latest/?badge=latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/dherrera1911/projnormal?tab=MIT-1-ov-file)
+![Python version](https://img.shields.io/badge/python-3.10|3.11|3.12-blue.svg)
+[![codecov](https://codecov.io/gh/dherrera1911/projnormal/graph/badge.svg?)](https://codecov.io/gh/dherrera1911/projnormal)
+[![PyPI version](https://badge.fury.io/py/projnormal.svg)](https://badge.fury.io/py/projnormal)
 
 `projnormal` is a Python package for working with the
 projected normal and related distributions. It uses a
