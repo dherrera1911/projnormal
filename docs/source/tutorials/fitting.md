@@ -135,6 +135,6 @@ pnc_fit_mm.moment_match(data_moments=data_moments_const, show_progress=False)
 
 # Print the fitted parameters
 print("Fitted mean (Moment Matching):\n", pnc_fit_mm.mean_x.detach().numpy())
-print("Fitted covariance (Moment Matching)\n:", pnc_fit_mm.covariance_x.detach().numpy())
-print("Fitted constant (Moment Matching)\n:", pnc_fit_mm.const.detach().numpy())
+print("Fitted covariance (Moment Matching):\n", pnc_fit_mm.covariance_x.detach().numpy())
+print("Fitted constant (Moment Matching):\n", pnc_fit_mm.const.detach().numpy())
 ```
