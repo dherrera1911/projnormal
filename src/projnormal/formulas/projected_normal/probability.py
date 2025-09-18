@@ -60,14 +60,15 @@ def log_pdf(mean_x, covariance_x, y):
           Log-PDF evaluated at each y. Shape is ``(n_points,)``.
     """
     n_dim = torch.tensor(mean_x.size(0))
-    # Compute the precision matrix
-    precision = torch.linalg.inv(covariance_x)
+    # Solve the linear systems
+    covinv_mean = torch.linalg.solve(covariance_x, mean_x)
+    covinv_y = torch.linalg.solve(covariance_x, y.t())
 
     # Compute the terms
-    q1 = torch.einsum("i,ij,j->", mean_x, precision, mean_x)
-    q2 = torch.einsum("i,ij,j...->...", mean_x, precision, y.t())
-    q3 = torch.einsum("...i,ij,j...->...", y, precision, y.t())
-    alpha = q2 / torch.sqrt(q3)
+    q1 = torch.einsum("i,i->", mean_x, covinv_mean)
+    q2 = torch.einsum("i,i...->...", mean_x, covinv_y)
+    q3 = torch.einsum("...i,i...->...", y, covinv_y)
+    alpha = q2 / torch.sqrt(q3 + 1e-12)
     M = _M_value(alpha, n_dim=n_dim)
 
     # Compute the log PDF
