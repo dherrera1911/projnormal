@@ -1,4 +1,4 @@
-"""Class for the general projected normal distribution."""
+"""Class for the general projected normal distribution with denominator matrix B."""
 import geotorch
 import torch
 import torch.nn as nn
