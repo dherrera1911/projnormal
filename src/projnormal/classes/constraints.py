@@ -289,7 +289,7 @@ class ConstrainedSPD(nn.Module):
     :math:`W` is a symmetric positive semi-definite matrix of rank at most `k`.
     """
 
-    def __init__(self, diag=1.0, rank=1):
+    def __init__(self, diag=1.0, rank=1, fixed_diag=False):
         """
         Parameters
         ----------
@@ -301,7 +301,14 @@ class ConstrainedSPD(nn.Module):
             Must be less than or equal to n_dim.
         """
         super().__init__()
-        self.diag = nn.Parameter(torch.as_tensor(diag))
+        if fixed_diag:
+            self.register_buffer(
+              "diag_param", torch.as_tensor(_inv_softmax(torch.as_tensor(diag)))
+            )
+        else:
+            self.diag = nn.Parameter(
+              torch.as_tensor(_inv_softmax(torch.as_tensor(diag)))
+            )
         self.rank = rank
         self.n_dim = None
 
@@ -321,8 +328,8 @@ class ConstrainedSPD(nn.Module):
             Constrained SPD matrix.
         """
         low_rank = torch.einsum("ik,jk->ij", vecs, vecs)
-        val_pos = _softmax(self.diag)
-        return torch.diag(val_pos.expand(self.n_dim)) + low_rank
+        diag = _softmax(self.diag_param)
+        return torch.diag(diag.expand(self.n_dim)) + low_rank
 
 
     def right_inverse(self, M):
