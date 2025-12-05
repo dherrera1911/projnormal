@@ -284,25 +284,26 @@ class Diagonal(nn.Module):
 
 class ConstrainedSPD(nn.Module):
     r"""Constrain matrix :math:`M` to be
-    :math:`M = d \cdot I_n + W`, where :math:`d>0` is a fixed scalar,
+    :math:`M = d \cdot I_n + W`, where :math:`d>0` is a scalar,
     :math:`I_n` is the identity matrix, and
     :math:`W` is a symmetric positive semi-definite matrix of rank at most `k`.
     """
 
-    def __init__(self, d=1.0, k=1):
+    def __init__(self, diag=1.0, rank=1):
         """
         Parameters
         ----------
-        d : float
+        diag : float
             Fixed positive scalar to be added to the diagonal of the matrix.
 
-        k : int
+        rank : int
             Rank of the symmetric positive semi-definite matrix W.
             Must be less than or equal to n_dim.
         """
         super().__init__()
-        self.register_buffer("d", torch.as_tensor(d))
-        self.k = k
+        self.diag = nn.Parameter(torch.as_tensor(diag))
+        self.rank = rank
+        self.n_dim = None
 
 
     def forward(self, vecs):
@@ -311,7 +312,7 @@ class ConstrainedSPD(nn.Module):
 
         Parameters
         ----------
-        vecs : torch.Tensor (n_dim, k).
+        vecs : torch.Tensor (n_dim, rank).
             Input vectors in euclidean space.
 
         Returns
@@ -320,36 +321,15 @@ class ConstrainedSPD(nn.Module):
             Constrained SPD matrix.
         """
         low_rank = torch.einsum("ik,jk->ij", vecs, vecs)
-        Id = torch.eye(vecs.shape[0], device=vecs.device, dtype=vecs.dtype)
-        return self.d * Id + low_rank
+        val_pos = _softmax(self.diag)
+        return torch.diag(val_pos.expand(self.n_dim)) + low_rank
 
 
     def right_inverse(self, M):
         """
-        Set the vectors that are used to make the low rank matrix W
-        as the (scaled) k eigenvectors with largest eigenvalues of M.
-
-        Parameters
-        ----------
-        M : torch.Tensor
-            Input matrix. Must have positive diagonal entries.
-
-        Returns
-        -------
-        torch.Tensor (n_dim, k).
-            Vectors that can be used to reconstruct the SPD matrix.
+        Initialize the vectors to a set of k random vectors.
         """
-        # Eigen decomposition
-        eigenvalues, eigenvectors = torch.linalg.eigh(M)
-
-        # Get the indices of the k largest eigenvalues
-        k_largest_indices = torch.argsort(eigenvalues, descending=True)[:self.k]
-        # Select the corresponding eigenvectors
-        vecs = eigenvectors[:, k_largest_indices]
-
-        # Scale by the square root of the eigenvalues minus the fixed scalar d
-        vecs = torch.einsum(
-          'ik,k->ik', vecs, torch.sqrt(eigenvalues[k_largest_indices] - self.d)
-        )
-
+        self.n_dim = M.shape[0]
+        vecs = torch.randn(self.n_dim, self.rank)
+        vecs = vecs / vecs.norm(dim=0, keepdim=True)
         return vecs
